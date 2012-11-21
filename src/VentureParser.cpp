@@ -1,10 +1,11 @@
-
 #include "Header.h"
 #include "VentureParser.h"
 #include "VentureValues.h"
 #include "boost/shared_ptr.hpp"
 #include "boost/lexical_cast.hpp"
 #include "boost/algorithm/string.hpp"
+
+// Parsed implementation is inspired by: http://howtowriteaprogram.blogspot.com/2010/11/lisp-interpreter-in-90-lines-of-c.html
 
 bool IsInteger(const string& input) {
   try {
