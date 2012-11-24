@@ -63,7 +63,7 @@ VentureValue* ProcessAtom(const string& token)
     return new VentureBoolean(false);
   } else if (ToLower(token) == "true") {
     return new VentureBoolean(true);
-  } else {
+  } else { // FIXME: make check on the symbol format!
     return new VentureSymbol(token);
   }
 }
