@@ -1,3 +1,4 @@
+
 #include "Header.h"
 #include "VentureParser.h"
 #include "VentureValues.h"
@@ -5,12 +6,12 @@
 #include "boost/lexical_cast.hpp"
 #include "boost/algorithm/string.hpp"
 
-// Parsed implementation is inspired by: http://howtowriteaprogram.blogspot.com/2010/11/lisp-interpreter-in-90-lines-of-c.html
+// Parser implementation is inspired by: http://howtowriteaprogram.blogspot.com/2010/11/lisp-interpreter-in-90-lines-of-c.html
 
 bool IsInteger(const string& input) {
   try {
     boost::lexical_cast<int>(input);
-  } catch(boost::bad_lexical_cast& e) {
+  } catch(boost::bad_lexical_cast&) {
     return false;
   }
   return true;
@@ -19,7 +20,7 @@ bool IsInteger(const string& input) {
 bool IsReal(const string& input) {
   try {
     boost::lexical_cast<real>(input);
-  } catch(boost::bad_lexical_cast& e) {
+  } catch(boost::bad_lexical_cast&) {
     return false;
   }
   return true;
@@ -40,7 +41,7 @@ list<string> Tokenize(const string& code)
     if (*s == '(' || *s == ')')
       tokens.push_back(*s++ == '(' ? "(" : ")");
     else {
-      const char * t = s;
+      const char* t = s;
       while (*t && *t != ' ' && *t != '(' && *t != ')')
         ++t;
       tokens.push_back(string(s, t));
@@ -50,45 +51,70 @@ list<string> Tokenize(const string& code)
   return tokens;
 }
 
-shared_ptr<VentureValue> ProcessAtom(const std::string& token) // 
+VentureValue* ProcessAtom(const string& token)
 {
   if (IsInteger(token)) {
-    return shared_ptr<VentureValue>(new VentureInteger(boost::lexical_cast<int>(token)));
+    return new VentureInteger(boost::lexical_cast<int>(token));
   } else if (IsReal(token)) {
-    return shared_ptr<VentureValue>(new VentureReal(boost::lexical_cast<real>(token)));
+    return new VentureReal(boost::lexical_cast<real>(token));
   } else if (ToLower(token) == "nil") {
-    return shared_ptr<VentureValue>(new VentureNil());
+    return (VentureValue*)(NIL_INSTANCE);
   } else if (ToLower(token) == "false") {
-    return shared_ptr<VentureValue>(new VentureBoolean(false));
+    return new VentureBoolean(false);
   } else if (ToLower(token) == "true") {
-    return shared_ptr<VentureValue>(new VentureBoolean(true));
+    return new VentureBoolean(true);
   } else {
-    return shared_ptr<VentureValue>(new VentureToken(token));
+    return new VentureSymbol(token);
   }
 }
 
-shared_ptr<VentureValue> ProcessTokens(list<string>& tokens)
+VentureValue* ProcessTokens(list<string>& tokens)
 {
   const std::string token(tokens.front());
   tokens.pop_front();
   if (token == "(") {
-    shared_ptr<VentureValue> new_list = shared_ptr<VentureValue>(new VentureNil());
-    shared_ptr<VentureValue> list_end = new_list;
+    VentureList* new_list = NIL_INSTANCE;
+    VentureList* last_cons = NIL_INSTANCE;
     while (tokens.front() != ")")
     {
-      // Function *AddToList* should return the reference
-      // to the "cdr" of updated last list element.
-      list_end = AddToList(list_end, ProcessTokens(tokens));
+      VentureValue* next_element = ProcessTokens(tokens);
+      if (new_list == NIL_INSTANCE) { // First element.
+        new_list = new VentureList(next_element, NIL_INSTANCE);
+        last_cons = new_list;
+      } else {
+        last_cons->cdr = new VentureList(next_element, NIL_INSTANCE);
+        last_cons = last_cons->cdr;
+      }
     }
     tokens.pop_front();
-    return list_end;
+    return new_list;
   } else {
     return ProcessAtom(token);
   }
 }
 
-shared_ptr<VentureValue> ReadCode(const std::string& s)
+VentureValue* ReadCode(const string& input)
 {
-  std::list<std::string> tokens(Tokenize(s));
+  list<string> tokens(Tokenize(input));
   return ProcessTokens(tokens);
+}
+
+string Stringify(VentureValue* const value) {
+  if (value->GetType() == NIL) {
+    return "#nil";
+  } else {
+    return value->GetString();
+  }
+}
+
+bool CompareValue(VentureSymbol* first_value, string second_value) { // Should be inline.
+  return first_value->symbol == second_value;
+}
+
+bool CompareValue(string first_value, VentureSymbol* const second_value) { // Should be inline.
+  return first_value == second_value->symbol;
+}
+
+bool CompareValue(VentureSymbol* const first_value, VentureSymbol* const second_value) { // Should be inline.
+  return first_value->symbol == second_value->symbol;
 }

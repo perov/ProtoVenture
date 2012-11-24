@@ -4,79 +4,91 @@
 
 #include "Header.h"
 
-class VentureValue {
-public:
+enum VentureDataTypes { UNDEFINED_TYPE, INTEGER, REAL, BOOLEAN, NIL, LIST, SYMBOL, NODE };
+
+struct VentureValue {
   VentureValue() {};
-  virtual string GetType() { return "NotDefined"; };
+  virtual VentureDataTypes GetType() { return UNDEFINED_TYPE; }
+  virtual string GetString() { return "UNDEFINED"; }
   virtual ~VentureValue() {};
 };
 
-class VentureInteger : public VentureValue {
-public:
-  VentureInteger(const int data) : data(data) {};
+struct VentureInteger : public VentureValue {
+  VentureInteger(const int data) : data(data) {}
   // Question: where would be the type transformation happen?
   //           Before this function, it seems?
-  string GetType() { return "Integer"; }
-private:
-  int data; // Const?
+  VentureDataTypes GetType() { return INTEGER; }
+  string GetString() { return boost::lexical_cast<string>(data); }
+
+  int data;
 };
 
-class VentureReal : public VentureValue {
-public:
-  VentureReal(const real data) : data(data) {};
-  string GetType() { return "Real"; }
-private:
-  real data; // Const?
+struct VentureReal : public VentureValue {
+  VentureReal(const real data) : data(data) {}
+  VentureDataTypes GetType() { return REAL; }
+  string GetString() { return boost::lexical_cast<string>(data); }
+
+  real data;
 };
 
-class VentureBoolean : public VentureValue {
-public:
-  VentureBoolean(const bool data) : data(data) {};
-  string GetType() { return "Boolean"; }
-private:
-  bool data; // Const?
+struct VentureBoolean : public VentureValue {
+  VentureBoolean(const bool data) : data(data) {}
+  VentureDataTypes GetType() { return BOOLEAN; }
+  string GetString() {
+    if (data == false) {
+      return "#f";
+    } else {
+      return "#t";
+    }
+  }
+
+  bool data;
 };
 
-class VentureList : public VentureValue { // Should be references constants?
-public:
-  VentureList(shared_ptr<VentureValue> car, shared_ptr<VentureValue> cdr)
-  : car(car), cdr(cdr) {};
-  string GetType() { return "List"; }
-private:
-  shared_ptr<VentureValue> car; // Const?
-  shared_ptr<VentureValue> cdr; // Const?
+// Should be references constants?
+// Should be renamed to the VentureCons!
+struct VentureList : public VentureValue {
+  VentureList(VentureValue* car = 0, VentureList* cdr = 0)
+    : car(car), cdr(cdr) {}
+  VentureDataTypes GetType() { return LIST; } // Should be virtual for NIL?..
+  string GetString();
+
+  VentureValue* car;
+  VentureList* cdr;
 };
 
-class VentureNil : public VentureValue {
-public:
-  VentureNil() {};
-  string GetType() { return "Nil"; }
-private:
+struct VentureNil : public VentureList {
+  VentureNil() {}
+  VentureDataTypes GetType() { return NIL; }
+  string GetString() { return "#nil"; }
 };
 
-class VentureProbabilityVector : public VentureValue {
-public:
-  VentureProbabilityVector(const vector<real> data) // Passing by value. Not efficiently!
-  : data(data) {};
-  string GetType() { return "ProbabilityVector"; }
-private:
-  vector<real> data; // Const?
+extern VentureList* const NIL_INSTANCE;
+
+struct VentureSymbol : public VentureValue {
+  VentureSymbol(const string& symbol) : symbol(symbol) {}
+  VentureDataTypes GetType() { return SYMBOL; }
+  string GetString() { return symbol; }
+
+  string symbol;
 };
 
-class VentureReference : public VentureValue {
-public:
-  VentureReference(const shared_ptr<VentureValue> reference) : reference(reference) {};
-  string GetType() { return "Reference"; }
-private:
-  shared_ptr<VentureValue> reference; // Const?
-};
+void AssertVentureSymbol(VentureValue*);
 
-class VentureToken : public VentureValue {
-public:
-  VentureToken(const string& token) : token(token) {};
-  string GetType() { return "Reference"; }
-private:
-  const string& token; // Const?
+VentureSymbol* ToVentureSymbol(VentureValue*);
+
+void AssertVentureList(VentureValue*);
+
+VentureList* ToVentureList(VentureValue*);
+
+/*
+struct VentureReference : public VentureValue {
+  VentureReference(const shared_ptr<VentureValue> reference) : reference(reference) {}
+  VentureDataTypes GetType() { return REFERENCE; }
+  string GetString() { return boost::lexical_cast<string>(reference); }
+
+  shared_ptr<VentureValue> reference;
 };
+*/
 
 #endif
