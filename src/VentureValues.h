@@ -3,8 +3,9 @@
 #define VENTURE___VENTURE_VALUES_H
 
 #include "Header.h"
+#include "XRP.h"
 
-enum VentureDataTypes { UNDEFINED_TYPE, INTEGER, REAL, BOOLEAN, NIL, LIST, SYMBOL, NODE };
+enum VentureDataTypes { UNDEFINED_TYPE, INTEGER, REAL, BOOLEAN, NIL, LIST, SYMBOL, LAMBDA, XRP, NODE };
 
 struct VentureValue {
   VentureValue() {};
@@ -48,13 +49,14 @@ struct VentureBoolean : public VentureValue {
 // Should be references constants?
 // Should be renamed to the VentureCons!
 struct VentureList : public VentureValue {
-  VentureList(VentureValue* car = 0, VentureList* cdr = 0)
+  VentureList(shared_ptr<VentureValue> car = shared_ptr<VentureValue>(),
+              shared_ptr<VentureList> cdr = shared_ptr<VentureList>())
     : car(car), cdr(cdr) {}
   VentureDataTypes GetType() { return LIST; } // Should be virtual for NIL?..
   string GetString();
 
-  VentureValue* car;
-  VentureList* cdr;
+  shared_ptr<VentureValue> car;
+  shared_ptr<VentureList> cdr;
 };
 
 struct VentureNil : public VentureList {
@@ -63,7 +65,7 @@ struct VentureNil : public VentureList {
   string GetString() { return "#nil"; }
 };
 
-extern VentureList* const NIL_INSTANCE;
+extern shared_ptr<VentureList> const NIL_INSTANCE;
 
 struct VentureSymbol : public VentureValue {
   VentureSymbol(const string& symbol) : symbol(symbol) {}
@@ -73,13 +75,35 @@ struct VentureSymbol : public VentureValue {
   string symbol;
 };
 
-void AssertVentureSymbol(VentureValue*);
+struct VentureLambda : public VentureValue {
+  VentureLambda(shared_ptr<VentureList> formal_arguments,
+                shared_ptr<NodeEvaluation> expressions,
+                shared_ptr<NodeEnvironment> scope_environment)
+    : formal_arguments(formal_arguments), expressions(expressions), scope_environment(scope_environment) {}
+  VentureDataTypes GetType() { return LAMBDA; }
+  string GetString() { return "LAMBDA"; }
 
-VentureSymbol* ToVentureSymbol(VentureValue*);
+  shared_ptr<VentureList> formal_arguments;
+  shared_ptr<NodeEvaluation> expressions;
+  shared_ptr<NodeEnvironment> scope_environment;
+};
 
-void AssertVentureList(VentureValue*);
+struct VentureXRP : public VentureValue {
+  VentureXRP(shared_ptr<XRP> xrp)
+    : xrp(xrp) {}
+  VentureDataTypes GetType() { return XRP; }
+  string GetString() { return "XRP"; }
 
-VentureList* ToVentureList(VentureValue*);
+  shared_ptr<XRP> xrp;
+};
+
+void AssertVentureSymbol(shared_ptr<VentureValue>);
+
+shared_ptr<VentureSymbol> ToVentureSymbol(shared_ptr<VentureValue>);
+
+void AssertVentureList(shared_ptr<VentureValue>);
+
+shared_ptr<VentureList> ToVentureList(shared_ptr<VentureValue>);
 
 /*
 struct VentureReference : public VentureValue {

@@ -5,11 +5,11 @@
 #include "Header.h"
 #include "VentureValues.h"
 
-VentureValue* GetFirst(VentureList*);
+shared_ptr<VentureValue> GetFirst(shared_ptr<VentureList>);
 
-VentureList* GetNext(VentureList*);
+shared_ptr<VentureList> GetNext(shared_ptr<VentureList>);
 
-VentureValue* GetNth(VentureList*, size_t);
+shared_ptr<VentureValue> GetNth(shared_ptr<VentureList>, size_t);
 
 enum NodeTypes { UNDEFINED_NODE, ENVIRONMENT, VARIABLE, UNDEFINED_EVALUATION_NODE, DIRECTIVE_ASSUME,
                  DIRECTIVE_PREDICT, DIRECTIVE_OBSERVE, SELF_EVALUATING, LAMBDA_CREATOR,
@@ -31,100 +31,107 @@ struct Node : public VentureValue {
 struct NodeVariable;
 
 struct NodeEnvironment : public Node {
-  NodeEnvironment(NodeEnvironment* parent_environment) : parent_environment(parent_environment) {}
+  NodeEnvironment(shared_ptr<NodeEnvironment> parent_environment) : parent_environment(parent_environment) {}
   NodeTypes GetNodeType() { return ENVIRONMENT; }
-  NodeEnvironment* parent_environment;
-  map<string, NodeVariable*> variables;
+  shared_ptr<NodeEnvironment> parent_environment;
+  map<string, shared_ptr<NodeVariable> > variables;
 };
 
-
 struct NodeVariable : public Node {
-  NodeVariable(NodeEnvironment* parent_environment, VentureValue* value)
+  NodeVariable(shared_ptr<NodeEnvironment> parent_environment, shared_ptr<VentureValue> value)
     : parent_environment(parent_environment), value(value)
   {}
   NodeTypes GetNodeType() { return VARIABLE; }
-  NodeEnvironment* parent_environment;
-  VentureValue* value;
+  shared_ptr<NodeEnvironment> parent_environment;
+  shared_ptr<VentureValue> value;
 };
 
 struct NodeEvaluation : public Node {
   NodeEvaluation()
-    : environment(0),
-      earlier_evaluation_nodes(0),
+    : environment(shared_ptr<NodeEnvironment>()),
+      earlier_evaluation_nodes(shared_ptr<NodeEvaluation>()),
       evaluated(false)
   {}
   virtual NodeTypes GetNodeType() { return UNDEFINED_EVALUATION_NODE; }
-  NodeEnvironment* environment;
-  NodeEvaluation* earlier_evaluation_nodes;
+  virtual shared_ptr<VentureValue> Evaluate(shared_ptr<NodeEnvironment>);
+  shared_ptr<NodeEnvironment> environment;
+  shared_ptr<NodeEvaluation> earlier_evaluation_nodes;
   bool evaluated;
 };
 
 struct NodeDirectiveAssume : public NodeEvaluation {
   virtual NodeTypes GetNodeType() { return DIRECTIVE_ASSUME; }
-  NodeDirectiveAssume(VentureSymbol* name, NodeEvaluation* expression)
+  NodeDirectiveAssume(shared_ptr<VentureSymbol> name, shared_ptr<NodeEvaluation> expression)
     : name(name), expression(expression) {}
+  shared_ptr<VentureValue> Evaluate(shared_ptr<NodeEnvironment>);
   
-  VentureSymbol* name;
-  NodeEvaluation* expression;
+  shared_ptr<VentureSymbol> name;
+  shared_ptr<NodeEvaluation> expression;
 };
 
 struct NodeDirectivePredict : public NodeEvaluation {
   virtual NodeTypes GetNodeType() { return DIRECTIVE_PREDICT; }
-  NodeDirectivePredict(NodeEvaluation* expression)
+  NodeDirectivePredict(shared_ptr<NodeEvaluation> expression)
     : expression(expression) {}
+  shared_ptr<VentureValue> Evaluate(shared_ptr<NodeEnvironment>);
 
-  NodeEvaluation* expression;
+  shared_ptr<NodeEvaluation> expression;
 };
 
 struct NodeDirectiveObserve : public NodeEvaluation {
   virtual NodeTypes GetNodeType() { return DIRECTIVE_ASSUME; }
-  NodeDirectiveObserve(NodeEvaluation* expression, VentureValue* observed_value)
+  NodeDirectiveObserve(shared_ptr<NodeEvaluation> expression, shared_ptr<VentureValue> observed_value)
     : expression(expression), observed_value(observed_value) {}
+  shared_ptr<VentureValue> Evaluate(shared_ptr<NodeEnvironment>);
   
-  NodeEvaluation* expression;
-  VentureValue* observed_value;
+  shared_ptr<NodeEvaluation> expression;
+  shared_ptr<VentureValue> observed_value;
 };
 
 struct NodeSelfEvaluating : public NodeEvaluation {
   virtual NodeTypes GetNodeType() { return SELF_EVALUATING; }
-  NodeSelfEvaluating(VentureValue* value)
+  NodeSelfEvaluating(shared_ptr<VentureValue> value)
     : value(value) {}
+  shared_ptr<VentureValue> Evaluate(shared_ptr<NodeEnvironment>);
   
-  VentureValue* value;
+  shared_ptr<VentureValue> value;
 };
 
 struct NodeLambdaCreator : public NodeEvaluation {
   virtual NodeTypes GetNodeType() { return LAMBDA_CREATOR; }
-  NodeLambdaCreator(VentureList* arguments, NodeEvaluation* expressions)
+  NodeLambdaCreator(shared_ptr<VentureList> arguments, shared_ptr<NodeEvaluation> expressions)
     : arguments(arguments), expressions(expressions) {}
+  shared_ptr<VentureValue> Evaluate(shared_ptr<NodeEnvironment>);
   
-  VentureList* arguments;
-  NodeEvaluation* expressions;
+  shared_ptr<VentureList> arguments;
+  shared_ptr<NodeEvaluation> expressions;
 };
 
 struct NodeLookup : public NodeEvaluation {
   virtual NodeTypes GetNodeType() { return LOOKUP; }
-  NodeLookup(VentureSymbol* symbol)
+  NodeLookup(shared_ptr<VentureSymbol> symbol)
     : symbol(symbol) {}
+  shared_ptr<VentureValue> Evaluate(shared_ptr<NodeEnvironment>);
   
-  VentureSymbol* symbol;
+  shared_ptr<VentureSymbol> symbol;
 };
 
 struct NodeApplicationCaller : public NodeEvaluation {
   virtual NodeTypes GetNodeType() { return APPLICATION_CALLER; }
-  NodeApplicationCaller(NodeEvaluation* application_operator,
-                        vector<NodeEvaluation*>& application_operands)
+  NodeApplicationCaller(shared_ptr<NodeEvaluation> application_operator,
+                        vector< shared_ptr<NodeEvaluation> >& application_operands)
     : application_operator(application_operator),
       application_operands(application_operands),
-      application_node(0)
+      application_node(shared_ptr<NodeEvaluation>())
   {}
+  shared_ptr<VentureValue> Evaluate(shared_ptr<NodeEnvironment>);
   
-  NodeEvaluation* application_operator;
-  vector<NodeEvaluation*> application_operands;
-  NodeEvaluation* application_node;
+  shared_ptr<NodeEvaluation> application_operator;
+  vector< shared_ptr<NodeEvaluation> > application_operands;
+  shared_ptr<NodeEvaluation> application_node;
 };
 
-NodeEvaluation* AnalyzeDirective(VentureValue*);
-NodeEvaluation* AnalyzeExpression(VentureValue*);
+shared_ptr<NodeEvaluation> AnalyzeDirective(shared_ptr<VentureValue>);
+shared_ptr<NodeEvaluation> AnalyzeExpression(shared_ptr<VentureValue>);
 
 #endif

@@ -5,9 +5,9 @@
 
 string VentureList::GetString() {
   std::string output("(");
-  VentureList* iterator = this;
+  shared_ptr<VentureList> iterator = shared_ptr<VentureList>(this);
   while (iterator->GetType() != NIL) {
-    if (iterator != this) { output += " "; }
+    if (iterator != shared_ptr<VentureList>(this)) { output += " "; }
     output += Stringify(iterator->car);
     iterator = iterator->cdr;
   }
@@ -15,26 +15,26 @@ string VentureList::GetString() {
   return output;
 }
 
-void AssertVentureSymbol(VentureValue* value) {
-  if (dynamic_cast<VentureSymbol*>(value) == 0 || value->GetType() != SYMBOL) {
-    throw std::exception("Assertion: it is not a symbol.");
+void AssertVentureSymbol(shared_ptr<VentureValue> value) {
+  if (dynamic_cast<VentureSymbol*>(value.get()) == 0 || value->GetType() != SYMBOL) {
+    throw std::exception(string(string("Assertion: it is not a symbol.") + value->GetString() + string(boost::lexical_cast<string>(value->GetType()))).c_str());
   }
 }
 
-VentureSymbol* ToVentureSymbol(VentureValue* value_reference) {
+shared_ptr<VentureSymbol> ToVentureSymbol(shared_ptr<VentureValue> value_reference) {
   AssertVentureSymbol(value_reference);
-  VentureSymbol* return_reference = dynamic_cast<VentureSymbol*>(value_reference);
+  shared_ptr<VentureSymbol> return_reference = dynamic_pointer_cast<VentureSymbol>(value_reference);
   return return_reference;
 }
 
-void AssertVentureList(VentureValue* value) {
-  if (dynamic_cast<VentureList*>(value) == 0) { // If dynamic_cast returns NULL.
-    throw std::exception("Assertion: it is not a list.");
+void AssertVentureList(shared_ptr<VentureValue> value) {;
+  if (dynamic_cast<VentureList*>(value.get()) == 0) { // If dynamic_cast returns NULL.
+    throw std::exception(string(string("Assertion: it is not a list.") + value->GetString() + string(boost::lexical_cast<string>(value->GetType()))).c_str());
   }
 }
 
-VentureList* ToVentureList(VentureValue* value_reference) {
+shared_ptr<VentureList> ToVentureList(shared_ptr<VentureValue> value_reference) {
   AssertVentureList(value_reference);
-  VentureList* return_reference = dynamic_cast<VentureList*>(value_reference);
+  shared_ptr<VentureList> return_reference = dynamic_pointer_cast<VentureList>(value_reference);
   return return_reference;
 }

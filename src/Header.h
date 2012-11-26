@@ -13,6 +13,7 @@
 
 using std::vector;
 using boost::shared_ptr;
+using boost::dynamic_pointer_cast;
 using std::string;
 using std::list;
 using std::map;

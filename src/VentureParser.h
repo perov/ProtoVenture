@@ -15,16 +15,16 @@ string ToLower(string);
 
 list<string> Tokenize(const string&);
 
-VentureValue* ProcessAtom(const string&);
+shared_ptr<VentureValue> ProcessAtom(const string&);
 
-VentureValue* ProcessTokens(list<string>&);
+shared_ptr<VentureValue> ProcessTokens(list<string>&);
 
-VentureValue* ReadCode(const string&);
+shared_ptr<VentureValue> ReadCode(const string&);
 
-string Stringify(VentureValue* const);
+string Stringify(shared_ptr<VentureValue> const);
 
-bool CompareValue(VentureSymbol*, string);
-bool CompareValue(string, VentureSymbol* const);
-bool CompareValue(VentureSymbol* const, VentureSymbol* const);
+bool CompareValue(shared_ptr<VentureSymbol>, string);
+bool CompareValue(string, shared_ptr<VentureSymbol> const);
+bool CompareValue(shared_ptr<VentureSymbol> const, shared_ptr<VentureSymbol> const);
 
 #endif
