@@ -23,8 +23,6 @@ shared_ptr<VentureValue> ReadCode(const string&);
 
 string Stringify(shared_ptr<VentureValue> const);
 
-bool CompareValue(shared_ptr<VentureSymbol>, string);
-bool CompareValue(string, shared_ptr<VentureSymbol> const);
-bool CompareValue(shared_ptr<VentureSymbol> const, shared_ptr<VentureSymbol> const);
+bool CompareValue(shared_ptr<VentureValue>, shared_ptr<VentureValue>);
 
 #endif

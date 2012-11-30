@@ -53,6 +53,41 @@ list<string> Tokenize(const string& code)
 
 shared_ptr<VentureValue> ProcessAtom(const string& token)
 {
+  if (token == "b[0]" || token == "b[false]") {
+    return shared_ptr<VentureValue>(new VentureBoolean(false));
+  } else if (token == "b[1]" || token == "b[true]") {
+    return shared_ptr<VentureValue>(new VentureBoolean(true));
+  } else if (token.substr(0, 2) == "c[") {
+    string value = token.substr(2, token.length() - 2 - 1);
+    return shared_ptr<VentureValue>(new VentureCount(boost::lexical_cast<int>(value)));
+  } else if (token.substr(0, 2) == "r[") {
+    string value = token.substr(2, token.length() - 2 - 1);
+    return shared_ptr<VentureValue>(new VentureReal(boost::lexical_cast<real>(value)));
+  } else if (token.substr(0, 2) == "p[") {
+    string value = token.substr(2, token.length() - 2 - 1);
+    return shared_ptr<VentureValue>(new VentureProbability(boost::lexical_cast<real>(value)));
+  } else if (token.substr(0, 2) == "a[") {
+    string value = token.substr(2, token.length() - 2 - 1);
+    return shared_ptr<VentureValue>(new VentureAtom(boost::lexical_cast<int>(value)));
+  } else if (token.substr(0, 3) == "sp[") {
+    string value = token.substr(3, token.length() - 3 - 1);
+    return shared_ptr<VentureValue>(new VentureSmoothedContinuous(boost::lexical_cast<real>(value)));
+  } else if (token.substr(0, 3) == "sc[") {
+    string value = token.substr(3, token.length() - 3 - 1);
+    vector<string> elements_as_strings;
+    boost::split(elements_as_strings, value, boost::is_any_of(","));
+    vector<real> elements;
+    for (size_t index = 0; index < elements_as_strings.size(); index++) {
+      elements.push_back(boost::lexical_cast<real>(elements_as_strings[index]));
+    }
+    return shared_ptr<VentureValue>(new VentureSimplexPoint(elements));
+  } else {
+    if (legal_SYMBOL_name(token) == false) {
+      throw std::exception(("Incorrect symbol: " + token + ".").c_str());
+    }
+    return shared_ptr<VentureValue>(new VentureSymbol(token)); 
+  }
+  /*
   if (IsInteger(token)) {
     return shared_ptr<VentureValue>(new VentureInteger(boost::lexical_cast<int>(token)));
   } else if (IsReal(token)) {
@@ -66,6 +101,7 @@ shared_ptr<VentureValue> ProcessAtom(const string& token)
   } else { // FIXME: make check on the symbol format!
     return shared_ptr<VentureValue>(new VentureSymbol(token));
   }
+  */
 }
 
 shared_ptr<VentureValue> ProcessTokens(list<string>& tokens)
@@ -79,10 +115,10 @@ shared_ptr<VentureValue> ProcessTokens(list<string>& tokens)
     {
       shared_ptr<VentureValue> next_element = ProcessTokens(tokens);
       if (new_list == NIL_INSTANCE) { // First element.
-        new_list = shared_ptr<VentureList>(new VentureList(next_element, NIL_INSTANCE));
+        new_list = shared_ptr<VentureList>(new VentureList(next_element));
         last_cons = new_list;
       } else {
-        last_cons->cdr = shared_ptr<VentureList>(new VentureList(next_element, NIL_INSTANCE));
+        last_cons->cdr = shared_ptr<VentureList>(new VentureList(next_element));
         last_cons = last_cons->cdr;
       }
     }
@@ -107,14 +143,10 @@ string Stringify(shared_ptr<VentureValue> const value) {
   }
 }
 
-bool CompareValue(shared_ptr<VentureSymbol> first_value, string second_value) { // Should be inline.
-  return first_value->symbol == second_value;
-}
-
-bool CompareValue(string first_value, shared_ptr<VentureSymbol> const second_value) { // Should be inline.
-  return first_value == second_value->symbol;
-}
-
-bool CompareValue(shared_ptr<VentureSymbol> const first_value, shared_ptr<VentureSymbol> const second_value) { // Should be inline.
-  return first_value->symbol == second_value->symbol;
+bool CompareValue(shared_ptr<VentureValue> first, shared_ptr<VentureValue> second) {
+  if (first->GetType() == second->GetType()) { // What about LIST and NIL?
+    return first->CompareByValue(second);
+  } else {
+    return false;
+  }
 }
