@@ -2,6 +2,7 @@
 #ifndef VENTURE___HEADER_H
 #define VENTURE___HEADER_H
 
+#include <Python.h> // Must be the here. See details: http://docs.python.org/2/extending/extending.html.
 #include <algorithm>
 #include <iostream>
 #include <vector>
@@ -12,6 +13,8 @@
 #include <limits>
 #include <queue>
 #include <stack>
+#include <utility>
+#include <fstream>
 #include "boost/weak_ptr.hpp"
 #include "boost/shared_ptr.hpp"
 #include "boost/lexical_cast.hpp"
@@ -29,6 +32,7 @@ using std::map;
 using std::queue;
 using std::stack;
 using std::priority_queue;
+using std::pair; using std::make_pair;
 
 // For basic output.
 using std::cout;

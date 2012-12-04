@@ -22,11 +22,11 @@ void BindVariableToEnvironment(shared_ptr<NodeEnvironment>,
 shared_ptr<VentureValue> LookupValue(shared_ptr<NodeEnvironment>,
                                      shared_ptr<VentureSymbol>,
                                      shared_ptr<NodeEvaluation>,
-                                     bool old_values = false);
+                                     bool old_values);
 
 shared_ptr<VentureValue> LookupValue(shared_ptr<NodeEnvironment>,
                                      size_t,
                                      shared_ptr<NodeEvaluation>,
-                                     bool old_values = false);
+                                     bool old_values);
 
 #endif

@@ -10,67 +10,64 @@ enum NodeTypes { UNDEFINED_NODE, ENVIRONMENT, VARIABLE, UNDEFINED_EVALUATION_NOD
                  DIRECTIVE_PREDICT, DIRECTIVE_OBSERVE, SELF_EVALUATING, LAMBDA_CREATOR,
                  LOOKUP, APPLICATION_CALLER, XRP_APPLICATION};
 
-extern size_t NEXT_UNIQUE_ID;
+string GetNodeTypeAsString(size_t node_type);
+
 extern size_t DIRECTIVE_COUNTER;
 
 struct Node : public VentureValue {
-  Node()
-  {
-    unique_id = ++NEXT_UNIQUE_ID; // FIXME: make transaction free!
-  }
-  VentureDataTypes GetType() { return NODE; }
-  virtual NodeTypes GetNodeType() { return UNDEFINED_NODE; }
-  virtual shared_ptr<ReevaluationResult> Reevaluate(shared_ptr<VentureValue>,
+  Node::Node();
+  virtual VentureDataTypes Node::GetType();
+  virtual NodeTypes Node::GetNodeType();
+  virtual string Node::GetUniqueID();
+  virtual shared_ptr<ReevaluationResult> Node::Reevaluate(shared_ptr<VentureValue>,
                                                     shared_ptr<Node>,
-                                                    ReevaluationParameters&);
-  virtual void GetChildren(queue< shared_ptr<Node> >& processing_queue) {
-    throw std::exception("Should not be called.");
-  };
+                                                    ReevaluationParameters&); // Should be in NodeEvaluation?
+  virtual void Node::GetChildren(queue< shared_ptr<Node> >& processing_queue);
+  virtual bool Node::WasEvaluated();
+  virtual string Node::GetContent();
+  ~Node();
 
-  size_t unique_id;
+  virtual void Node::DeleteNode();
 };
 
 struct NodeVariable;
 
 struct NodeEnvironment : public Node {
-  NodeEnvironment(shared_ptr<NodeEnvironment> parent_environment) : parent_environment(parent_environment) {}
-  NodeTypes GetNodeType() { return ENVIRONMENT; }
+  NodeEnvironment::NodeEnvironment(shared_ptr<NodeEnvironment> parent_environment);
+  virtual NodeTypes NodeEnvironment::GetNodeType();
+  ~NodeEnvironment();
+
   shared_ptr<NodeEnvironment> parent_environment;
   map<string, shared_ptr<NodeVariable> > variables;
   vector< shared_ptr<NodeVariable> > local_variables;
+  
+  virtual void NodeEnvironment::DeleteNode();
 };
 
 struct NodeVariable : public Node {
-  NodeVariable(shared_ptr<NodeEnvironment> parent_environment, shared_ptr<VentureValue> value)
-    : parent_environment(parent_environment),
-      value(value),
-      new_value(shared_ptr<VentureValue>())
-  {}
-  NodeTypes GetNodeType() { return VARIABLE; }
+  NodeVariable::NodeVariable(shared_ptr<NodeEnvironment> parent_environment, shared_ptr<VentureValue> value);
+  virtual NodeTypes NodeVariable::GetNodeType();
+  ~NodeVariable();
+
   shared_ptr<NodeEnvironment> parent_environment;
   shared_ptr<VentureValue> value;
   shared_ptr<VentureValue> new_value;
   set< shared_ptr<Node> > output_references;
+  
+  virtual void NodeVariable::DeleteNode();
 };
 
 struct NodeEvaluation : public Node {
-  NodeEvaluation()
-    : environment(shared_ptr<NodeEnvironment>()),
-      earlier_evaluation_nodes(shared_ptr<NodeEvaluation>()),
-      evaluated(false),
-      last_child_order(0),
-      parent(shared_ptr<NodeEvaluation>())
-  {}
-  virtual NodeTypes GetNodeType() { return UNDEFINED_EVALUATION_NODE; }
-  virtual NodeEvaluation* clone() const {
-    // Using the "clone pattern" in order to clone the Node for the lambda application.
-    // See details here: http://www.cplusplus.com/forum/articles/18757/
-    return new NodeEvaluation(*this);
-  }
-  virtual shared_ptr<VentureValue> Evaluate(shared_ptr<NodeEnvironment>);
-  virtual shared_ptr<ReevaluationResult> Reevaluate(shared_ptr<VentureValue>,
+  NodeEvaluation::NodeEvaluation();
+  virtual NodeTypes NodeEvaluation::GetNodeType();
+  virtual shared_ptr<NodeEvaluation> NodeEvaluation::clone() const;
+  virtual shared_ptr<VentureValue> NodeEvaluation::Evaluate(shared_ptr<NodeEnvironment>);
+  virtual shared_ptr<ReevaluationResult> NodeEvaluation::Reevaluate(shared_ptr<VentureValue>,
                                                     shared_ptr<Node>,
                                                     ReevaluationParameters&);
+  virtual bool NodeEvaluation::WasEvaluated();
+  ~NodeEvaluation();
+
   shared_ptr<NodeEnvironment> environment;
   shared_ptr<NodeEvaluation> parent;
   shared_ptr<NodeEvaluation> earlier_evaluation_nodes;
@@ -78,188 +75,122 @@ struct NodeEvaluation : public Node {
   set< shared_ptr<Node> > output_references;
   vector<size_t> myorder;
   size_t last_child_order;
+  
+  virtual void NodeEvaluation::DeleteNode();
 };
 
 struct ReevaluationOrderComparer {
-  bool operator()(const ReevaluationEntry& first, const ReevaluationEntry& second) {
-    if (first.reevaluation_node->myorder.size() == 0) {
-      throw std::exception("The first node has not been evaluated yet!");
-    }
-    if (second.reevaluation_node->myorder.size() == 0) {
-      throw std::exception("The second node has not been evaluated yet!");
-    }
-    for (size_t index = 0;; index++) {
-      if (index >= first.reevaluation_node->myorder.size() &&
-          index >= second.reevaluation_node->myorder.size()) {
-        return false; // They are the same.
-      } else {
-        if (index >= first.reevaluation_node->myorder.size()) {
-          return true; // The first should be reevaluated later than the second.
-        } else {
-          if (index >= second.reevaluation_node->myorder.size()) {
-            return false; // The first should be reevaluated earlier than the second.
-          } else {
-            if (first.reevaluation_node->myorder[index] == second.reevaluation_node->myorder[index]) {
-              continue;
-            } else {
-              return (first.reevaluation_node->myorder[index] > second.reevaluation_node->myorder[index]);
-            }
-          }
-        }
-      }
-    }
-  }
+  bool ReevaluationOrderComparer::operator()(const ReevaluationEntry& first, const ReevaluationEntry& second);
 };
 
 struct NodeDirectiveAssume : public NodeEvaluation {
-  virtual NodeTypes GetNodeType() { return DIRECTIVE_ASSUME; }
-  NodeDirectiveAssume(shared_ptr<VentureSymbol> name, shared_ptr<NodeEvaluation> expression)
-    : name(name), expression(expression) {}
-  shared_ptr<VentureValue> Evaluate(shared_ptr<NodeEnvironment>);
-  virtual shared_ptr<ReevaluationResult> Reevaluate(shared_ptr<VentureValue>,
+  NodeDirectiveAssume::NodeDirectiveAssume(shared_ptr<VentureSymbol> name, shared_ptr<NodeEvaluation> expression);
+  virtual NodeTypes NodeDirectiveAssume::GetNodeType();
+  virtual shared_ptr<VentureValue> NodeDirectiveAssume::Evaluate(shared_ptr<NodeEnvironment>);
+  virtual shared_ptr<ReevaluationResult> NodeDirectiveAssume::Reevaluate(shared_ptr<VentureValue>,
                                                     shared_ptr<Node>,
                                                     ReevaluationParameters&);
-  virtual void GetChildren(queue< shared_ptr<Node> >& processing_queue) {
-    if (earlier_evaluation_nodes != shared_ptr<NodeEvaluation>()) {
-      processing_queue.push(earlier_evaluation_nodes);
-    }
-    processing_queue.push(expression);
-  };
+  virtual void NodeDirectiveAssume::GetChildren(queue< shared_ptr<Node> >& processing_queue);
+  ~NodeDirectiveAssume();
   
   shared_ptr<VentureSymbol> name;
   shared_ptr<NodeEvaluation> expression;
+  shared_ptr<VentureValue> my_value; // It should not be implemented in this way?
+
+  virtual void NodeDirectiveAssume::DeleteNode();
 };
 
 struct NodeDirectivePredict : public NodeEvaluation {
-  virtual NodeTypes GetNodeType() { return DIRECTIVE_PREDICT; }
-  NodeDirectivePredict(shared_ptr<NodeEvaluation> expression)
-    : expression(expression) {}
-  shared_ptr<VentureValue> Evaluate(shared_ptr<NodeEnvironment>);
-  virtual shared_ptr<ReevaluationResult> Reevaluate(shared_ptr<VentureValue>,
+  NodeDirectivePredict::NodeDirectivePredict(shared_ptr<NodeEvaluation> expression);
+  virtual NodeTypes NodeDirectivePredict::GetNodeType();
+  virtual shared_ptr<VentureValue> NodeDirectivePredict::Evaluate(shared_ptr<NodeEnvironment>);
+  virtual shared_ptr<ReevaluationResult> NodeDirectivePredict::Reevaluate(shared_ptr<VentureValue>,
                                                     shared_ptr<Node>,
                                                     ReevaluationParameters&);
-  virtual void GetChildren(queue< shared_ptr<Node> >& processing_queue) {
-    if (earlier_evaluation_nodes != shared_ptr<NodeEvaluation>()) {
-      processing_queue.push(earlier_evaluation_nodes);
-    }
-    processing_queue.push(expression);
-  };
+  virtual void NodeDirectivePredict::GetChildren(queue< shared_ptr<Node> >& processing_queue);
+  ~NodeDirectivePredict();
 
   shared_ptr<NodeEvaluation> expression;
+  shared_ptr<VentureValue> my_value; // It should not be implemented in this way?
+
+  virtual void NodeDirectivePredict::DeleteNode();
 };
 
 struct NodeDirectiveObserve : public NodeEvaluation {
-  virtual NodeTypes GetNodeType() { return DIRECTIVE_ASSUME; }
-  NodeDirectiveObserve(shared_ptr<NodeEvaluation> expression, shared_ptr<VentureValue> observed_value)
-    : expression(expression), observed_value(observed_value) {}
-  shared_ptr<VentureValue> Evaluate(shared_ptr<NodeEnvironment>);
-  virtual void GetChildren(queue< shared_ptr<Node> >& processing_queue) {
-    if (earlier_evaluation_nodes != shared_ptr<NodeEvaluation>()) {
-      processing_queue.push(earlier_evaluation_nodes);
-    }
-    processing_queue.push(expression);
-  };
+  NodeDirectiveObserve::NodeDirectiveObserve(shared_ptr<NodeEvaluation> expression, shared_ptr<VentureValue> observed_value);
+  virtual NodeTypes NodeDirectiveObserve::GetNodeType();
+  virtual shared_ptr<VentureValue> Evaluate(shared_ptr<NodeEnvironment>);
+  //virtual shared_ptr<ReevaluationResult> NodeDirectiveObserve::Reevaluate(shared_ptr<VentureValue>,
+  //                                                  shared_ptr<Node>,
+  //                                                  ReevaluationParameters&);
+  virtual void NodeDirectiveObserve::GetChildren(queue< shared_ptr<Node> >& processing_queue);
+  ~NodeDirectiveObserve();
   
   shared_ptr<NodeEvaluation> expression;
   shared_ptr<VentureValue> observed_value;
+
+  virtual void NodeDirectiveObserve::DeleteNode();
 };
 
 struct NodeSelfEvaluating : public NodeEvaluation {
-  virtual NodeTypes GetNodeType() { return SELF_EVALUATING; }
-  NodeSelfEvaluating(shared_ptr<VentureValue> value)
-    : value(value) {}
-  NodeSelfEvaluating* clone() const {
-    return new NodeSelfEvaluating(*this);
-  }
-  shared_ptr<VentureValue> Evaluate(shared_ptr<NodeEnvironment>);
-  virtual void GetChildren(queue< shared_ptr<Node> >& processing_queue) {
-    if (earlier_evaluation_nodes != shared_ptr<NodeEvaluation>()) {
-      processing_queue.push(earlier_evaluation_nodes);
-    }
-  };
+  NodeSelfEvaluating::NodeSelfEvaluating(shared_ptr<VentureValue> value);
+  virtual NodeTypes NodeSelfEvaluating::GetNodeType();
+  virtual shared_ptr<NodeEvaluation> NodeSelfEvaluating::clone() const;
+  shared_ptr<VentureValue> NodeSelfEvaluating::Evaluate(shared_ptr<NodeEnvironment>);
+  virtual void NodeSelfEvaluating::GetChildren(queue< shared_ptr<Node> >& processing_queue);
   // Using standard copy constructor.
+  virtual string NodeSelfEvaluating::GetContent();
+  ~NodeSelfEvaluating();
   
   shared_ptr<VentureValue> value;
+
+  virtual void NodeSelfEvaluating::DeleteNode();
 };
 
 struct NodeLambdaCreator : public NodeEvaluation {
-  virtual NodeTypes GetNodeType() { return LAMBDA_CREATOR; }
-  NodeLambdaCreator(shared_ptr<VentureList> arguments, shared_ptr<NodeEvaluation> expressions)
-    : arguments(arguments), expressions(expressions) {
-
-  }
-  NodeLambdaCreator* clone() const {
-    return new NodeLambdaCreator(*this);
-  }
-  shared_ptr<VentureValue> Evaluate(shared_ptr<NodeEnvironment>);
-  virtual void GetChildren(queue< shared_ptr<Node> >& processing_queue) {
-    if (earlier_evaluation_nodes != shared_ptr<NodeEvaluation>()) {
-      processing_queue.push(earlier_evaluation_nodes);
-    }
-    processing_queue.push(expressions);
-  };
+  NodeLambdaCreator::NodeLambdaCreator(shared_ptr<VentureList> arguments, shared_ptr<NodeEvaluation> expressions);
+  virtual NodeTypes NodeLambdaCreator::GetNodeType();
+  virtual shared_ptr<NodeEvaluation> NodeLambdaCreator::clone() const;
+  virtual shared_ptr<VentureValue> NodeLambdaCreator::Evaluate(shared_ptr<NodeEnvironment>);
+  virtual void NodeLambdaCreator::GetChildren(queue< shared_ptr<Node> >& processing_queue);
   // Using standard copy constructor.
+  ~NodeLambdaCreator();
   
   shared_ptr<VentureList> arguments;
   shared_ptr<NodeEvaluation> expressions;
+
+  virtual void NodeLambdaCreator::DeleteNode();
 };
 
 struct NodeLookup : public NodeEvaluation {
-  virtual NodeTypes GetNodeType() { return LOOKUP; }
-  NodeLookup(shared_ptr<VentureSymbol> symbol)
-    : symbol(symbol) {}
-  NodeLookup* clone() const {
-    return new NodeLookup(*this);
-  }
-  shared_ptr<VentureValue> Evaluate(shared_ptr<NodeEnvironment>);
-  virtual shared_ptr<ReevaluationResult> Reevaluate(shared_ptr<VentureValue>,
+  NodeLookup::NodeLookup(shared_ptr<VentureSymbol> symbol);
+  virtual NodeTypes NodeLookup::GetNodeType();
+  virtual shared_ptr<NodeEvaluation> NodeLookup::clone() const;
+  virtual shared_ptr<VentureValue> NodeLookup::Evaluate(shared_ptr<NodeEnvironment>);
+  virtual shared_ptr<ReevaluationResult> NodeLookup::Reevaluate(shared_ptr<VentureValue>,
                                                     shared_ptr<Node>,
                                                     ReevaluationParameters&);
-  virtual void GetChildren(queue< shared_ptr<Node> >& processing_queue) {
-    if (earlier_evaluation_nodes != shared_ptr<NodeEvaluation>()) {
-      processing_queue.push(earlier_evaluation_nodes);
-    }
-  };
+  virtual void NodeLookup::GetChildren(queue< shared_ptr<Node> >& processing_queue);
+  virtual string NodeLookup::GetContent();
+  ~NodeLookup();
 
   shared_ptr<VentureSymbol> symbol;
   shared_ptr<NodeVariable> where_lookuped;
+
+  virtual void NodeLookup::DeleteNode();
 };
 
 struct NodeApplicationCaller : public NodeEvaluation {
-  virtual NodeTypes GetNodeType() { return APPLICATION_CALLER; }
-  NodeApplicationCaller(shared_ptr<NodeEvaluation> application_operator,
-                        vector< shared_ptr<NodeEvaluation> >& application_operands)
-    : saved_evaluated_operator(shared_ptr<VentureValue>()),
-      proposing_evaluated_operator(shared_ptr<VentureValue>()),
-      application_operator(application_operator),
-      application_operands(application_operands),
-      application_node(shared_ptr<NodeEvaluation>()),
-      new_application_node(shared_ptr<NodeEvaluation>())
-  {}
-  NodeApplicationCaller* clone() const {
-    NodeApplicationCaller* NodeApplicationCaller_new = new NodeApplicationCaller(*this);
-    NodeApplicationCaller_new->application_operator =
-      shared_ptr<NodeEvaluation>(application_operator->clone());
-    for (size_t index = 0; index < application_operands.size(); index++) {
-      NodeApplicationCaller_new->application_operands[index] =
-        shared_ptr<NodeEvaluation>(application_operands[index]->clone());
-    }
-    return NodeApplicationCaller_new;
-  }
-  shared_ptr<VentureValue> Evaluate(shared_ptr<NodeEnvironment>);
-  virtual shared_ptr<ReevaluationResult> Reevaluate(shared_ptr<VentureValue>,
+  NodeApplicationCaller::NodeApplicationCaller(shared_ptr<NodeEvaluation> application_operator,
+                        vector< shared_ptr<NodeEvaluation> >& application_operands);
+  virtual NodeTypes NodeApplicationCaller::GetNodeType();
+  virtual shared_ptr<NodeEvaluation> NodeApplicationCaller::clone() const;
+  virtual shared_ptr<VentureValue> NodeApplicationCaller::Evaluate(shared_ptr<NodeEnvironment>);
+  virtual shared_ptr<ReevaluationResult> NodeApplicationCaller::Reevaluate(shared_ptr<VentureValue>,
                                                     shared_ptr<Node>,
                                                     ReevaluationParameters&);
-  virtual void GetChildren(queue< shared_ptr<Node> >& processing_queue) {
-    if (earlier_evaluation_nodes != shared_ptr<NodeEvaluation>()) {
-      processing_queue.push(earlier_evaluation_nodes);
-    }
-    processing_queue.push(application_operator);
-    for (size_t index = 0; index < application_operands.size(); index++) {
-      processing_queue.push(application_operands[index]);
-    }
-    processing_queue.push(application_node);
-  };
+  virtual void NodeApplicationCaller::GetChildren(queue< shared_ptr<Node> >& processing_queue);
+  ~NodeApplicationCaller();
   
   shared_ptr<VentureValue> saved_evaluated_operator;
   shared_ptr<VentureValue> proposing_evaluated_operator;
@@ -267,29 +198,26 @@ struct NodeApplicationCaller : public NodeEvaluation {
   vector< shared_ptr<NodeEvaluation> > application_operands;
   shared_ptr<NodeEvaluation> application_node;
   shared_ptr<NodeEvaluation> new_application_node;
+  
+  virtual void NodeApplicationCaller::DeleteNode();
 };
 
 struct NodeXRPApplication : public NodeEvaluation {
-  virtual NodeTypes GetNodeType() { return XRP_APPLICATION; }
-  NodeXRPApplication(shared_ptr<VentureXRP> xrp)
-    : xrp(xrp),
-      sampled_value(shared_ptr<VentureValue>()),
-      new_sampled_value(shared_ptr<VentureValue>())
-  {}
+  NodeXRPApplication::NodeXRPApplication(shared_ptr<VentureXRP> xrp);
+  virtual NodeTypes NodeXRPApplication::GetNodeType();
   // It should not have clone() method?
-  shared_ptr<VentureValue> Evaluate(shared_ptr<NodeEnvironment>);
-  virtual shared_ptr<ReevaluationResult> Reevaluate(shared_ptr<VentureValue>,
+  virtual shared_ptr<VentureValue> NodeXRPApplication::Evaluate(shared_ptr<NodeEnvironment>);
+  virtual shared_ptr<ReevaluationResult> NodeXRPApplication::Reevaluate(shared_ptr<VentureValue>,
                                                     shared_ptr<Node>,
                                                     ReevaluationParameters&);
-  virtual void GetChildren(queue< shared_ptr<Node> >& processing_queue) {
-    if (earlier_evaluation_nodes != shared_ptr<NodeEvaluation>()) {
-      processing_queue.push(earlier_evaluation_nodes);
-    }
-  };
+  virtual void NodeXRPApplication::GetChildren(queue< shared_ptr<Node> >& processing_queue);
+  ~NodeXRPApplication();
   
   shared_ptr<VentureXRP> xrp;
   shared_ptr<VentureValue> sampled_value;
   shared_ptr<VentureValue> new_sampled_value;
+
+  virtual void NodeXRPApplication::DeleteNode();
 };
 
 shared_ptr<NodeEvaluation> AnalyzeDirective(shared_ptr<VentureValue>);
@@ -309,6 +237,8 @@ EvaluateApplication(shared_ptr<VentureValue>,
 
 void ApplyToMeAndAllMyChildren(shared_ptr<Node>,
                                void (*f)(shared_ptr<Node>));
+
+void DrawGraph(shared_ptr<Node> first_node);
 
 size_t CalculateNumberOfRandomChoices(shared_ptr<Node>);
 

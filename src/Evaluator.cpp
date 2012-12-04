@@ -73,7 +73,8 @@ shared_ptr<VentureValue> LookupValue(shared_ptr<NodeEnvironment> environment,
       inspecting_environment = inspecting_environment->parent_environment;
     }
   }
-  throw std::exception(("Unbound variable: " + variable_name->GetString()).c_str());
+  //cout << "Error: " << variable_name->GetString() << endl;
+  throw std::exception((string("Unbound variable: ") + variable_name->GetString()).c_str());
 }
 
 shared_ptr<VentureValue> LookupValue(shared_ptr<NodeEnvironment> environment,

@@ -5,6 +5,417 @@
 #include "Evaluator.h"
 #include "XRP.h"
 
+string GetNodeTypeAsString(size_t node_type) {
+  switch (node_type) {
+  case UNDEFINED_NODE:
+    return "UNDEFINED_NODE";
+  case ENVIRONMENT:
+    return "ENVIRONMENT";
+  case VARIABLE:
+    return "VARIABLE";
+  case UNDEFINED_EVALUATION_NODE:
+    return "UNDEFINED_EVALUATION_NODE";
+  case DIRECTIVE_ASSUME:
+    return "DIRECTIVE_ASSUME";
+  case DIRECTIVE_PREDICT:
+    return "DIRECTIVE_PREDICT";
+  case DIRECTIVE_OBSERVE:
+    return "DIRECTIVE_OBSERVE";
+  case SELF_EVALUATING:
+    return "SELF_EVALUATING";
+  case LAMBDA_CREATOR:
+    return "LAMBDA_CREATOR";
+  case LOOKUP:
+    return "LOOKUP";
+  case APPLICATION_CALLER:
+    return "APPLICATION_CALLER";
+  case XRP_APPLICATION:
+    return "XRP_APPLICATION";
+  default:
+    throw std::exception("Undefined node type.");
+  }
+}
+
+string Node::GetContent() {
+  return "";
+}
+string NodeSelfEvaluating::GetContent() {
+  return this->value->GetString();
+}
+string NodeLookup::GetContent() {
+  return this->symbol->symbol;
+}
+
+string Node::GetUniqueID() {
+  return boost::lexical_cast<string>(this);
+}
+
+Node::Node() {
+  //unique_id = ++NEXT_UNIQUE_ID; // FIXME: make transaction free!
+}
+
+// Default destructors
+/*
+Node::~Node() { cout << "Deleting: Node" << endl; }
+NodeEnvironment::~NodeEnvironment() { cout << "Deleting: NodeEnvironment" << endl; }
+NodeVariable::~NodeVariable() { cout << "Deleting: NodeVariable" << endl; }
+NodeEvaluation::~NodeEvaluation() { cout << "Deleting: NodeEvaluation" << endl; }
+NodeDirectiveAssume::~NodeDirectiveAssume() { cout << "Deleting: NodeDirectiveAssume" << endl; }
+NodeDirectivePredict::~NodeDirectivePredict() { cout << "Deleting: NodeDirectivePredict" << endl; }
+NodeDirectiveObserve::~NodeDirectiveObserve() { cout << "Deleting: NodeDirectiveObserve" << endl; }
+NodeSelfEvaluating::~NodeSelfEvaluating() { cout << "Deleting: NodeSelfEvaluating" << endl; }
+NodeLambdaCreator::~NodeLambdaCreator() { cout << "Deleting: NodeLambdaCreator" << endl; }
+NodeLookup::~NodeLookup() { cout << "Deleting: NodeLookup" << endl; }
+NodeApplicationCaller::~NodeApplicationCaller() { cout << "Deleting: NodeApplicationCaller" << endl; }
+NodeXRPApplication::~NodeXRPApplication() { cout << "Deleting: NodeXRPApplication" << endl; }
+*/
+Node::~Node() {}
+NodeEnvironment::~NodeEnvironment() {}
+NodeVariable::~NodeVariable() {}
+NodeEvaluation::~NodeEvaluation() {}
+NodeDirectiveAssume::~NodeDirectiveAssume() {}
+NodeDirectivePredict::~NodeDirectivePredict() {}
+NodeDirectiveObserve::~NodeDirectiveObserve() {}
+NodeSelfEvaluating::~NodeSelfEvaluating() {}
+NodeLambdaCreator::~NodeLambdaCreator() {}
+NodeLookup::~NodeLookup() {}
+NodeApplicationCaller::~NodeApplicationCaller() {}
+NodeXRPApplication::~NodeXRPApplication() {}
+
+VentureDataTypes Node::GetType() { return NODE; }
+NodeTypes Node::GetNodeType() { return UNDEFINED_NODE; }
+void Node::GetChildren(queue< shared_ptr<Node> >& processing_queue) {
+  throw std::exception("Should not be called.");
+};
+
+void Node::DeleteNode() {}
+
+
+
+NodeEnvironment::NodeEnvironment(shared_ptr<NodeEnvironment> parent_environment)
+  : parent_environment(parent_environment) {}
+NodeTypes NodeEnvironment::GetNodeType() { return ENVIRONMENT; }
+
+NodeVariable::NodeVariable(shared_ptr<NodeEnvironment> parent_environment, shared_ptr<VentureValue> value)
+  : parent_environment(parent_environment),
+    value(value),
+    new_value(shared_ptr<VentureValue>())
+{}
+NodeTypes NodeVariable::GetNodeType() { return VARIABLE; }
+
+void NodeVariable::DeleteNode() {
+  parent_environment = shared_ptr<NodeEnvironment>();
+  output_references.clear();
+}
+
+NodeEvaluation::NodeEvaluation()
+  : environment(shared_ptr<NodeEnvironment>()),
+    earlier_evaluation_nodes(shared_ptr<NodeEvaluation>()),
+    evaluated(false),
+    last_child_order(0),
+    parent(shared_ptr<NodeEvaluation>())
+{}
+NodeTypes NodeEvaluation::GetNodeType() { return UNDEFINED_EVALUATION_NODE; }
+shared_ptr<NodeEvaluation> NodeEvaluation::clone() const {
+  // Using the "clone pattern" in order to clone the Node for the lambda application.
+  // See details here: http://www.cplusplus.com/forum/articles/18757/
+  return shared_ptr<NodeEvaluation>(new NodeEvaluation());
+}
+
+void NodeEvaluation::DeleteNode() {
+  environment = shared_ptr<NodeEnvironment>();
+  parent = shared_ptr<NodeEvaluation>();
+  output_references.clear();
+}
+
+bool ReevaluationOrderComparer::operator()(const ReevaluationEntry& first, const ReevaluationEntry& second) {
+  if (first.reevaluation_node->myorder.size() == 0) {
+    throw std::exception("The first node has not been evaluated yet!");
+  }
+  if (second.reevaluation_node->myorder.size() == 0) {
+    throw std::exception("The second node has not been evaluated yet!");
+  }
+  for (size_t index = 0;; index++) {
+    if (index >= first.reevaluation_node->myorder.size() &&
+        index >= second.reevaluation_node->myorder.size()) {
+      return false; // They are the same.
+    } else {
+      if (index >= first.reevaluation_node->myorder.size()) {
+        return true; // The first should be reevaluated later than the second.
+      } else {
+        if (index >= second.reevaluation_node->myorder.size()) {
+          return false; // The first should be reevaluated earlier than the second.
+        } else {
+          if (first.reevaluation_node->myorder[index] == second.reevaluation_node->myorder[index]) {
+            continue;
+          } else {
+            return (first.reevaluation_node->myorder[index] > second.reevaluation_node->myorder[index]);
+          }
+        }
+      }
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+NodeTypes NodeDirectiveAssume::GetNodeType() { return DIRECTIVE_ASSUME; }
+NodeDirectiveAssume::NodeDirectiveAssume(shared_ptr<VentureSymbol> name, shared_ptr<NodeEvaluation> expression)
+  : name(name), expression(expression) {}
+void NodeDirectiveAssume::GetChildren(queue< shared_ptr<Node> >& processing_queue) {
+  if (earlier_evaluation_nodes != shared_ptr<NodeEvaluation>()) {
+    processing_queue.push(earlier_evaluation_nodes);
+  }
+  processing_queue.push(expression);
+};
+
+void NodeDirectiveAssume::DeleteNode() {
+  environment = shared_ptr<NodeEnvironment>();
+  parent = shared_ptr<NodeEvaluation>();
+  output_references.clear();
+}
+
+
+
+
+
+
+
+
+NodeTypes NodeDirectivePredict::GetNodeType() { return DIRECTIVE_PREDICT; }
+NodeDirectivePredict::NodeDirectivePredict(shared_ptr<NodeEvaluation> expression)
+  : expression(expression) {}
+void NodeDirectivePredict::GetChildren(queue< shared_ptr<Node> >& processing_queue) {
+  if (earlier_evaluation_nodes != shared_ptr<NodeEvaluation>()) {
+    processing_queue.push(earlier_evaluation_nodes);
+  }
+  processing_queue.push(expression);
+};
+
+void NodeDirectivePredict::DeleteNode() {
+  environment = shared_ptr<NodeEnvironment>();
+  parent = shared_ptr<NodeEvaluation>();
+  output_references.clear();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+NodeTypes NodeDirectiveObserve::GetNodeType() { return DIRECTIVE_ASSUME; }
+NodeDirectiveObserve::NodeDirectiveObserve(shared_ptr<NodeEvaluation> expression, shared_ptr<VentureValue> observed_value)
+  : expression(expression), observed_value(observed_value) {}
+void NodeDirectiveObserve::GetChildren(queue< shared_ptr<Node> >& processing_queue) {
+  if (earlier_evaluation_nodes != shared_ptr<NodeEvaluation>()) {
+    processing_queue.push(earlier_evaluation_nodes);
+  }
+  processing_queue.push(expression);
+}
+
+void NodeDirectiveObserve::DeleteNode() {
+  environment = shared_ptr<NodeEnvironment>();
+  parent = shared_ptr<NodeEvaluation>();
+  output_references.clear();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+NodeTypes NodeSelfEvaluating::GetNodeType() { return SELF_EVALUATING; }
+NodeSelfEvaluating::NodeSelfEvaluating(shared_ptr<VentureValue> value)
+  : value(value) {}
+shared_ptr<NodeEvaluation> NodeSelfEvaluating::clone() const {
+  return shared_ptr<NodeSelfEvaluating>(new NodeSelfEvaluating(this->value));
+}
+void NodeSelfEvaluating::GetChildren(queue< shared_ptr<Node> >& processing_queue) {
+  if (earlier_evaluation_nodes != shared_ptr<NodeEvaluation>()) {
+    processing_queue.push(earlier_evaluation_nodes);
+  }
+};
+
+void NodeSelfEvaluating::DeleteNode() {
+  environment = shared_ptr<NodeEnvironment>();
+  parent = shared_ptr<NodeEvaluation>();
+  output_references.clear();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+NodeTypes NodeLambdaCreator::GetNodeType() { return LAMBDA_CREATOR; }
+NodeLambdaCreator::NodeLambdaCreator(shared_ptr<VentureList> arguments, shared_ptr<NodeEvaluation> expressions)
+  : arguments(arguments), expressions(expressions) {
+
+}
+shared_ptr<NodeEvaluation> NodeLambdaCreator::clone() const {
+  return shared_ptr<NodeLambdaCreator>(new NodeLambdaCreator(this->arguments, this->expressions));
+}
+void NodeLambdaCreator::GetChildren(queue< shared_ptr<Node> >& processing_queue) {
+  if (earlier_evaluation_nodes != shared_ptr<NodeEvaluation>()) {
+    processing_queue.push(earlier_evaluation_nodes);
+  }
+  processing_queue.push(expressions);
+};
+// Using standard copy constructor.
+
+void NodeLambdaCreator::DeleteNode() {
+  environment = shared_ptr<NodeEnvironment>();
+  parent = shared_ptr<NodeEvaluation>();
+  output_references.clear();
+}
+
+
+
+
+NodeTypes NodeLookup::GetNodeType() { return LOOKUP; }
+NodeLookup::NodeLookup(shared_ptr<VentureSymbol> symbol)
+  : symbol(symbol) {}
+shared_ptr<NodeEvaluation> NodeLookup::clone() const {
+  return shared_ptr<NodeLookup>(new NodeLookup(this->symbol));
+}
+void NodeLookup::GetChildren(queue< shared_ptr<Node> >& processing_queue) {
+  if (earlier_evaluation_nodes != shared_ptr<NodeEvaluation>()) {
+    processing_queue.push(earlier_evaluation_nodes);
+  }
+};
+
+void NodeLookup::DeleteNode() {
+  environment = shared_ptr<NodeEnvironment>();
+  parent = shared_ptr<NodeEvaluation>();
+  output_references.clear();
+  where_lookuped = shared_ptr<NodeVariable>();
+}
+
+
+
+
+
+
+
+NodeTypes NodeApplicationCaller::GetNodeType() { return APPLICATION_CALLER; }
+NodeApplicationCaller::NodeApplicationCaller(shared_ptr<NodeEvaluation> application_operator,
+                      vector< shared_ptr<NodeEvaluation> >& application_operands)
+  : saved_evaluated_operator(shared_ptr<VentureValue>()),
+    proposing_evaluated_operator(shared_ptr<VentureValue>()),
+    application_operator(application_operator),
+    application_operands(application_operands),
+    application_node(shared_ptr<NodeEvaluation>()),
+    new_application_node(shared_ptr<NodeEvaluation>())
+{}
+shared_ptr<NodeEvaluation> NodeApplicationCaller::clone() const {
+  shared_ptr<NodeApplicationCaller> NodeApplicationCaller_new =
+    shared_ptr<NodeApplicationCaller>
+      (new NodeApplicationCaller(shared_ptr<NodeEvaluation>(),
+                                 vector< shared_ptr<NodeEvaluation> >()));
+  NodeApplicationCaller_new->application_operator =
+    shared_ptr<NodeEvaluation>(application_operator->clone());
+  for (size_t index = 0; index < application_operands.size(); index++) {
+    NodeApplicationCaller_new->application_operands.push_back(
+      shared_ptr<NodeEvaluation>(application_operands[index]->clone()));
+  }
+  return NodeApplicationCaller_new;
+}
+void NodeApplicationCaller::GetChildren(queue< shared_ptr<Node> >& processing_queue) {
+  if (earlier_evaluation_nodes != shared_ptr<NodeEvaluation>()) {
+    processing_queue.push(earlier_evaluation_nodes);
+  }
+  processing_queue.push(application_operator);
+  for (size_t index = 0; index < application_operands.size(); index++) {
+    processing_queue.push(application_operands[index]);
+  }
+  processing_queue.push(application_node);
+};
+
+void NodeApplicationCaller::DeleteNode() {
+  // cout << "MyUniqueID: " << this->GetUniqueID() << endl;
+  application_node->environment->DeleteNode();
+  environment = shared_ptr<NodeEnvironment>();
+  parent = shared_ptr<NodeEvaluation>();
+  output_references.clear();
+}
+
+
+
+
+
+
+NodeTypes NodeXRPApplication::GetNodeType() { return XRP_APPLICATION; }
+NodeXRPApplication::NodeXRPApplication(shared_ptr<VentureXRP> xrp)
+  : xrp(xrp),
+    sampled_value(shared_ptr<VentureValue>()),
+    new_sampled_value(shared_ptr<VentureValue>())
+{}
+// It should not have clone() method?
+void NodeXRPApplication::GetChildren(queue< shared_ptr<Node> >& processing_queue) {
+  if (earlier_evaluation_nodes != shared_ptr<NodeEvaluation>()) {
+    processing_queue.push(earlier_evaluation_nodes);
+  }
+};
+
+void NodeXRPApplication::DeleteNode() {
+  environment = shared_ptr<NodeEnvironment>();
+  parent = shared_ptr<NodeEvaluation>();
+  output_references.clear();
+  xrp = shared_ptr<VentureXRP>(); // Is it necessary?
+}  
+
+
+
+
 shared_ptr<NodeEvaluation> AnalyzeExpressions(shared_ptr<VentureList> expressions) {
   shared_ptr<NodeEvaluation> last_expression = shared_ptr<NodeEvaluation>();
   do {
@@ -25,7 +436,7 @@ shared_ptr<NodeEvaluation> AnalyzeExpression(shared_ptr<VentureValue> expression
       expression->GetType() == PROBABILITY ||
       expression->GetType() == ATOM ||
       expression->GetType() == SIMPLEXPOINT ||
-      expression->GetType() == SMOOTHEDCONTINUOUS ||
+      expression->GetType() == SMOOTHEDCOUNT ||
       expression->GetType() == NIL) // As in Scheme and Lisp?.
   {
     return shared_ptr<NodeEvaluation>(new NodeSelfEvaluating(expression));
@@ -100,13 +511,22 @@ shared_ptr<NodeEvaluation> AnalyzeDirective(shared_ptr<VentureValue> directive) 
   } else if (CompareValue(GetFirst(list), shared_ptr<VentureValue>(new VentureSymbol("PREDICT")))) {
     return  shared_ptr<NodeEvaluation>(
               new NodeDirectivePredict(AnalyzeExpression(GetNth(list, 2))));
-  } else if (CompareValue(GetFirst(list), shared_ptr<VentureValue>(new VentureSymbol("ASSUME")))) {
+  } else if (CompareValue(GetFirst(list), shared_ptr<VentureValue>(new VentureSymbol("OBSERVE")))) {
     // In the future something like this: AssertLiteralValue(GetNth(list, 3)); ?
     return shared_ptr<NodeEvaluation>(
              new NodeDirectiveObserve(AnalyzeExpression(GetNth(list, 2)), GetNth(list, 3)));
   } else {
     throw std::exception("Undefined directive.");
   }
+}
+
+void NodeEnvironment::DeleteNode() {
+  for (size_t index = 0; index < local_variables.size(); index++) { // Assuming there are no (def)ed inside variables.
+    local_variables[index]->DeleteNode();
+  }
+  parent_environment = shared_ptr<NodeEnvironment>();
+  variables.clear();
+  local_variables.clear();
 }
 
 shared_ptr<VentureValue>
@@ -116,27 +536,43 @@ NodeEvaluation::Evaluate(shared_ptr<NodeEnvironment> environment) { // It seems 
 
 shared_ptr<VentureValue>
 NodeDirectiveAssume::Evaluate(shared_ptr<NodeEnvironment> environment) {
+  this->my_value =              Evaluator(this->expression,
+                                environment,
+                                dynamic_pointer_cast<Node>(this->shared_from_this()),
+                                dynamic_pointer_cast<NodeEvaluation>(this->shared_from_this()));
   this->output_references.insert(
     BindToEnvironment(environment,
                       this->name,
-                      Evaluator(this->expression,
-                                environment,
-                                dynamic_pointer_cast<Node>(this->shared_from_this()),
-                                dynamic_pointer_cast<NodeEvaluation>(this->shared_from_this()))));
+                      this->my_value));
   return NIL_INSTANCE; // Something wiser?
 }
 
 shared_ptr<VentureValue>
 NodeDirectivePredict::Evaluate(shared_ptr<NodeEnvironment> environment) {
-  return Evaluator(this->expression,
+   this->my_value =
+         Evaluator(this->expression,
                    environment,
                    dynamic_pointer_cast<Node>(this->shared_from_this()),
                    dynamic_pointer_cast<NodeEvaluation>(this->shared_from_this()));
+   return this->my_value;
 }
 
 shared_ptr<VentureValue>
 NodeDirectiveObserve::Evaluate(shared_ptr<NodeEnvironment> environment) {
-  throw std::exception("TBA.");
+  Evaluator(this->expression,
+            environment,
+            dynamic_pointer_cast<Node>(this->shared_from_this()),
+            dynamic_pointer_cast<NodeEvaluation>(this->shared_from_this()));
+
+  // Silly:
+  dynamic_pointer_cast<NodeXRPApplication>(
+    dynamic_pointer_cast<NodeApplicationCaller>(this->expression)->application_node)->sampled_value =
+      this->observed_value;
+  random_choices.erase(
+    dynamic_pointer_cast<NodeXRPApplication>(
+      dynamic_pointer_cast<NodeApplicationCaller>(this->expression)->application_node));
+
+  return NIL_INSTANCE;
 }
 
 shared_ptr<VentureValue>
@@ -151,7 +587,7 @@ NodeLambdaCreator::Evaluate(shared_ptr<NodeEnvironment> environment) {
 
 shared_ptr<VentureValue>
 NodeLookup::Evaluate(shared_ptr<NodeEnvironment> environment) {
-  return LookupValue(environment, this->symbol, dynamic_pointer_cast<NodeEvaluation>(this->shared_from_this()));
+  return LookupValue(environment, this->symbol, dynamic_pointer_cast<NodeEvaluation>(this->shared_from_this()), false);
 }
 
 shared_ptr<VentureValue>
@@ -179,6 +615,8 @@ EvaluateApplication(shared_ptr<VentureValue> evaluated_operator,
     
     application_node =
       shared_ptr<NodeEvaluation>(ToVentureType<VentureLambda>(evaluated_operator)->expressions->clone());
+    // cout << "***" << ToVentureType<VentureLambda>(evaluated_operator)->expressions->GetUniqueID();
+    // cout << " " << application_node->GetUniqueID() << endl;
 
     return Evaluator(application_node,
                       local_environment,
@@ -345,6 +783,7 @@ shared_ptr<ReevaluationResult>
 NodeDirectiveAssume::Reevaluate(shared_ptr<VentureValue> passing_value,
                                 shared_ptr<Node> sender,
                                 ReevaluationParameters& reevaluation_parameters) {
+  this->my_value = passing_value;
   // Just passing up:
   return shared_ptr<ReevaluationResult>(
     new ReevaluationResult(passing_value, true));
@@ -354,21 +793,88 @@ shared_ptr<ReevaluationResult>
 NodeDirectivePredict::Reevaluate(shared_ptr<VentureValue> passing_value,
                                  shared_ptr<Node> sender,
                                  ReevaluationParameters& reevaluation_parameters) {
+  this->my_value = passing_value;
   // Just passing up:
   return shared_ptr<ReevaluationResult>(
     new ReevaluationResult(passing_value, true));
 }
 
+/*
+shared_ptr<ReevaluationResult>
+NodeDirectiveObserve::Reevaluate(shared_ptr<VentureValue> passing_value,
+                                 shared_ptr<Node> sender,
+                                 ReevaluationParameters& reevaluation_parameters) {
+  // Just passing up:
+  return shared_ptr<ReevaluationResult>(
+    new ReevaluationResult(passing_value, true));
+}
+*/
+
 void ApplyToMeAndAllMyChildren(shared_ptr<Node> first_node,
                                void (*f)(shared_ptr<Node>)) {
-  size_t number_of_random_choices = 0;
   queue< shared_ptr<Node> > processing_queue;
   processing_queue.push(first_node);
   while (!processing_queue.empty()) {
+    if (processing_queue.front()->WasEvaluated() == false) {
+      processing_queue.pop();
+      continue;
+      // We assume that not evaluated yet node just will be removed
+      // when its parent will be removed, because there is no cycled
+      // pointers.
+    }
     processing_queue.front()->GetChildren(processing_queue);
     (*f)(dynamic_pointer_cast<NodeEvaluation>(processing_queue.front()->shared_from_this()));
     processing_queue.pop();
   }
+}
+
+bool Node::WasEvaluated() {
+  return false;
+}
+
+bool NodeEvaluation::WasEvaluated() {
+  return this->evaluated;
+}
+
+void DrawGraph(shared_ptr<Node> first_node) {
+  cout << "Writing the graph" << endl;
+
+  std::ofstream graph_file;
+  graph_file.open("C:/Temp/graph_output.txt");
+  graph_file << "digraph G {" << endl;
+
+  queue< pair< string, shared_ptr<Node> > > processing_queue;
+  processing_queue.push(make_pair("", first_node));
+  while (!processing_queue.empty()) {
+    queue< shared_ptr<Node> > temporal_queue;
+    if (processing_queue.front().second == shared_ptr<Node>()) {
+      processing_queue.pop();
+      continue; // It means that some not yet evaluated node returned its not ready child
+                // (i.e. not existing yet child).
+    }
+    processing_queue.front().second->GetChildren(temporal_queue);
+    while (!temporal_queue.empty()) {
+      processing_queue.push(make_pair(processing_queue.front().second->GetUniqueID(), temporal_queue.front()));
+      temporal_queue.pop();
+    }
+
+    graph_file << "  Node" << processing_queue.front().second->GetUniqueID() << " [label=\"";
+    graph_file << "(" << processing_queue.front().second->WasEvaluated() << ") ";
+    graph_file << processing_queue.front().second->GetUniqueID() << ". ";
+    graph_file << GetNodeTypeAsString(processing_queue.front().second->GetNodeType())
+      << ": " << processing_queue.front().second->GetContent() << "\"]" << endl;
+    if (processing_queue.front().first != "") {
+      graph_file << "  Node" << processing_queue.front().first << " -> "
+        << "Node" << processing_queue.front().second->GetUniqueID() << endl;
+    }
+
+    processing_queue.pop();
+  }
+
+  graph_file << "}" << endl;
+  graph_file.close();
+
+  cout << "The graph has been written" << endl;
 }
 
 size_t CalculateNumberOfRandomChoices(shared_ptr<Node> first_node) {

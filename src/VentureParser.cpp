@@ -71,7 +71,7 @@ shared_ptr<VentureValue> ProcessAtom(const string& token)
     return shared_ptr<VentureValue>(new VentureAtom(boost::lexical_cast<int>(value)));
   } else if (token.substr(0, 3) == "sp[") {
     string value = token.substr(3, token.length() - 3 - 1);
-    return shared_ptr<VentureValue>(new VentureSmoothedContinuous(boost::lexical_cast<real>(value)));
+    return shared_ptr<VentureValue>(new VentureSmoothedCount(boost::lexical_cast<real>(value)));
   } else if (token.substr(0, 3) == "sc[") {
     string value = token.substr(3, token.length() - 3 - 1);
     vector<string> elements_as_strings;
@@ -87,21 +87,6 @@ shared_ptr<VentureValue> ProcessAtom(const string& token)
     }
     return shared_ptr<VentureValue>(new VentureSymbol(token)); 
   }
-  /*
-  if (IsInteger(token)) {
-    return shared_ptr<VentureValue>(new VentureInteger(boost::lexical_cast<int>(token)));
-  } else if (IsReal(token)) {
-    return shared_ptr<VentureValue>(new VentureReal(boost::lexical_cast<real>(token)));
-  } else if (ToLower(token) == "nil") {
-    return shared_ptr<VentureValue>(NIL_INSTANCE);
-  } else if (ToLower(token) == "false") {
-    return shared_ptr<VentureValue>(new VentureBoolean(false));
-  } else if (ToLower(token) == "true") {
-    return shared_ptr<VentureValue>(new VentureBoolean(true));
-  } else { // FIXME: make check on the symbol format!
-    return shared_ptr<VentureValue>(new VentureSymbol(token));
-  }
-  */
 }
 
 shared_ptr<VentureValue> ProcessTokens(list<string>& tokens)

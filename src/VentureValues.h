@@ -4,16 +4,15 @@
 
 #include "Header.h"
 
-enum VentureDataTypes { UNDEFINED_TYPE, BOOLEAN, COUNT, REAL, PROBABILITY, ATOM, SIMPLEXPOINT, SMOOTHEDCONTINUOUS, NIL, LIST, SYMBOL, LAMBDA, XRP_REFERENCE, NODE };
+enum VentureDataTypes { UNDEFINED_TYPE, BOOLEAN, COUNT, REAL, PROBABILITY, ATOM, SIMPLEXPOINT, SMOOTHEDCOUNT, NIL, LIST, SYMBOL, LAMBDA, XRP_REFERENCE, NODE };
 
 struct VentureValue : public boost::enable_shared_from_this<VentureValue> {
-  VentureValue() {};
-  virtual VentureDataTypes GetType() { return UNDEFINED_TYPE; }
-  virtual bool CompareByValue(shared_ptr<VentureValue> another) {
-    throw std::exception("Should not be called.");
-  }
-  virtual string GetString() { return "UNDEFINED"; }
-  virtual ~VentureValue() {};
+  VentureValue::VentureValue();
+  void CheckMyData();
+  virtual VentureDataTypes VentureValue::GetType();
+  virtual bool VentureValue::CompareByValue(shared_ptr<VentureValue>);
+  virtual string VentureValue::GetString();
+  ~VentureValue();
 };
 
 template <typename T>
@@ -26,125 +25,79 @@ template <typename T>
 shared_ptr<T> ToVentureType(shared_ptr<VentureValue>);
 
 struct VentureBoolean : public VentureValue {
-  VentureBoolean(const bool data) : data(data) {}
-  VentureDataTypes GetType() { return BOOLEAN; }
-  bool CompareByValue(shared_ptr<VentureValue>);
-  string GetString() {
-    if (data == false) {
-      return "#f";
-    } else {
-      return "#t";
-    }
-  }
+  VentureBoolean::VentureBoolean(const bool);
+  virtual VentureDataTypes VentureBoolean::GetType();
+  virtual bool VentureBoolean::CompareByValue(shared_ptr<VentureValue>);
+  virtual string VentureBoolean::GetString();
+  ~VentureBoolean();
 
   bool data;
 };
 
 struct VentureCount : public VentureValue {
-  VentureCount(const int data) : data(data) {
-    if (data < 0) {
-      throw std::exception("VentureCount should be non-negative.");
-    }
-  }
+  VentureCount::VentureCount(const int);
+  VentureCount::VentureCount(const string&);
+  void CheckMyData();
   // Question: where would be the type transformation happen?
   //           Before this function, it seems?
-  VentureDataTypes GetType() { return COUNT; }
-  bool CompareByValue(shared_ptr<VentureValue>);
-  string GetString() { return boost::lexical_cast<string>(data); }
+  virtual VentureDataTypes VentureCount::GetType();
+  virtual bool VentureCount::CompareByValue(shared_ptr<VentureValue>);
+  virtual string VentureCount::GetString();
+  ~VentureCount();
 
   int data;
 };
 
 struct VentureReal : public VentureValue {
-  VentureReal(const real data) : data(data) {}
-  VentureDataTypes GetType() { return REAL; }
-  bool CompareByValue(shared_ptr<VentureValue>);
-  string GetString() { return boost::lexical_cast<string>(data); }
+  VentureReal::VentureReal(const real);
+  virtual VentureDataTypes VentureReal::GetType();
+  virtual bool VentureReal::CompareByValue(shared_ptr<VentureValue>);
+  virtual string VentureReal::GetString();
+  ~VentureReal();
 
   real data;
 };
 
 struct VentureProbability : public VentureValue {
-  VentureProbability(const real data) : data(data) {
-    if (data < 0.0 || data > 1.0) { // Add acceptable epsilon error.
-      throw std::exception("VentureProbability should be non-negative.");
-    }
-  }
-  VentureDataTypes GetType() { return PROBABILITY; }
-  bool CompareByValue(shared_ptr<VentureValue>);
-  string GetString() { return boost::lexical_cast<string>(data); }
+  VentureProbability::VentureProbability(const real);
+  virtual VentureDataTypes VentureProbability::GetType();
+  virtual bool VentureProbability::CompareByValue(shared_ptr<VentureValue>);
+  virtual string VentureProbability::GetString();
+  ~VentureProbability();
 
   real data;
 };
 
 struct VentureAtom : public VentureValue {
-  VentureAtom(const int data) : data(data) {
-    if (data < 0) {
-      throw std::exception("VentureAtom should be non-negative.");
-    }
-  }
+  VentureAtom::VentureAtom(const int);
   // Question: where would be the type transformation happen?
   //           Before this function, it seems?
-  VentureDataTypes GetType() { return ATOM; }
-  bool CompareByValue(shared_ptr<VentureValue>);
-  string GetString() { return boost::lexical_cast<string>(data); }
+  virtual VentureDataTypes VentureAtom::GetType();
+  virtual bool VentureAtom::CompareByValue(shared_ptr<VentureValue>);
+  virtual string VentureAtom::GetString();
+  ~VentureAtom();
 
   int data;
 };
 
 struct VentureSimplexPoint : public VentureValue {
-  VentureSimplexPoint(vector<real>& input_data)
-    // : data(SOMEFUNCTION(data)) -- it should be implemented in this way? 
-  {
-    if (input_data.size() <= 1) {
-      throw std::exception("VentureSimplexPoint should be at least two-dimensional.");
-    }
-    double sum = 0.0;
-    // Change the data size preliminary?
-    for (size_t index = 0; index < input_data.size(); index++)
-    {
-      if (input_data[index] < 0.0) { // Add acceptable epsilon error?
-        throw std::exception("VentureSimplexPoint element should be non-negative.");
-      }
-      if (index + 1 != input_data.size())
-      {
-        data.push_back(input_data[index]);
-      }
-      sum += input_data[index];
-    }
-    if (fabs(sum - 1.0) > comparison_epsilon) {
-      throw std::exception("Sum of VentureSimplexPoint elements should be equal to 1.0.");
-    }
-  }
+  VentureSimplexPoint::VentureSimplexPoint(vector<real>&);
   // Question: where would be the type transformation happen?
   //           Before this function, it seems?
-  VentureDataTypes GetType() { return SIMPLEXPOINT; }
-  bool CompareByValue(shared_ptr<VentureValue>);
-  string GetString() {
-    double sum = 0.0;
-    string output = "sp[";
-    for (size_t index = 0; index < data.size(); index++)
-    {
-      output += boost::lexical_cast<string>(data[index]) + ";";
-      sum += data[index];
-    }
-    output += boost::lexical_cast<string>(1 - sum) + "]";
-    return output;
-  }
+  virtual VentureDataTypes VentureSimplexPoint::GetType();
+  virtual bool VentureSimplexPoint::CompareByValue(shared_ptr<VentureValue>);
+  virtual string VentureSimplexPoint::GetString();
+  ~VentureSimplexPoint();
 
   vector<real> data;
 };
 
-struct VentureSmoothedContinuous : public VentureValue {
-  VentureSmoothedContinuous(const real data) : data(data) {
-    if (data <= 0.0) { // Add acceptable epsilon error.
-                       // What about zero?
-      throw std::exception("VentureProbability should be positive.");
-    }
-  }
-  VentureDataTypes GetType() { return SMOOTHEDCONTINUOUS; }
-  bool CompareByValue(shared_ptr<VentureValue>);
-  string GetString() { return boost::lexical_cast<string>(data); }
+struct VentureSmoothedCount : public VentureValue {
+  VentureSmoothedCount::VentureSmoothedCount(const real);
+  virtual VentureDataTypes VentureSmoothedCount::GetType();
+  virtual bool VentureSmoothedCount::CompareByValue(shared_ptr<VentureValue>);
+  virtual string VentureSmoothedCount::GetString();
+  ~VentureSmoothedCount();
 
   real data;
 };
@@ -156,39 +109,33 @@ extern shared_ptr<VentureList> const NIL_INSTANCE;
 // Should be references constants?
 // Should be renamed to the VentureCons!
 struct VentureList : public VentureValue {
-  VentureList(shared_ptr<VentureValue> car = shared_ptr<VentureValue>())
-    : car(car), cdr(NIL_INSTANCE) {}
-  VentureDataTypes GetType() { return LIST; } // Should be virtual for NIL?..
+  VentureList::VentureList(shared_ptr<VentureValue> car);
+  virtual VentureDataTypes VentureList::GetType(); // Should be virtual for NIL?..
   // FIXME: add CompareByValue? Do not forget about the NIL, that it has another type?
-  string GetString();
+  virtual string VentureList::GetString();
+  ~VentureList();
 
   shared_ptr<VentureValue> car;
   shared_ptr<VentureList> cdr;
 };
 
 struct VentureNil : public VentureList {
-  VentureNil() {}
-  VentureDataTypes GetType() { return NIL; }
-  // FIXME: add CompareByValue? Do not forget about the LIST, that it has another type?
-  string GetString() { return "#nil"; }
+  VentureNil::VentureNil();
+  virtual VentureDataTypes VentureNil::GetType();
+  virtual string VentureNil::GetString();
+  ~VentureNil();
 };
 
 // http://stackoverflow.com/questions/2926878/determine-if-a-string-contains-only-alphanumeric-characters-or-a-space
-static inline bool is_not_legal_SYMBOL_character(char c)
-{
-  //return !(isalnum(c) || (c == '-'));
-  return !(isgraph(c));
-}
-static inline bool legal_SYMBOL_name(const string& str)
-{
-  return find_if(str.begin(), str.end(), is_not_legal_SYMBOL_character) == str.end();
-}
+bool is_not_legal_SYMBOL_character(char); // static inline?
+bool legal_SYMBOL_name(const string&); // static inline?
 
 struct VentureSymbol : public VentureValue {
-  VentureSymbol(const string& symbol) : symbol(symbol) {}
-  VentureDataTypes GetType() { return SYMBOL; }
-  bool CompareByValue(shared_ptr<VentureValue>);
-  string GetString() { return symbol; }
+  VentureSymbol::VentureSymbol(const string&);
+  virtual VentureDataTypes VentureSymbol::GetType();
+  virtual bool VentureSymbol::CompareByValue(shared_ptr<VentureValue>);
+  virtual string VentureSymbol::GetString();
+  ~VentureSymbol();
 
   string symbol;
 };
@@ -198,13 +145,13 @@ struct NodeEnvironment;
 class XRP;
 
 struct VentureLambda : public VentureValue {
-  VentureLambda(shared_ptr<VentureList> formal_arguments,
-                shared_ptr<NodeEvaluation> expressions,
-                shared_ptr<NodeEnvironment> scope_environment)
-    : formal_arguments(formal_arguments), expressions(expressions), scope_environment(scope_environment) {}
-  VentureDataTypes GetType() { return LAMBDA; }
-  bool CompareByValue(shared_ptr<VentureValue>); // We really do not need this function?
-  string GetString() { return "LAMBDA"; }
+  VentureLambda::VentureLambda(shared_ptr<VentureList>,
+                shared_ptr<NodeEvaluation>,
+                shared_ptr<NodeEnvironment>);
+  virtual VentureDataTypes VentureLambda::GetType();
+  virtual bool VentureLambda::CompareByValue(shared_ptr<VentureValue>); // We really do not need this function?
+  virtual string VentureLambda::GetString();
+  ~VentureLambda();
 
   shared_ptr<VentureList> formal_arguments;
   shared_ptr<NodeEvaluation> expressions;
@@ -212,11 +159,11 @@ struct VentureLambda : public VentureValue {
 };
 
 struct VentureXRP : public VentureValue {
-  VentureXRP(shared_ptr<XRP> xrp)
-    : xrp(xrp) {}
-  VentureDataTypes GetType() { return XRP_REFERENCE; }
-  bool CompareByValue(shared_ptr<VentureValue>); // We really do not need this function?
-  string GetString() { return "XRP_REFERENCE"; }
+  VentureXRP::VentureXRP(shared_ptr<XRP>);
+  virtual VentureDataTypes VentureXRP::GetType();
+  virtual bool VentureXRP::CompareByValue(shared_ptr<VentureValue>); // We really do not need this function?
+  virtual string VentureXRP::GetString();
+  ~VentureXRP();
 
   shared_ptr<XRP> xrp;
 };
@@ -238,15 +185,5 @@ shared_ptr<VentureValue> GetNth(shared_ptr<VentureList>, size_t);
 void AddToList(shared_ptr<VentureList>, shared_ptr<VentureValue>);
 
 bool StandardPredicate(shared_ptr<VentureValue>);
-
-/*
-struct VentureReference : public VentureValue {
-  VentureReference(const shared_ptr<VentureValue> reference) : reference(reference) {}
-  VentureDataTypes GetType() { return REFERENCE; }
-  string GetString() { return boost::lexical_cast<string>(reference); }
-
-  shared_ptr<VentureValue> reference;
-};
-*/
 
 #endif

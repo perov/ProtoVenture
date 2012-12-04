@@ -5,6 +5,39 @@
 #include "Analyzer.h"
 #include "XRP.h"
 
+RescorerResamplerResult::RescorerResamplerResult(shared_ptr<VentureValue> new_value,
+                        real old_loglikelihood,
+                        real new_loglikelihood)
+  : new_value(new_value),
+    old_loglikelihood(old_loglikelihood),
+    new_loglikelihood(new_loglikelihood)
+{}
+  
+ReevaluationResult::ReevaluationResult(shared_ptr<VentureValue> passing_value,
+                    bool pass_further)
+  : passing_value(passing_value),
+    pass_further(pass_further)
+{}
+  
+ReevaluationEntry::ReevaluationEntry(shared_ptr<NodeEvaluation> reevaluation_node,
+                  shared_ptr<NodeEvaluation> caller,
+                  shared_ptr<VentureValue> passing_value)
+  : reevaluation_node(reevaluation_node),
+    caller(caller),
+    passing_value(passing_value)
+{}
+  
+OmitPattern::OmitPattern(vector<size_t>& omit_pattern,
+            vector<size_t>& stop_pattern)
+  : omit_pattern(omit_pattern),
+    stop_pattern(stop_pattern)
+{}
+  
+ReevaluationParameters::ReevaluationParameters()
+  : loglikelihood_changes(0.0),
+    random_choices_delta(0)
+{}
+
 shared_ptr<VentureValue>
 XRP::Sample(vector< shared_ptr<VentureValue> >& arguments,
             shared_ptr<NodeXRPApplication> caller) {
@@ -43,6 +76,298 @@ XRP::RescorerResampler(vector< shared_ptr<VentureValue> >& old_arguments,
   }
 }
 
+XRP::XRP() {}
+shared_ptr<VentureValue> XRP::Sampler(vector< shared_ptr<VentureValue> >& arguments) {
+  throw std::exception("It should not happen.");
+} // Should be just ";"?
+real XRP::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
+                                      shared_ptr<VentureValue> sampled_value) {
+  throw std::exception("It should not happen.");
+} // Should be just ";"?
+void XRP::Incorporate(vector< shared_ptr<VentureValue> >& arguments,
+                              shared_ptr<VentureValue> sampled_value) {
+  throw std::exception("It should not happen.");
+} // Should be just ";"?
+void XRP::Remove(vector< shared_ptr<VentureValue> >& arguments,
+                          shared_ptr<VentureValue> sampled_value) {
+  throw std::exception("It should not happen.");
+} // Should be just ";"?
+  
+bool XRP::IsRandomChoice() { return false; }
+bool XRP::CouldBeRescored() { return false; }
+string XRP::GetName() { return "XRPClass"; }
+  
+void ERP::Incorporate(vector< shared_ptr<VentureValue> >& arguments,
+                  shared_ptr<VentureValue> sampled_value) { // inline?
+
+}
+void ERP::Remove(vector< shared_ptr<VentureValue> >& arguments,
+            shared_ptr<VentureValue> sampled_value) { // inline?
+
+}
+  
+bool ERP::IsRandomChoice() { return true; }
+bool ERP::CouldBeRescored() { return true; }
+string ERP::GetName() { return "ERPClass"; }
+  
+real ERP__Flip::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
+                                shared_ptr<VentureValue> sampled_value) { // inline?
+  real weight;
+  if (arguments.size() == 0) {
+    weight = 0.5;
+  } else if (arguments.size() == 1) {
+    weight = ToVentureType<VentureReal>(arguments[0])->data;
+  } else {
+    throw std::exception("Wrong number of arguments.");
+  }
+  if (VerifyVentureType<VentureBoolean>(sampled_value) == true) {
+    if (CompareValue(sampled_value, shared_ptr<VentureValue>(new VentureBoolean(true)))) {
+      return log(weight);
+    } else {
+      return log(1 - weight);
+    }
+  } else {
+    cout << " " << sampled_value << endl;
+    throw std::exception("Wrong value.");
+  }
+}
+shared_ptr<VentureValue> ERP__Flip::Sampler(vector< shared_ptr<VentureValue> >& arguments) {
+  real weight;
+  if (arguments.size() == 0) {
+    weight = 0.5;
+  } else if (arguments.size() == 1) {
+    weight = ToVentureType<VentureReal>(arguments[0])->data;
+  } else {
+    throw std::exception("Wrong number of arguments.");
+  }
+  unsigned int result_int = gsl_ran_bernoulli(random_generator, weight);
+  bool result_bool = (result_int == 1);
+  return shared_ptr<VentureBoolean>(new VentureBoolean(result_bool));
+}
+string ERP__Flip::GetName() { return "ERP__Flip"; }
+
+real ERP__Normal::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
+                                shared_ptr<VentureValue> sampled_value) {
+  if (arguments.size() == 2) {
+    double likelihood =
+           gsl_ran_gaussian_pdf(ToVentureType<VentureReal>(sampled_value)->data -
+                                  ToVentureType<VentureReal>(arguments[0])->data,
+                                ToVentureType<VentureReal>(arguments[1])->data);
+    return log(likelihood);
+  } else {
+    throw std::exception("Wrong number of arguments.");
+  }
+}
+shared_ptr<VentureValue> ERP__Normal::Sampler(vector< shared_ptr<VentureValue> >& arguments) {
+  if (arguments.size() == 2) {
+    double random_value =
+           gsl_ran_gaussian(random_generator,
+                            ToVentureType<VentureReal>(arguments[1])->data) +
+             ToVentureType<VentureReal>(arguments[0])->data;
+    return shared_ptr<VentureReal>(new VentureReal(random_value));
+  } else {
+    throw std::exception("Wrong number of arguments.");
+  }
+}
+string ERP__Normal::GetName() { return "ERP__Normal"; }
+
+real ERP__UniformDiscrete::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
+                                 shared_ptr<VentureValue> sampled_value) {
+  if (arguments.size() == 2) {
+    if (ToVentureType<VentureCount>(sampled_value)->data >= ToVentureType<VentureCount>(arguments[0])->data &&
+      ToVentureType<VentureCount>(sampled_value)->data <= ToVentureType<VentureCount>(arguments[1])->data) {
+      return log(1.0 / (1 + ToVentureType<VentureCount>(arguments[1])->data -
+              ToVentureType<VentureCount>(arguments[0])->data));
+    } else {
+      return log(0.0);
+    }
+  } else {
+    throw std::exception("Wrong number of arguments.");
+  }
+}
+shared_ptr<VentureValue> ERP__UniformDiscrete::Sampler(vector< shared_ptr<VentureValue> >& arguments) {
+  if (arguments.size() == 2) {
+    int random_value =
+           UniformDiscrete(ToVentureType<VentureCount>(arguments[0])->data,
+                           ToVentureType<VentureCount>(arguments[1])->data);
+    return shared_ptr<VentureCount>(new VentureCount(random_value));
+  } else {
+    throw std::exception("Wrong number of arguments.");
+  }
+}
+string ERP__UniformDiscrete::GetName() { return "ERP__UniformDiscrete"; }
+
+real ERP__UniformContinuous::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
+                                 shared_ptr<VentureValue> sampled_value) {
+  if (arguments.size() == 2) {
+    if (ToVentureType<VentureReal>(sampled_value)->data >= ToVentureType<VentureReal>(arguments[0])->data &&
+      ToVentureType<VentureReal>(sampled_value)->data <= ToVentureType<VentureReal>(arguments[1])->data) {
+      return log(1.0 / (ToVentureType<VentureReal>(arguments[1])->data -
+              ToVentureType<VentureReal>(arguments[0])->data));
+    } else {
+      return log(0.0);
+    }
+  } else {
+    throw std::exception("Wrong number of arguments.");
+  }
+}
+shared_ptr<VentureValue> ERP__UniformContinuous::Sampler(vector< shared_ptr<VentureValue> >& arguments) {
+  if (arguments.size() == 2) {
+    double random_value =
+          gsl_ran_flat(random_generator,
+                         ToVentureType<VentureReal>(arguments[0])->data,
+                         ToVentureType<VentureReal>(arguments[1])->data);
+    return shared_ptr<VentureReal>(new VentureReal(random_value));
+  } else {
+    throw std::exception("Wrong number of arguments.");
+  }
+}
+string ERP__UniformContinuous::GetName() { return "ERP__UniformContinuous"; }
+
+real ERP__NoisyNegate::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
+                                shared_ptr<VentureValue> sampled_value) { // inline?
+  bool boolean_expression;
+  real weight;
+  if (arguments.size() == 2) {
+    boolean_expression = ToVentureType<VentureBoolean>(arguments[0])->data;
+    weight = ToVentureType<VentureReal>(arguments[1])->data;
+  } else {
+    throw std::exception("Wrong number of arguments.");
+  }
+  if (VerifyVentureType<VentureBoolean>(sampled_value) == true) {
+    if (CompareValue(sampled_value, shared_ptr<VentureValue>(new VentureBoolean(boolean_expression)))) {
+      return log(1 - weight);
+    } else {
+      return log(weight);
+    }
+  } else {
+    cout << " " << sampled_value << endl;
+    throw std::exception("Wrong value.");
+  }
+}
+shared_ptr<VentureValue> ERP__NoisyNegate::Sampler(vector< shared_ptr<VentureValue> >& arguments) {
+  bool boolean_expression;
+  real weight;
+  if (arguments.size() == 2) {
+    boolean_expression = ToVentureType<VentureBoolean>(arguments[0])->data;
+    weight = ToVentureType<VentureReal>(arguments[1])->data;
+  } else {
+    throw std::exception("Wrong number of arguments.");
+  }
+  unsigned int result_int = gsl_ran_bernoulli(random_generator, weight);
+  if (result_int == 1) {
+    return shared_ptr<VentureBoolean>(new VentureBoolean(!boolean_expression));
+  } else {
+    return shared_ptr<VentureBoolean>(new VentureBoolean(boolean_expression));
+  }
+}
+string ERP__NoisyNegate::GetName() { return "ERP__NoisyNegate"; }
+
+real ERP__ConditionERP::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
+                                                shared_ptr<VentureValue> sampled_value) { // inline?
+  if (arguments.size() != 3) {
+    throw std::exception("Wrong number of arguments.");
+  }
+  if (StandardPredicate(arguments[0]) &&
+      arguments[1] == sampled_value) { // Comparing by reference.
+    return log(1.0);
+  } else if (!StandardPredicate(arguments[0])
+              && arguments[2] == sampled_value) { // Comparing by reference.
+    return log(1.0);
+  } else {
+    return log(0.0);
+  }
+}
+shared_ptr<VentureValue> ERP__ConditionERP::Sampler(vector< shared_ptr<VentureValue> >& arguments) {
+  if (arguments.size() != 3) {
+    throw std::exception("Wrong number of arguments.");
+  }
+  if (StandardPredicate(arguments[0])) {
+    return arguments[1];
+  } else {
+    return arguments[2];
+  }
+}
+  
+bool ERP__ConditionERP::IsRandomChoice() { return false; }
+bool ERP__ConditionERP::CouldBeRescored() { return false; }
+string ERP__ConditionERP::GetName() { return "ERP__ConditionERP"; }
+  
+real Primitive::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
+                                shared_ptr<VentureValue> sampled_value) { // inline?
+  return log(1.0);
+}
+  
+bool Primitive::IsRandomChoice() { return false; }
+bool Primitive::CouldBeRescored() { return false; }
+string Primitive::GetName() { return "PrimitiveClass"; }
+  
+shared_ptr<VentureValue> Primitive__RealPlus::Sampler(vector< shared_ptr<VentureValue> >& arguments) {
+  shared_ptr<VentureReal> result = shared_ptr<VentureReal>(new VentureReal(0.0));
+  //for (vector< shared_ptr<VentureValue> >::iterator iterator = arguments.begin();
+  //     iterator != arguments.end();
+  //     iterator++) {
+  for (size_t index = 0; index < arguments.size(); index++) {
+    //result->data += dynamic_pointer_cast<VentureInteger>(iterator->get())->data; // Too ambiguous!
+    result->data += ToVentureType<VentureReal>(arguments[index])->data; // Too ambiguous!
+    // Consider *real*! Consider errors!
+  }
+  return result;
+}
+string Primitive__RealPlus::GetName() { return "Primitive__RealPlus"; }
+
+shared_ptr<VentureValue> Primitive__RealMultiply::Sampler(vector< shared_ptr<VentureValue> >& arguments) {
+  shared_ptr<VentureReal> result = shared_ptr<VentureReal>(new VentureReal(1.0));
+  for (size_t index = 0; index < arguments.size(); index++) {
+    result->data *= ToVentureType<VentureReal>(arguments[index])->data;
+  }
+  return result;
+}
+string Primitive__RealMultiply::GetName() { return "Primitive__RealMultiply"; }
+
+shared_ptr<VentureValue> Primitive__RealPower::Sampler(vector< shared_ptr<VentureValue> >& arguments) {
+  if (arguments.size() != 2) {
+    throw std::exception("Wrong number of arguments.");
+  }
+  shared_ptr<VentureReal> result = shared_ptr<VentureReal>(new VentureReal(0.0));
+  result->data
+    = pow(ToVentureType<VentureReal>(arguments[0])->data,
+          ToVentureType<VentureReal>(arguments[1])->data);
+  return result;
+}
+string Primitive__RealPower::GetName() { return "Primitive__RealPower"; }
+
+shared_ptr<VentureValue> Primitive__CountEqualOrGreater::Sampler(vector< shared_ptr<VentureValue> >& arguments) {
+  if (arguments.size() != 2) {
+    throw std::exception("Wrong number of arguments.");
+  }
+
+  bool result;
+  if (ToVentureType<VentureCount>(arguments[0])->data >= ToVentureType<VentureCount>(arguments[1])->data) {
+    result = true;
+  } else {
+    result = false;
+  }
+  return shared_ptr<VentureBoolean>(new VentureBoolean(result));
+}
+string Primitive__CountEqualOrGreater::GetName() { return "Primitive__CountEqualOrGreater"; }
+
+shared_ptr<VentureValue> Primitive__List::Sampler(vector< shared_ptr<VentureValue> >& arguments) {
+  if (arguments.size() == 0) {
+    return NIL_INSTANCE;
+  }
+  shared_ptr<VentureList> new_list =
+    shared_ptr<VentureList>(new VentureList(arguments[0]));
+  for (size_t index = 1; index < arguments.size(); index++) {
+    // AddToList() is not efficient!
+    AddToList(new_list,
+              arguments[index]);
+  }
+  return new_list;
+}
+
+string Primitive__List::GetName() { return "Primitive__List"; }
+
 int UniformDiscrete(int a, int b) {
   return gsl_ran_flat(random_generator, a, b + 1);
 }
@@ -71,6 +396,7 @@ void DeleteNode(shared_ptr<Node> node) {
       random_choices.erase(dynamic_pointer_cast<NodeXRPApplication>(node->shared_from_this()));
     }
   }
+  node->DeleteNode();
 }
 
 void DeleteBranch(shared_ptr<Node> first_node) {
@@ -128,12 +454,14 @@ void MakeMHProposal() {
       {
         if ((*iterator)->GetNodeType() == VARIABLE) {
           touched_nodes.push(*iterator);
+          assert(reevaluation_result->passing_value != shared_ptr<VentureValue>());
           dynamic_pointer_cast<NodeVariable>(*iterator)->new_value = reevaluation_result->passing_value;
           for (set< shared_ptr<Node> >::iterator variable_iterator =
                  dynamic_pointer_cast<NodeVariable>(*iterator)->output_references.begin();
                variable_iterator != dynamic_pointer_cast<NodeVariable>(*iterator)->output_references.end();
                variable_iterator++)
           {
+            assert((*variable_iterator)->GetNodeType() != VARIABLE);
             reevaluation_queue.push(ReevaluationEntry(dynamic_pointer_cast<NodeEvaluation>(*variable_iterator),
                                                       current_reevaluation.caller, // Or just NULL?
                                                       reevaluation_result->passing_value)); // Or also just NULL?
@@ -189,15 +517,23 @@ void MakeMHProposal() {
     touched_nodes.pop();
     if (current_node->GetNodeType() == VARIABLE) {
       if (mh_decision == MH_APPROVED) {
-        dynamic_pointer_cast<NodeVariable>(current_node)->value = dynamic_pointer_cast<NodeVariable>(current_node)->new_value;
+        if (dynamic_pointer_cast<NodeVariable>(current_node)->new_value != shared_ptr<VentureValue>()) {
+          assert(dynamic_pointer_cast<NodeVariable>(current_node)->new_value != shared_ptr<VentureValue>());
+          dynamic_pointer_cast<NodeVariable>(current_node)->value = dynamic_pointer_cast<NodeVariable>(current_node)->new_value;
+        }
       }
       dynamic_pointer_cast<NodeVariable>(current_node)->new_value = shared_ptr<VentureValue>();
     } else if (current_node->GetNodeType() == APPLICATION_CALLER &&
                  dynamic_pointer_cast<NodeApplicationCaller>(current_node)->new_application_node != shared_ptr<NodeEvaluation>())
     {
       if (mh_decision == MH_APPROVED) {
+        dynamic_pointer_cast<NodeApplicationCaller>(current_node)->application_node->environment->DeleteNode();
         DeleteBranch(dynamic_pointer_cast<NodeApplicationCaller>(current_node)->application_node);
+        //cout << "Deleting" << endl;
+        //cout << dynamic_pointer_cast<NodeApplicationCaller>(current_node)->application_node->environment.use_count() << endl;
+        //cout << endl;
       } else {
+        dynamic_pointer_cast<NodeApplicationCaller>(current_node)->new_application_node->environment->DeleteNode();
         DeleteBranch(dynamic_pointer_cast<NodeApplicationCaller>(current_node)->new_application_node);
       }
       
