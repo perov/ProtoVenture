@@ -19,11 +19,12 @@ VentureValue::VentureValue() {
 }
 VentureBoolean::VentureBoolean(const bool data) : data(data) {}
 VentureCount::VentureCount(const int data) : data(data) {
+  cout << "Creating: VentureCount" << endl; 
   this->CheckMyData();
 }
-VentureCount::VentureCount(const string& input) : data(boost::lexical_cast<int>(data)) {
+/*VentureCount::VentureCount(const string& input) : data(boost::lexical_cast<int>(data)) {
   this->CheckMyData();
-}
+}*/
 VentureReal::VentureReal(const real data) : data(data) {}
 VentureProbability::VentureProbability(const real data) : data(data) {
   if (data < 0.0 || data > 1.0) { // Add acceptable epsilon error.
@@ -95,7 +96,7 @@ VentureLambda::~VentureLambda() { cout << "Deleting: VentureLambda" << endl; }
 VentureXRP::~VentureXRP() { cout << "Deleting: VentureXRP" << endl; }
 */
 VentureBoolean::~VentureBoolean() {}
-VentureCount::~VentureCount() {}
+VentureCount::~VentureCount() { cout << "Deleting: VentureCount" << endl; }
 VentureReal::~VentureReal() {}
 VentureProbability::~VentureProbability() {}
 VentureAtom::~VentureAtom() {}

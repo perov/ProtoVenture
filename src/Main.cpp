@@ -256,20 +256,40 @@ ForPython__continuous_inference_status(PyObject *self, PyObject *args)
     return Py_BuildValue("b", true);
   }
 }
+void ForPython____DestroySharedPointer(PyObject *object) {
+  // SERIOUS WARNING: Is it safe?
+  // Ask on StackOverflow!
+  //cout << static_cast<shared_ptr<VentureValue>*>(PyCapsule_GetPointer(object, NULL))->get()->GetString() << endl;
+  //delete static_cast<shared_ptr<VentureValue>*>(PyCapsule_GetPointer(object, NULL));
+}
 static PyObject*
-ForPython__NewVentureValue(PyObject *self, PyObject *args)
+ForPython__NewVentureCount(PyObject *self, PyObject *args)
 {
-  char* venture_type;
-  char* value_as_string;
-  if(!PyArg_ParseTuple(args, "ss:NewVentureValue", &venture_type, &value_as_string))
+  int input;
+  if(!PyArg_ParseTuple(args, "i:NewVentureValue", &input))
     return NULL;
-  if (venture_type == "count") {
-    //shared_ptr<VentureValue> new_value = shared_ptr<VentureCount>(new VentureCount(value_as_string));
-    return Py_BuildValue("b", true);
-    //return PyCapsule_New((void*) &new_value, NULL, NULL);
-  } else {
-    throw std::exception("Undefined VentureType.");
-  }
+  //shared_ptr<VentureCount>* new_value = new shared_ptr<VentureCount>(new VentureCount(input));
+  return Py_BuildValue("b", true);
+  //return PyCapsule_New((void*) new_value, NULL, ForPython____DestroySharedPointer);
+}
+bool ForPython____ConvertPythonObjectToVentureValue
+  (PyObject* python_object,
+   shared_ptr<VentureValue>* pointer_to_shared_pointer)
+{
+  if (python_object is PythonString, and this PythonString is "c[...]")
+  *pointer_to_shared_pointer = VentureCount(...);
+}
+static PyObject*
+ForPython__assume(PyObject *self, PyObject *args)
+{
+  shared_ptr<VentureValue> variable_name;
+  shared_ptr<VentureValue> expression;
+  if(!PyArg_ParseTuple(args, "O&O&:NewVentureValue", ForPython____ConvertPythonObjectToVentureValue, &variable_name,
+                         ForPython____ConvertPythonObjectToVentureValue, &expression))
+    return NULL;
+  //shared_ptr<VentureCount>* new_value = new shared_ptr<VentureCount>(new VentureCount(input));
+  return Py_BuildValue("b", true);
+  //return PyCapsule_New((void*) new_value, NULL, ForPython____DestroySharedPointer);
 }
 static PyMethodDef MethodsForPythons[] = {
     {"execute_directive", ForPython__execute_directive, METH_VARARGS,
@@ -284,7 +304,9 @@ static PyMethodDef MethodsForPythons[] = {
      "... Write description ..."},
     {"continuous_inference_status", ForPython__continuous_inference_status, METH_VARARGS,
      "... Write description ..."},
-    {"NewVentureValue", ForPython__NewVentureValue, METH_VARARGS,
+    {"NewVentureCount", ForPython__NewVentureCount, METH_VARARGS,
+     "... Write description ..."},
+    {"assume", ForPython__assume, METH_VARARGS,
      "... Write description ..."},
     {NULL, NULL, 0, NULL}
 };
@@ -335,7 +357,7 @@ int main(int argc, char *argv[])
   PyRun_SimpleFile(python_script, "RESTPython.py");
   //PyRun_SimpleString(buf);
   // Why it does not work?: PyRun_SimpleFile(python_script, "RESTPython.py");
-  fclose(python_script);
+  //fclose(python_script);
   //numargs = argc;
   //PyRun_SimpleString("import emb\n"
   //                   "print \"Number of arguments\", emb.numargs()");

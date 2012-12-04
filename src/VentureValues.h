@@ -36,7 +36,7 @@ struct VentureBoolean : public VentureValue {
 
 struct VentureCount : public VentureValue {
   VentureCount::VentureCount(const int);
-  VentureCount::VentureCount(const string&);
+  //VentureCount::VentureCount(const string&);
   void CheckMyData();
   // Question: where would be the type transformation happen?
   //           Before this function, it seems?

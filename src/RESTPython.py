@@ -54,11 +54,8 @@ import venture_engine
 
 
 
-
+"""
 class VentureValueBaseClass:
-  def CreateCapsule(self, value_as_string):
-    self.capsule_object = venture_engine.NewVentureValue(self.venture_type, str(value_as_string))
-
   def GetCapsuleObject(self):
     return self.capsule_object
     
@@ -67,12 +64,11 @@ class VentureValueBaseClass:
     # venture_engine.DeleteVentureValue(self.capsule_object)
     
 class VentureCount(VentureValueBaseClass):
-  def __init__(self, value_as_string):
-    self.venture_type = "count";
-    self.CreateCapsule(value_as_string)
+  def __init__(self, value):
+    self.capsule_object = venture_engine.NewVentureCount(self.venture_type, value_as_string)
     
 class VentureSymbol(VentureValueBaseClass):
-  def __init__(self, value_as_string):
+  def __init__(self, value):
     self.venture_type = "symbol";
     self.CreateCapsule(value_as_string)
     
@@ -94,7 +90,7 @@ def ProcessTokens(expression):
     return new_list
   else:
     if element[:2] == "c[":
-      return VentureCount(element[2:-1])
+      return VentureCount(int(element[2:-1]))
     elif element[:2] == "s[":
       return VentureSmoothed(element[2:-1])
     else:
@@ -105,7 +101,9 @@ def ProcessTokens(expression):
                                     
 # VentureCount("5")    
   
-venture_engine.NewVentureValue("count", "5")
+#a = venture_engine.NewVentureCount(5)
+a = 5
+"""
 
 import flask
 from flask import request
