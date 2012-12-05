@@ -39,14 +39,21 @@ shared_ptr<VentureValue> Evaluator(shared_ptr<NodeEvaluation> evaluation_node,
 shared_ptr<Node> BindToEnvironment(shared_ptr<NodeEnvironment> target_environment,
                                   shared_ptr<VentureSymbol> variable_name,
                                   shared_ptr<VentureValue> binding_value) {
+  if (target_environment->variables.count(variable_name->GetString()) != 0) {
+    throw std::exception(("Binding variable, which has been already bound: " + variable_name->GetString()).c_str());
+  }
   target_environment->variables[variable_name->GetString()] =
     shared_ptr<NodeVariable>(new NodeVariable(target_environment, binding_value));
   return target_environment->variables[variable_name->GetString()];
 }
 
+// Should be implemented with the function above?
 void BindVariableToEnvironment(shared_ptr<NodeEnvironment> target_environment,
                                shared_ptr<VentureSymbol> variable_name,
                                shared_ptr<NodeVariable> binding_variable) {
+  if (target_environment->variables.count(variable_name->GetString()) != 0) {
+    throw std::exception(("Binding variable, which has been already bound: " + variable_name->GetString()).c_str());
+  }
   target_environment->variables[variable_name->GetString()] =
     binding_variable;
 }

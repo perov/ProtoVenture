@@ -53,61 +53,41 @@ print "Hello"
 import venture_engine
 
 
+# venture_engine.assume("a", parse("(uniform-continuous r[0.0] r[1.0])"))
+# venture_engine.observe(parse("(normal a r[0.01])"), "r[0.7]")
 
-"""
-class VentureValueBaseClass:
-  def GetCapsuleObject(self):
-    return self.capsule_object
-    
-  def __del__(self):
-    print "Hello"
-    # venture_engine.DeleteVentureValue(self.capsule_object)
-    
-class VentureCount(VentureValueBaseClass):
-  def __init__(self, value):
-    self.capsule_object = venture_engine.NewVentureCount(self.venture_type, value_as_string)
-    
-class VentureSymbol(VentureValueBaseClass):
-  def __init__(self, value):
-    self.venture_type = "symbol";
-    self.CreateCapsule(value_as_string)
-    
-class VentureList(VentureValueBaseClass):
-  def __init__(self):
-    self.venture_type = "list";
-    self.CreateCapsule("nil")
-  def AddToList(venture_value):
-    venture_engine.AddToList(self.capsule_object, venture_value.GetCapsuleObject())
-    
-def ProcessTokens(expression):
-  if isInstance(expression, list):
-    new_list = VentureList()
-    for element in expression:
-      new_list.AddToList(ProcessTokens(element)) # This function is now implemented not efficiently
-                                                 # in Venture, because to add a new element
-                                                 # it goes up to the end of the list.
-                                                 # (i.e. it is O(n))
-    return new_list
-  else:
-    if element[:2] == "c[":
-      return VentureCount(int(element[2:-1]))
-    elif element[:2] == "s[":
-      return VentureSmoothed(element[2:-1])
-    else:
-      return VentureSymbol(element) # Not very wisely.
-                                    # Though the Venture will make
-                                    # the check for VentureSymbol's name
-                                    # restrictions.
-                                    
-# VentureCount("5")    
-  
-#a = venture_engine.NewVentureCount(5)
-a = 5
-"""
+# while True:
+  # print venture_engine.report_value(1)
+  # venture_engine.infer(1)
+
+
+# venture_engine.assume("order", parse("(uniform-discrete c[0] c[4])"))
+# venture_engine.assume("noise", parse("(uniform-continuous r[0.1] r[1.0])"))
+# venture_engine.assume("c0", parse("(if (>= order c[0]) (normal r[0.0] r[10.0]) r[0.0])"))
+# venture_engine.assume("c1", parse("(if (>= order c[1]) (normal r[0.0] r[1]) r[0.0])"))
+# venture_engine.assume("c2", parse("(if (>= order c[2]) (normal r[0.0] r[0.1]) r[0.0])"))
+# venture_engine.assume("c3", parse("(if (>= order c[3]) (normal r[0.0] r[0.01]) r[0.0])"))
+# venture_engine.assume("c4", parse("(if (>= order c[4]) (normal r[0.0] r[0.001]) r[0.0])"))
+# venture_engine.assume("clean-func", parse("(lambda (x) (+ c0 (* c1 (power x r[1.0])) (* c2 (power x r[2.0])) (* c3 (power x r[3.0])) (* c4 (power x r[4.0]))))"))
+# venture_engine.predict(parse("(list order c0 c1 c2 c3 c4 noise)"))
+# a = venture_engine.observe(parse("(normal (clean-func (normal r[5.6] noise)) noise)"), "r[1.8]")
+# venture_engine.infer(1000);
+# venture.forget(8)
+# venture.forget(9)
+
+# venture_engine.assume("power-law", parse("(lambda (prob x) (if (flip prob) x (power-law prob (+ x 1))))"))
+# venture_engine.assume("a", parse("(power-law 0.3 1)"))
+# (last_directive, _) = venture_engine.predict(parse("(< a 5)"))
+# venture_engine.infer(1000)
 
 import flask
 from flask import request
 from flask import make_response
+
+# Why it disables the output for the flask?
+import logging
+flask_log = logging.getLogger("werkzeug")
+flask_log.setLevel(logging.DEBUG) # For some reason WARNING and ERROR! still prints requests to the console.
 
 try: # See for details: http://stackoverflow.com/questions/791561/python-2-5-json-module
     import json
@@ -123,60 +103,40 @@ def get_response(string):
     resp.headers['Access-Control-Allow-Origin'] = '*'
     return resp
     
-# Back parser
-# Very stupid :), but for the present
-def ParseElementBack(element):
-  if not isinstance(element, list):
-    return str(element)
-  else:
-    output = "("
-    first = True
-    for subelement in element:
-      if first == False:
-        output += " "
-      first = False
-      output += ParseElementBack(subelement)
-    output += ")"
-    return output
-
 global app
 app = flask.Flask(__name__)
 
 @app.route('/assume', methods=['POST'])
 def assume():
-  name_str = ParseElementBack(json.loads(request.form["name_str"]))
-  expr_lst = ParseElementBack(json.loads(request.form["expr_lst"]))
-  directive_code = "(ASSUME " + name_str + " " + expr_lst + ")"
-  directive_id = venture_cpp.execute_directive(directive_code)
-  val = venture_cpp.report_value(directive_id)
+  name_str = json.loads(request.form["name_str"])
+  expr_lst = json.loads(request.form["expr_lst"])
+  print expr_lst
+  (directive_id, value) = venture_engine.assume(name_str, expr_lst)
   return get_response(json.dumps({"d_id": directive_id,
-                                  "val": val}))
-                     
-@app.route('/observe', methods=['POST'])
-def observe():
-  expr_lst = ParseElementBack(json.loads(request.form["expr_lst"]))
-  literal_val = ParseElementBack(json.loads(request.form["literal_val"]))
-  directive_code = "(OBSERVE " + expr_lst + " " + literal_val + ")"
-  directive_id = venture_cpp.execute_directive(directive_code)
-  return get_response(json.dumps({"d_id": directive_id}))
-
+                                  "val": value}))
+             
 @app.route('/predict', methods=['POST'])
 def predict():
-  expr_lst = ParseElementBack(json.loads(request.form["expr_lst"]))
-  directive_code = "(PREDICT " + expr_lst + ")"
-  directive_id = venture_cpp.execute_directive(directive_code)
-  val = venture_cpp.report_value(directive_id)
-  return get_response(json.dumps({"d_id": directive_id, "val": val}))
+  expr_lst = json.loads(request.form["expr_lst"])
+  (directive_id, value) = venture_engine.predict(expr_lst)
+  return get_response(json.dumps({"d_id": directive_id, "val": value}))
+        
+@app.route('/observe', methods=['POST'])
+def observe():
+  expr_lst = json.loads(request.form["expr_lst"])
+  literal_val = json.loads(request.form["literal_val"])
+  directive_id = venture_engine.observe(expr_lst, literal_val)
+  return get_response(json.dumps({"d_id": directive_id}))
 
 @app.route('/start_cont_infer', methods=['POST'])
 def start_cont_infer():
-  venture_cpp.start_continuous_inference();
+  venture_engine.start_continuous_inference();
   return get_response(json.dumps({"started": True}))
   
 @app.route('/cont_infer_status', methods=['GET'])
 def cont_infer_status():
   print "Necessary to add additional information!"
-  if venture_cpp.continuous_inference_status():
+  if venture_engine.continuous_inference_status():
     return get_response(json.dumps({"status": "on"}))
   else:
     return get_response(json.dumps({"status": "off"}))
@@ -184,26 +144,38 @@ def cont_infer_status():
 # Check for DELETE!
 @app.route('/', methods=['POST'])
 def clear():
-  venture_cpp.clear();
+  venture_engine.clear();
   return get_response(json.dumps({"cleared": True}))
   
 @app.route('/<int:directive_id>', methods=['GET'])
 def report_value(directive_id):
-  current_value = venture_cpp.report_value(directive_id);
-  return get_response(json.dumps({"val": parse(current_value)}))
+  current_value = venture_engine.report_value(directive_id);
+  return get_response(json.dumps({"val": current_value}))
+  
+@app.route('/', methods=['GET'])
+def report_directives():
+  directives = venture_engine.report_directives();
+  return get_response(json.dumps({"val": directives}))
   
 @app.route('/<int:directive_id>', methods=['POST'])
 # Check for DELETE!
 def forget(directive_id):
-  try:
-    venture_cpp.forget(directive_id)
-    return get_response(json.dumps({"okay": "okay"}))
-  except Exception, err:
-    print "Error has happened: " + err
+  venture_engine.forget(directive_id)
+  return get_response(json.dumps({"okay": True}))
 
+@app.route('/infer', methods=['POST'])
+def infer():
+    MHiterations = json.loads(request.form["MHiterations"])
+    t = venture_engine.infer(MHiterations)
+    return get_response(json.dumps({"time": -1}))
+
+@app.errorhandler(Exception)
+def special_exception_handler(error):
+  print "Error: " + str(error)
+  return get_response("Your query has invoked an error:\n" + str(error)), 500
+  
   
 #try:
+app.config['DEBUG'] = False
+app.config['TESTING'] = False
 app.run(port=8081)
-  
-  
-  

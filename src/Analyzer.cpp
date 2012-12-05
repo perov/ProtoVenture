@@ -4,6 +4,7 @@
 #include "Analyzer.h"
 #include "Evaluator.h"
 #include "XRP.h"
+#include "RIPL.h"
 
 string GetNodeTypeAsString(size_t node_type) {
   switch (node_type) {
@@ -187,6 +188,7 @@ void NodeDirectiveAssume::GetChildren(queue< shared_ptr<Node> >& processing_queu
   if (earlier_evaluation_nodes != shared_ptr<NodeEvaluation>()) {
     processing_queue.push(earlier_evaluation_nodes);
   }
+  assert(expression.get() != 0);
   processing_queue.push(expression);
 };
 
@@ -210,6 +212,7 @@ void NodeDirectivePredict::GetChildren(queue< shared_ptr<Node> >& processing_que
   if (earlier_evaluation_nodes != shared_ptr<NodeEvaluation>()) {
     processing_queue.push(earlier_evaluation_nodes);
   }
+  assert(expression.get() != 0);
   processing_queue.push(expression);
 };
 
@@ -236,13 +239,14 @@ void NodeDirectivePredict::DeleteNode() {
 
 
 
-NodeTypes NodeDirectiveObserve::GetNodeType() { return DIRECTIVE_ASSUME; }
+NodeTypes NodeDirectiveObserve::GetNodeType() { return DIRECTIVE_OBSERVE; }
 NodeDirectiveObserve::NodeDirectiveObserve(shared_ptr<NodeEvaluation> expression, shared_ptr<VentureValue> observed_value)
   : expression(expression), observed_value(observed_value) {}
 void NodeDirectiveObserve::GetChildren(queue< shared_ptr<Node> >& processing_queue) {
   if (earlier_evaluation_nodes != shared_ptr<NodeEvaluation>()) {
     processing_queue.push(earlier_evaluation_nodes);
   }
+  assert(expression.get() != 0);
   processing_queue.push(expression);
 }
 
@@ -308,6 +312,7 @@ void NodeLambdaCreator::GetChildren(queue< shared_ptr<Node> >& processing_queue)
   if (earlier_evaluation_nodes != shared_ptr<NodeEvaluation>()) {
     processing_queue.push(earlier_evaluation_nodes);
   }
+  assert(expressions.get() != 0);
   processing_queue.push(expressions);
 };
 // Using standard copy constructor.
@@ -373,16 +378,37 @@ void NodeApplicationCaller::GetChildren(queue< shared_ptr<Node> >& processing_qu
   if (earlier_evaluation_nodes != shared_ptr<NodeEvaluation>()) {
     processing_queue.push(earlier_evaluation_nodes);
   }
+  assert(application_operator.get() != 0);
   processing_queue.push(application_operator);
   for (size_t index = 0; index < application_operands.size(); index++) {
+    assert(application_operands[index].get() != 0);
     processing_queue.push(application_operands[index]);
   }
-  processing_queue.push(application_node);
+  if (this->evaluated == true) { // Is it right?
+    if (application_node.get() == 0) {
+      queue< shared_ptr<Node> > tmp;
+      tmp.push(dynamic_pointer_cast<Node>(this->shared_from_this()));
+      cout << this->evaluated << endl;
+      assert(false);
+      DrawGraphDuringMH(GetLastDirectiveNode(), tmp);
+      assert(false);
+    }
+    assert(application_node.get() != 0);
+    processing_queue.push(application_node);
+  }
 };
 
 void NodeApplicationCaller::DeleteNode() {
   // cout << "MyUniqueID: " << this->GetUniqueID() << endl;
-  application_node->environment->DeleteNode();
+  if (application_node != shared_ptr<NodeEvaluation>() &&
+        application_node->environment != shared_ptr<NodeEnvironment>()) {
+    // THIS NOTICE IS UNIVERSAL, AND IT IS CALLED "BAD-POINTER"
+    // Roughly speaking, if the engine works without errors,
+    // application_node always should not be NULL.
+    // TODO: figure out why this invariant fails
+    // if there were errors in RIPL requests
+    application_node->environment->DeleteNode();
+  }
   environment = shared_ptr<NodeEnvironment>();
   parent = shared_ptr<NodeEvaluation>();
   output_references.clear();
@@ -503,23 +529,6 @@ shared_ptr<NodeEvaluation> AnalyzeExpression(shared_ptr<VentureValue> expression
   }
 }
 
-shared_ptr<NodeEvaluation> AnalyzeDirective(shared_ptr<VentureValue> directive) {
-  shared_ptr<VentureList> list = ToVentureList(directive);
-  if (CompareValue(GetFirst(list), shared_ptr<VentureValue>(new VentureSymbol("ASSUME")))) { // FIXME: without matching case?
-    return shared_ptr<NodeEvaluation>(
-             new NodeDirectiveAssume(ToVentureSymbol(GetNth(list, 2)), AnalyzeExpression(GetNth(list, 3))));
-  } else if (CompareValue(GetFirst(list), shared_ptr<VentureValue>(new VentureSymbol("PREDICT")))) {
-    return  shared_ptr<NodeEvaluation>(
-              new NodeDirectivePredict(AnalyzeExpression(GetNth(list, 2))));
-  } else if (CompareValue(GetFirst(list), shared_ptr<VentureValue>(new VentureSymbol("OBSERVE")))) {
-    // In the future something like this: AssertLiteralValue(GetNth(list, 3)); ?
-    return shared_ptr<NodeEvaluation>(
-             new NodeDirectiveObserve(AnalyzeExpression(GetNth(list, 2)), GetNth(list, 3)));
-  } else {
-    throw std::exception("Undefined directive.");
-  }
-}
-
 void NodeEnvironment::DeleteNode() {
   for (size_t index = 0; index < local_variables.size(); index++) { // Assuming there are no (def)ed inside variables.
     local_variables[index]->DeleteNode();
@@ -554,6 +563,7 @@ NodeDirectivePredict::Evaluate(shared_ptr<NodeEnvironment> environment) {
                    environment,
                    dynamic_pointer_cast<Node>(this->shared_from_this()),
                    dynamic_pointer_cast<NodeEvaluation>(this->shared_from_this()));
+   cout << this->my_value->GetString() << "$" << endl;
    return this->my_value;
 }
 
@@ -645,8 +655,15 @@ NodeApplicationCaller::Evaluate(shared_ptr<NodeEnvironment> environment) {
                                                           dynamic_pointer_cast<NodeEvaluation>(this->shared_from_this()));
   this->saved_evaluated_operator = evaluated_operator;
   
+  shared_ptr<NodeEnvironment> previous_environment;
+  if (evaluated_operator->GetType() == LAMBDA) {
+    previous_environment = ToVentureType<VentureLambda>(evaluated_operator)->scope_environment;
+  } else {
+    previous_environment = environment;
+  }
+
   shared_ptr<NodeEnvironment> local_environment =
-    shared_ptr<NodeEnvironment>(new NodeEnvironment(environment));
+    shared_ptr<NodeEnvironment>(new NodeEnvironment(previous_environment));
   for (size_t index = 0; index < application_operands.size(); index++) {
     shared_ptr<VentureValue> binding_value =
       Evaluator(application_operands[index],
@@ -783,7 +800,7 @@ shared_ptr<ReevaluationResult>
 NodeDirectiveAssume::Reevaluate(shared_ptr<VentureValue> passing_value,
                                 shared_ptr<Node> sender,
                                 ReevaluationParameters& reevaluation_parameters) {
-  this->my_value = passing_value;
+  this->my_new_value = passing_value;
   // Just passing up:
   return shared_ptr<ReevaluationResult>(
     new ReevaluationResult(passing_value, true));
@@ -793,7 +810,7 @@ shared_ptr<ReevaluationResult>
 NodeDirectivePredict::Reevaluate(shared_ptr<VentureValue> passing_value,
                                  shared_ptr<Node> sender,
                                  ReevaluationParameters& reevaluation_parameters) {
-  this->my_value = passing_value;
+  this->my_new_value = passing_value;
   // Just passing up:
   return shared_ptr<ReevaluationResult>(
     new ReevaluationResult(passing_value, true));
@@ -822,6 +839,14 @@ void ApplyToMeAndAllMyChildren(shared_ptr<Node> first_node,
       // when its parent will be removed, because there is no cycled
       // pointers.
     }
+    if (processing_queue.front() != first_node &&
+         (processing_queue.front()->GetNodeType() == DIRECTIVE_ASSUME || 
+           processing_queue.front()->GetNodeType() == DIRECTIVE_PREDICT || 
+           processing_queue.front()->GetNodeType() == DIRECTIVE_OBSERVE)) {
+      // Do not delete children, which are directives itself.
+      processing_queue.pop();
+      continue;
+    }
     processing_queue.front()->GetChildren(processing_queue);
     (*f)(dynamic_pointer_cast<NodeEvaluation>(processing_queue.front()->shared_from_this()));
     processing_queue.pop();
@@ -836,7 +861,7 @@ bool NodeEvaluation::WasEvaluated() {
   return this->evaluated;
 }
 
-void DrawGraph(shared_ptr<Node> first_node) {
+void DrawGraphDuringMH(shared_ptr<Node> first_node, queue< shared_ptr<Node> >& touched_nodes) {
   cout << "Writing the graph" << endl;
 
   std::ofstream graph_file;
@@ -857,12 +882,21 @@ void DrawGraph(shared_ptr<Node> first_node) {
       processing_queue.push(make_pair(processing_queue.front().second->GetUniqueID(), temporal_queue.front()));
       temporal_queue.pop();
     }
-
+    std::deque< shared_ptr<Node> >::const_iterator already_existent_element =
+      std::find(touched_nodes._Get_container().begin(), touched_nodes._Get_container().end(), processing_queue.front().second);
     graph_file << "  Node" << processing_queue.front().second->GetUniqueID() << " [label=\"";
+    if (!(already_existent_element == touched_nodes._Get_container().end())) {
+      int distance = std::distance(touched_nodes._Get_container().begin(), already_existent_element);
+      graph_file << "[MH" << distance << "] ";
+    }
     graph_file << "(" << processing_queue.front().second->WasEvaluated() << ") ";
     graph_file << processing_queue.front().second->GetUniqueID() << ". ";
     graph_file << GetNodeTypeAsString(processing_queue.front().second->GetNodeType())
-      << ": " << processing_queue.front().second->GetContent() << "\"]" << endl;
+      << ": " << processing_queue.front().second->GetContent() << "\"" << endl;
+    if (!(already_existent_element == touched_nodes._Get_container().end())) {
+      graph_file << ",color=red";
+    }
+    graph_file << "]";
     if (processing_queue.front().first != "") {
       graph_file << "  Node" << processing_queue.front().first << " -> "
         << "Node" << processing_queue.front().second->GetUniqueID() << endl;

@@ -6,6 +6,11 @@
 #include "Analyzer.h"
 #include "Evaluator.h"
 #include "XRP.h"
+#include "RIPL.h"
+#include "ERPs.h"
+#include "Primitives.h"
+
+// Booleans should be as NIL!
 
 // Using for Windows: http://sourceware.org/pthreads-win32/
 // (So requires the pthreadVC2.dll)
@@ -17,23 +22,32 @@ set< shared_ptr<NodeXRPApplication> > random_choices;
 size_t DIRECTIVE_COUNTER = 0;
 
 shared_ptr<NodeEnvironment> global_environment;
-shared_ptr<NodeEvaluation> last_directive_node;
-vector< shared_ptr<NodeEvaluation> > directives;
+size_t last_directive_id;
+map<size_t, directive_entry> directives;
 
 int continuous_inference_status = 0; // NOT THREAD SAFE!
+
+/* Python notices:
+   1) When some C++ function throws exception,
+      we should firstly delete Python objects.
+*/
 
 // http://cs.gmu.edu/~white/CS571/Examples/Pthread/create.c
 void* ContinuousInference(void* arguments) {
   while (continuous_inference_status != 0) {
-    cout << " <I> ";
-    for (size_t i = 0; i < 1000000; i++) {}
+    //cout << " <I> ";
     if (continuous_inference_status == 1) {
-      MakeMHProposal();
+      try {
+        MakeMHProposal();
+      } catch (std::exception& e) {
+        cout << "Exception has been raised during continuous inference: " << e.what() << endl;
+        return NULL;
+      }
     } else if (continuous_inference_status == 2) {
       continuous_inference_status = 3;
       while (continuous_inference_status == 3) {
         //cout << "SleepingC" << endl;
-        struct timespec ts = {0, 1000};
+        struct timespec ts = {0, 1}; // 1 ns -- is it okay? :)
         pthread_delay_np(&ts);
       }
     }
@@ -47,8 +61,12 @@ void PauseInference() {
   if (continuous_inference_status == 1) {
     need_to_return_inference = true;
     continuous_inference_status = 2;
+    clock_t start_time = clock();
     while (continuous_inference_status != 3) {
-      struct timespec ts = {0, 1000};
+      if ((( static_cast<float>(clock() - start_time)) / CLOCKS_PER_SEC) > 3.0) {
+        throw std::exception("Cannot stop the inference for more than 3 seconds.");
+      }
+      struct timespec ts = {0, 1}; // 1 ns -- is it okay? :)
       pthread_delay_np(&ts);
     }
   } else {
@@ -67,6 +85,9 @@ void InitRIPL() {
   BindToEnvironment(global_environment,
                     shared_ptr<VentureSymbol>(new VentureSymbol("flip")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new ERP__Flip()))));
+  BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol("bernoulli")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new ERP__Flip()))));
   // WARNING: Deprecated:
   BindToEnvironment(global_environment,
                     shared_ptr<VentureSymbol>(new VentureSymbol("noise-negate")), // Make just via the std::string?
@@ -81,6 +102,9 @@ void InitRIPL() {
                     shared_ptr<VentureSymbol>(new VentureSymbol("normal")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new ERP__Normal()))));
   BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol("beta")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new ERP__Beta()))));
+  BindToEnvironment(global_environment,
                     shared_ptr<VentureSymbol>(new VentureSymbol("uniform-discrete")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new ERP__UniformDiscrete()))));
   BindToEnvironment(global_environment,
@@ -91,208 +115,386 @@ void InitRIPL() {
                     shared_ptr<VentureSymbol>(new VentureSymbol("list")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__List()))));
   BindToEnvironment(global_environment,
-                    shared_ptr<VentureSymbol>(new VentureSymbol("real+")), // Make just via the std::string?
+                    shared_ptr<VentureSymbol>(new VentureSymbol("+")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__RealPlus()))));
   BindToEnvironment(global_environment,
-                    shared_ptr<VentureSymbol>(new VentureSymbol("real*")), // Make just via the std::string?
+                    shared_ptr<VentureSymbol>(new VentureSymbol("*")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__RealMultiply()))));
   BindToEnvironment(global_environment,
-                    shared_ptr<VentureSymbol>(new VentureSymbol("real-power")), // Make just via the std::string?
+                    shared_ptr<VentureSymbol>(new VentureSymbol("power")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__RealPower()))));
   BindToEnvironment(global_environment,
-                    shared_ptr<VentureSymbol>(new VentureSymbol("count>=")), // Make just via the std::string?
-                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__CountEqualOrGreater()))));
+                    shared_ptr<VentureSymbol>(new VentureSymbol(">=")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__RealEqualOrGreater()))));
+  BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol("<=")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__RealEqualOrLesser()))));
+  BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol(">")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__RealEqualOrGreater()))));
+  BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol("<")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__RealLesser()))));
+  BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol("=")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__RealEqual()))));
 
-  last_directive_node = shared_ptr<NodeEvaluation>();
+  last_directive_id = 0;
+  DIRECTIVE_COUNTER = 0; // For "myorder".
 }
 
 void DeleteRIPL() {
-  directives.clear();
-  if (last_directive_node != shared_ptr<NodeEvaluation>()) {
-    DeleteBranch(last_directive_node);
+  // Reconsider this function.
+  for (map<size_t, directive_entry>::iterator iterator = directives.begin(); iterator != directives.end(); iterator++) {
+    DeleteBranch(iterator->second.directive_node);
   }
-  last_directive_node = shared_ptr<NodeEvaluation>();
-  global_environment->DeleteNode();
+
+  if (global_environment != shared_ptr<NodeEnvironment>()) { // It should not be in a good way?
+    global_environment->DeleteNode();
+  }
   global_environment = shared_ptr<NodeEnvironment>();
+
+  last_directive_id = 0;
+  directives.clear();
 }
 
 void clear_trace()
 {
-  PauseInference();
   continuous_inference_status = 0;
 
   DeleteRIPL();
   InitRIPL();
 }
 
-size_t execute_directive(const string& directive_code) {
-  cout << directive_code << endl;
-  PauseInference();
-  if (last_directive_node == shared_ptr<NodeEvaluation>()) {
-    last_directive_node = AnalyzeDirective(ReadCode(directive_code));
-    Evaluator(last_directive_node, global_environment, shared_ptr<Node>(), shared_ptr<NodeEvaluation>());
-  } else {
-    shared_ptr<NodeEvaluation> new_directive_node = AnalyzeDirective(ReadCode(directive_code));
-    Evaluator(new_directive_node, global_environment, shared_ptr<Node>(), shared_ptr<NodeEvaluation>());
-    new_directive_node->earlier_evaluation_nodes = last_directive_node;
-    last_directive_node = new_directive_node;
+shared_ptr<VentureValue> report_value(size_t directive_id) {
+  if (directives.count(directive_id) == 0) {
+    throw std::exception("Attempt to report value neither for non-existent directive.");
   }
-  directives.push_back(last_directive_node);
-  ReturnInferenceIfNecessary();
-  return directives.size();
-}
-
-string report_value(size_t directive_id) {
-  cout << "Pam1";
-  PauseInference();
-  cout << "Pam2";
-  if (directives[directive_id - 1]->GetNodeType() == DIRECTIVE_ASSUME) {
-    ReturnInferenceIfNecessary(); // Too early.
-    cout << "Pam3";
-    return dynamic_pointer_cast<NodeDirectiveAssume>(directives[directive_id - 1])->my_value->GetString();
-  } else if (directives[directive_id - 1]->GetNodeType() == DIRECTIVE_PREDICT) {
-    cout << "Pam4" << endl;
-    cout << dynamic_pointer_cast<NodeDirectivePredict>(directives[directive_id - 1])->my_value->GetType() << "!" << endl;
-    cout << dynamic_pointer_cast<NodeDirectivePredict>(directives[directive_id - 1])->my_value->GetString() << "!" << endl;
-    string to_return = dynamic_pointer_cast<NodeDirectivePredict>(directives[directive_id - 1])->my_value->GetString();
-    cout << "Pam4.5";
-    ReturnInferenceIfNecessary();
-    cout << "Pam4.8";
-    return to_return;
+  if (directives[directive_id].directive_node->GetNodeType() == DIRECTIVE_ASSUME) {
+    return dynamic_pointer_cast<NodeDirectiveAssume>(directives[directive_id].directive_node)->my_value;
+  } else if (directives[directive_id].directive_node->GetNodeType() == DIRECTIVE_PREDICT) {
+    return dynamic_pointer_cast<NodeDirectivePredict>(directives[directive_id].directive_node)->my_value;
   } else {
-    ReturnInferenceIfNecessary();
-    cout << "Pam5";
     throw std::exception("Attempt to report value neither for ASSUME nor PREDICT.");
   }
 }
 
 void forget_directive(size_t directive_id) {
-  if (directive_id >= directives.size() ||
-        directives[directive_id - 1] == shared_ptr<NodeEvaluation>()) {
+  if (directives.count(directive_id) == 0) {
     throw std::exception("There is no such directive.");
   }
 
-  if (last_directive_node == directives[directive_id - 1] &&
-        last_directive_node->earlier_evaluation_nodes == shared_ptr<NodeEvaluation>()) {
-    PauseInference(); 
-    if (last_directive_node == directives[directive_id - 1]) {
-      last_directive_node = directives[directive_id - 1]->earlier_evaluation_nodes;
-    }
-    DeleteBranch(directives[directive_id - 1]);
-    directives[directive_id - 1] = shared_ptr<NodeEvaluation>();
-    ReturnInferenceIfNecessary();
-  } else {
+  if (directives.size() == 1)
+  {
     clear_trace();
+  } else {
+    // Check for ASSUME.
+    DeleteBranch(directives[directive_id].directive_node);
+    directives.erase(directive_id);
   }
 }
 
-static PyObject*
-ForPython__execute_directive(PyObject *self, PyObject *args)
-{
-  char* directive_code_as_chars;
-  if(!PyArg_ParseTuple(args, "s:execute_directive", &directive_code_as_chars))
-    return NULL;
-  return Py_BuildValue("i", execute_directive(directive_code_as_chars));
+size_t execute_directive(string& directive_as_string,
+                         shared_ptr<NodeEvaluation> directive_node) {
+  shared_ptr<NodeEvaluation> last_directive_node;
+  if (directives.size() > 0) {
+    last_directive_node = GetLastDirectiveNode();
+  }
+  Evaluator(directive_node, global_environment, shared_ptr<Node>(), shared_ptr<NodeEvaluation>());
+  directive_node->earlier_evaluation_nodes = last_directive_node;
+
+  last_directive_id++;
+  directives.insert(pair<size_t, directive_entry>(last_directive_id, directive_entry(directive_as_string, directive_node)));
+  return last_directive_id;
 }
+
+string PythonObjectAsString(PyObject* python_object) {
+  PyObject* type = NULL;
+  PyObject* pyString =  NULL;
+  string result;
+  if (python_object != NULL &&
+       (pyString=PyObject_Str(python_object))!=NULL && 
+       (PyString_Check(pyString))) {
+    result = PyString_AsString(pyString);
+  } else {
+    return string("<Python cannot stringify this object>");
+  }
+  Py_XDECREF(pyString);
+  return result;
+}
+
+bool ConvertPythonObjectToVentureValue
+  (PyObject* python_object,
+   shared_ptr<VentureValue>* pointer_to_shared_pointer)
+{
+  if (PyString_Check(python_object)) {
+    char* string_as_chars = PyString_AsString(python_object);
+    *pointer_to_shared_pointer = ProcessAtom(string_as_chars);
+  } else if (PyUnicode_Check(python_object)) {
+    PyObject* encoded_string = PyUnicode_AsUTF8String(python_object);
+    char* string_as_chars = PyString_AsString(encoded_string);
+    *pointer_to_shared_pointer = ProcessAtom(string_as_chars);
+    Py_XDECREF(encoded_string);
+  } else if (PyBool_Check(python_object)) {
+    if (python_object == Py_True) {
+      *pointer_to_shared_pointer = shared_ptr<VentureBoolean>(new VentureBoolean(true));
+    } else if (python_object == Py_False) {
+      *pointer_to_shared_pointer = shared_ptr<VentureBoolean>(new VentureBoolean(false));
+    } else {
+      throw std::exception("Unidentified Python boolean value.");
+    }
+  } else if (PyInt_Check(python_object)) {
+    // Not safe, because Python returns long, not int!
+    *pointer_to_shared_pointer = shared_ptr<VentureCount>(new VentureCount(PyInt_AS_LONG(python_object)));
+  } else if (PyFloat_Check(python_object)) {
+    // Not safe in general, because Python returns double, while we use typedef "real"
+    // (which is now "double", though)!
+    *pointer_to_shared_pointer = shared_ptr<VentureReal>(new VentureReal(PyFloat_AS_DOUBLE(python_object)));
+  } else if (PyList_Check(python_object)) {
+    *pointer_to_shared_pointer = NIL_INSTANCE;
+    shared_ptr<VentureList> last_cons = NIL_INSTANCE;
+    for (Py_ssize_t index = 0; index < PyList_Size(python_object); index++) {
+      shared_ptr<VentureValue> next_element;
+      ConvertPythonObjectToVentureValue(PyList_GetItem(python_object, index), &next_element);
+      if (*pointer_to_shared_pointer == NIL_INSTANCE) { // First element.
+        last_cons = shared_ptr<VentureList>(new VentureList(next_element));
+        *pointer_to_shared_pointer = last_cons;
+      } else {
+        last_cons->cdr = shared_ptr<VentureList>(new VentureList(next_element));
+        last_cons = last_cons->cdr;
+      }
+    }
+  } else {
+    throw std::exception(("Unidentified Python object (its type: '" + PythonObjectAsString(PyObject_Type(python_object)) + "'): '" + PythonObjectAsString(python_object) + "'.").c_str());
+    return false;
+    // http://docs.python.org/release/1.5.2p2/ext/parseTuple.html
+    // "The returned status should be 1 for a successful conversion and 0 if the conversion
+    // has failed. When the conversion fails, the converter function should raise an exception."
+    // How to understand these two issues at the same time?
+  }
+  return true;
+}
+
 static PyObject*
 ForPython__report_value(PyObject *self, PyObject *args)
-{
+{ try {
+  PauseInference();
   int directive_id;
-  if(!PyArg_ParseTuple(args, "i:report_value", &directive_id))
-    return NULL;
-  string result = report_value(directive_id);
-  if (IsInteger(result)) {
-    return Py_BuildValue("i", boost::lexical_cast<int>(result));
-  } else if (IsReal(result)) {
-    return Py_BuildValue("d", boost::lexical_cast<double>(result));
-  } else {
-    return Py_BuildValue("s", result.c_str());
+  if(!PyArg_ParseTuple(args, "i:report_value", &directive_id)) {
+    PyErr_SetString(PyExc_TypeError, "report_value: wrong arguments.");
+    return NULL; // ReturnInferenceIfNecessary(); ?
   }
-}
+  PyObject* returning_python_object = report_value(directive_id)->GetAsPythonObject();
+  ReturnInferenceIfNecessary();
+  return returning_python_object;
+} catch(std::exception& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }
+
+static PyObject*
+ForPython__report_directives(PyObject *self, PyObject *args)
+{ try {
+  PauseInference();
+  if(!PyArg_ParseTuple(args, ":report_directives")) {
+    PyErr_SetString(PyExc_TypeError, "report_directives: wrong arguments.");
+    return NULL; // ReturnInferenceIfNecessary(); ?
+  }
+  
+  PyObject* returning_list = PyList_New(directives.size());
+  size_t index = 0;
+  for (map<size_t, directive_entry>::iterator iterator = directives.begin(); iterator != directives.end(); iterator++) {
+    PyObject* directive_dictionary = PyDict_New();
+    PyDict_SetItemString(directive_dictionary, "directive-id", Py_BuildValue("d", iterator->first));
+    PyDict_SetItemString(directive_dictionary, "directive-expression", Py_BuildValue("s", iterator->second.directice_as_string.c_str()));
+    if (iterator->second.directive_node->GetNodeType() == DIRECTIVE_ASSUME) {
+      PyDict_SetItemString(directive_dictionary,
+                           "value",
+                           dynamic_pointer_cast<NodeDirectiveAssume>(iterator->second.directive_node)->my_value->GetAsPythonObject());
+    }
+    if (iterator->second.directive_node->GetNodeType() == DIRECTIVE_PREDICT) {
+      PyDict_SetItemString(directive_dictionary,
+                           "value",
+                           dynamic_pointer_cast<NodeDirectivePredict>(iterator->second.directive_node)->my_value->GetAsPythonObject());
+    }
+    PyList_SetItem(returning_list, index, directive_dictionary);
+    index++;
+  }
+
+  ReturnInferenceIfNecessary();
+  return returning_list;
+} catch(std::exception& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }
+
 static PyObject*
 ForPython__clear(PyObject *self, PyObject *args)
-{
-  int directive_id;
-  if(!PyArg_ParseTuple(args, ":clear"))
-    return NULL;
+{ try {
+  PauseInference();
+  if(!PyArg_ParseTuple(args, ":clear")) {
+    PyErr_SetString(PyExc_TypeError, "clear: wrong arguments.");
+    return NULL; // ReturnInferenceIfNecessary(); ?
+  }
   clear_trace();
-  return Py_BuildValue("i", 0); // Make something better.
-}
+  ReturnInferenceIfNecessary();
+  Py_INCREF(Py_None);
+  return Py_None;
+} catch(std::exception& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }
+
 static PyObject*
 ForPython__forget(PyObject *self, PyObject *args)
-{
+{ try {
+  PauseInference();
   int directive_id;
-  if(!PyArg_ParseTuple(args, "i:forget", &directive_id))
-    return NULL;
+  if(!PyArg_ParseTuple(args, "i:forget", &directive_id)) {
+    PyErr_SetString(PyExc_TypeError, "forget: wrong arguments.");
+    return NULL; // ReturnInferenceIfNecessary(); ?
+  }
   forget_directive(directive_id);
-  return Py_BuildValue("i", 0); // Make something better.
-}
+  cout << "Have forgotten" << endl << endl;
+  ReturnInferenceIfNecessary();
+  Py_INCREF(Py_None);
+  return Py_None;
+} catch(std::exception& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }
+
+static PyObject*
+ForPython__infer(PyObject *self, PyObject *args)
+{ try {
+  PauseInference();
+  int number_of_required_inferences;
+  if(!PyArg_ParseTuple(args, "i:infer", &number_of_required_inferences)) {
+    PyErr_SetString(PyExc_TypeError, "infer: wrong arguments.");
+    return NULL; // ReturnInferenceIfNecessary(); ?
+  }
+  if (number_of_required_inferences < 0) {
+    PyErr_SetString(PyExc_TypeError, "infer: wrong arguments.");
+    return NULL; // ReturnInferenceIfNecessary(); ?
+  }
+  for (size_t iteration = 0; iteration < number_of_required_inferences; iteration++) {
+    MakeMHProposal();
+  }
+  ReturnInferenceIfNecessary();
+  Py_INCREF(Py_None);
+  return Py_None;
+} catch(std::exception& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }
+
 static PyObject*
 ForPython__start_continuous_inference(PyObject *self, PyObject *args)
-{
-  int directive_id;
-  if(!PyArg_ParseTuple(args, ":start_continuous_inference"))
-    return NULL;
+{ try {
+  if(!PyArg_ParseTuple(args, ":start_continuous_inference")) {
+    PyErr_SetString(PyExc_TypeError, "start_continuous_inference: wrong arguments.");
+    return NULL; // ReturnInferenceIfNecessary(); ?
+  }
   pthread_t new_thread;
   if (continuous_inference_status == 0) {
     continuous_inference_status = 1;
     cout << "Starting thread" << endl;
     pthread_create(&new_thread, NULL, &ContinuousInference, NULL);
     cout << "Have started" << endl;
-    return Py_BuildValue("i", 0); // Make something better.
+    Py_INCREF(Py_None);
+    return Py_None;
   } else {
     throw std::exception("The continuous inference has been already started.");
   }
-}
+} catch(std::exception& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }
+
 static PyObject*
 ForPython__continuous_inference_status(PyObject *self, PyObject *args)
-{
-  int directive_id;
-  if(!PyArg_ParseTuple(args, ":continuous_inference_status"))
-    return NULL;
+{ try {
+  if(!PyArg_ParseTuple(args, ":continuous_inference_status")) {
+    PyErr_SetString(PyExc_TypeError, "continuous_inference_status: wrong arguments.");
+    return NULL; // ReturnInferenceIfNecessary(); ?
+  }
   if (continuous_inference_status == 0) {
     return Py_BuildValue("b", false);
   } else {
     return Py_BuildValue("b", true);
   }
-}
-void ForPython____DestroySharedPointer(PyObject *object) {
-  // SERIOUS WARNING: Is it safe?
-  // Ask on StackOverflow!
-  //cout << static_cast<shared_ptr<VentureValue>*>(PyCapsule_GetPointer(object, NULL))->get()->GetString() << endl;
-  //delete static_cast<shared_ptr<VentureValue>*>(PyCapsule_GetPointer(object, NULL));
-}
+} catch(std::exception& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }
+
 static PyObject*
-ForPython__NewVentureCount(PyObject *self, PyObject *args)
-{
-  int input;
-  if(!PyArg_ParseTuple(args, "i:NewVentureValue", &input))
+ForPython__stop_continuous_inference(PyObject *self, PyObject *args)
+{ try {
+  if(!PyArg_ParseTuple(args, ":stop_continuous_inference")) {
+    PyErr_SetString(PyExc_TypeError, "stop_continuous_inference: wrong arguments.");
     return NULL;
-  //shared_ptr<VentureCount>* new_value = new shared_ptr<VentureCount>(new VentureCount(input));
-  return Py_BuildValue("b", true);
-  //return PyCapsule_New((void*) new_value, NULL, ForPython____DestroySharedPointer);
-}
-bool ForPython____ConvertPythonObjectToVentureValue
-  (PyObject* python_object,
-   shared_ptr<VentureValue>* pointer_to_shared_pointer)
-{
-  if (python_object is PythonString, and this PythonString is "c[...]")
-  *pointer_to_shared_pointer = VentureCount(...);
-}
+  }
+  pthread_t new_thread;
+  if (continuous_inference_status != 0) {
+    continuous_inference_status = 0;
+    // Here we should wait until the inference will realy finish.
+    Py_INCREF(Py_None);
+    return Py_None;
+  } else {
+    throw std::exception("The continuous inference is not running.");
+  }
+} catch(std::exception& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }
+
 static PyObject*
 ForPython__assume(PyObject *self, PyObject *args)
-{
-  shared_ptr<VentureValue> variable_name;
+{ try {
+  PauseInference();
+  char* variable_name_as_chars;
   shared_ptr<VentureValue> expression;
-  if(!PyArg_ParseTuple(args, "O&O&:NewVentureValue", ForPython____ConvertPythonObjectToVentureValue, &variable_name,
-                         ForPython____ConvertPythonObjectToVentureValue, &expression))
-    return NULL;
-  //shared_ptr<VentureCount>* new_value = new shared_ptr<VentureCount>(new VentureCount(input));
-  return Py_BuildValue("b", true);
-  //return PyCapsule_New((void*) new_value, NULL, ForPython____DestroySharedPointer);
-}
+  if(!PyArg_ParseTuple(args, "sO&:assume",
+                         &variable_name_as_chars,
+                         ConvertPythonObjectToVentureValue, &expression))
+  {
+    PyErr_SetString(PyExc_TypeError, "assume: wrong arguments.");
+    return NULL; // ReturnInferenceIfNecessary(); ?
+  }
+  shared_ptr<VentureSymbol> variable_name = shared_ptr<VentureSymbol>(new VentureSymbol(variable_name_as_chars));
+  string directive_string_representation = "ASSUME " + string(variable_name_as_chars) + " " + expression->GetString();
+  size_t directive_id =
+    execute_directive(directive_string_representation,
+                      shared_ptr<NodeEvaluation>(new NodeDirectiveAssume(variable_name, AnalyzeExpression(expression))));
+  shared_ptr<VentureValue> directive_value = report_value(directive_id);
+  PyObject* returning_python_object = Py_BuildValue("(iO)", static_cast<int>(directive_id), directive_value->GetAsPythonObject());
+  ReturnInferenceIfNecessary();
+  return returning_python_object;
+} catch(std::exception& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }
+
+static PyObject*
+ForPython__predict(PyObject *self, PyObject *args)
+{ try {
+  PauseInference();
+  shared_ptr<VentureValue> expression;
+  if(!PyArg_ParseTuple(args, "O&:predict",
+                         ConvertPythonObjectToVentureValue, &expression))
+  {
+    PyErr_SetString(PyExc_TypeError, "predict: wrong arguments.");
+    return NULL; // ReturnInferenceIfNecessary(); ?
+  }
+  string directive_string_representation = "PREDICT " + expression->GetString();
+  size_t directive_id =
+    execute_directive(directive_string_representation,
+                      shared_ptr<NodeEvaluation>(new NodeDirectivePredict(AnalyzeExpression(expression))));
+  shared_ptr<VentureValue> directive_value = report_value(directive_id);
+  PyObject* returning_python_object = Py_BuildValue("(iO)", static_cast<int>(directive_id), directive_value->GetAsPythonObject());
+  ReturnInferenceIfNecessary();
+  return returning_python_object;
+} catch(std::exception& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }
+
+static PyObject*
+ForPython__observe(PyObject *self, PyObject *args)
+{ try {
+  PauseInference();
+  char* variable_name_as_chars;
+  shared_ptr<VentureValue> expression;
+  shared_ptr<VentureValue> literal_value;
+  if(!PyArg_ParseTuple(args, "O&O&:observe",
+                         ConvertPythonObjectToVentureValue, &expression,
+                         ConvertPythonObjectToVentureValue, &literal_value))
+  {
+    PyErr_SetString(PyExc_TypeError, "observe: wrong arguments.");
+    return NULL; // ReturnInferenceIfNecessary(); ?
+  }
+  string directive_string_representation = "OBSERVE " + expression->GetString() + " " + literal_value->GetString();
+  size_t directive_id =
+    execute_directive(directive_string_representation,
+                      shared_ptr<NodeEvaluation>(new NodeDirectiveObserve(AnalyzeExpression(expression), literal_value)));
+  PyObject* returning_python_object = Py_BuildValue("i", static_cast<int>(directive_id));
+  ReturnInferenceIfNecessary();
+  return returning_python_object;
+} catch(std::exception& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }
+
 static PyMethodDef MethodsForPythons[] = {
-    {"execute_directive", ForPython__execute_directive, METH_VARARGS,
+    {"report_directives", ForPython__report_directives, METH_VARARGS,
      "... Write description ..."},
     {"report_value", ForPython__report_value, METH_VARARGS,
      "... Write description ..."},
@@ -300,13 +502,19 @@ static PyMethodDef MethodsForPythons[] = {
      "... Write description ..."},
     {"forget", ForPython__forget, METH_VARARGS,
      "... Write description ..."},
+    {"infer", ForPython__infer, METH_VARARGS,
+     "... Write description ..."},
     {"start_continuous_inference", ForPython__start_continuous_inference, METH_VARARGS,
      "... Write description ..."},
     {"continuous_inference_status", ForPython__continuous_inference_status, METH_VARARGS,
      "... Write description ..."},
-    {"NewVentureCount", ForPython__NewVentureCount, METH_VARARGS,
+    {"stop_continuous_inference", ForPython__stop_continuous_inference, METH_VARARGS,
      "... Write description ..."},
     {"assume", ForPython__assume, METH_VARARGS,
+     "... Write description ..."},
+    {"predict", ForPython__predict, METH_VARARGS,
+     "... Write description ..."},
+    {"observe", ForPython__observe, METH_VARARGS,
      "... Write description ..."},
     {NULL, NULL, 0, NULL}
 };
@@ -314,7 +522,9 @@ static PyMethodDef MethodsForPythons[] = {
 int main(int argc, char *argv[])
 {
   random_generator = gsl_rng_alloc(gsl_rng_mt19937);
-  gsl_rng_set(random_generator, abs(time(NULL)));
+  unsigned long seed = 0; // time(NULL)
+  cout << "WARNING: RANDOM SEED is not random!" << endl;
+  gsl_rng_set(random_generator, seed);
 
   InitRIPL();
 
@@ -344,7 +554,14 @@ int main(int argc, char *argv[])
   Py_SetProgramName(argv[0]);  /* optional but recommended */
   Py_Initialize();
   Py_InitModule("venture_engine", MethodsForPythons);
-  FILE *python_script = fopen("C:/Users/Yura Perov/workspace/VentureAlpha/src/RESTPython.py", "r");
+
+  // PyRun_SimpleFile(...) does not work in Release configuration (works in debug).
+  // Read here: http://docs.python.org/2/faq/windows.html#pyrun-simplefile-crashes-on-windows-but-not-on-unix-why
+  // It seems it is necessary to recompile pythonXY.lib and *.dll.
+  // Now using this variant:
+  PyRun_SimpleString("execfile(\"C:/Users/Yura Perov/workspace/VentureAlpha/src/RESTPython.py\")");
+
+  //FILE *python_script = fopen("C:/Users/Yura Perov/workspace/VentureAlpha/src/RESTPython.py", "r");
   /*cout << python_script << endl;
   long len;
   char* buf;
@@ -354,7 +571,7 @@ int main(int argc, char *argv[])
   buf = (char*) malloc(len); //malloc buffer
   fread(buf, len, 1, python_script); //read into buffer
   cout << buf << endl;*/
-  PyRun_SimpleFile(python_script, "RESTPython.py");
+  //PyRun_SimpleFile(python_script, "RESTPython.py");
   //PyRun_SimpleString(buf);
   // Why it does not work?: PyRun_SimpleFile(python_script, "RESTPython.py");
   //fclose(python_script);

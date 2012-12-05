@@ -96,6 +96,7 @@ struct NodeDirectiveAssume : public NodeEvaluation {
   shared_ptr<VentureSymbol> name;
   shared_ptr<NodeEvaluation> expression;
   shared_ptr<VentureValue> my_value; // It should not be implemented in this way?
+  shared_ptr<VentureValue> my_new_value; // It should not be implemented in this way?
 
   virtual void NodeDirectiveAssume::DeleteNode();
 };
@@ -112,6 +113,7 @@ struct NodeDirectivePredict : public NodeEvaluation {
 
   shared_ptr<NodeEvaluation> expression;
   shared_ptr<VentureValue> my_value; // It should not be implemented in this way?
+  shared_ptr<VentureValue> my_new_value; // It should not be implemented in this way?
 
   virtual void NodeDirectivePredict::DeleteNode();
 };
@@ -220,7 +222,6 @@ struct NodeXRPApplication : public NodeEvaluation {
   virtual void NodeXRPApplication::DeleteNode();
 };
 
-shared_ptr<NodeEvaluation> AnalyzeDirective(shared_ptr<VentureValue>);
 shared_ptr<NodeEvaluation> AnalyzeExpression(shared_ptr<VentureValue>);
 
 vector< shared_ptr<VentureValue> >
@@ -238,7 +239,7 @@ EvaluateApplication(shared_ptr<VentureValue>,
 void ApplyToMeAndAllMyChildren(shared_ptr<Node>,
                                void (*f)(shared_ptr<Node>));
 
-void DrawGraph(shared_ptr<Node> first_node);
+void DrawGraphDuringMH(shared_ptr<Node> first_node, queue< shared_ptr<Node> >& touched_nodes);
 
 size_t CalculateNumberOfRandomChoices(shared_ptr<Node>);
 

@@ -15,6 +15,8 @@
 #include <stack>
 #include <utility>
 #include <fstream>
+#include <deque>
+#include <iterator>
 #include "boost/weak_ptr.hpp"
 #include "boost/shared_ptr.hpp"
 #include "boost/lexical_cast.hpp"

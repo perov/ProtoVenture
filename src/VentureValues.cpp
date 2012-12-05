@@ -3,13 +3,36 @@
 #include "VentureValues.h"
 #include "VentureParser.h"
 
-void VentureValue::CheckMyData() {
+void VentureValue::CheckMyData(VentureValue* venture_value) {
   // This is standard blank checker.
 }
-
-void VentureCount::CheckMyData() {
-  if (data < 0) {
+void VentureCount::CheckMyData(VentureValue* venture_value) {
+  if (venture_value->GetInteger() < 0) {
     throw std::exception("VentureCount should be non-negative.");
+  }
+}
+void VentureReal::CheckMyData(VentureValue* venture_value) {
+  venture_value->GetReal();
+}
+void VentureProbability::CheckMyData(VentureValue* venture_value) {
+  if (venture_value->GetReal() < 0.0 || venture_value->GetReal() > 1.0) { // Add acceptable epsilon error?
+    throw std::exception("VentureProbability should be non-negative.");
+  }
+}
+void VentureAtom::CheckMyData(VentureValue* venture_value) {
+  if (venture_value->GetInteger() < 0) {
+    throw std::exception("VentureAtom should be non-negative.");
+  }
+}
+void VentureSimplexPoint::CheckMyData(VentureValue* venture_value) {
+  if (venture_value->GetInteger() < 0) {
+    throw std::exception("VentureCount should be non-negative.");
+  }
+}
+void VentureSmoothedCount::CheckMyData(VentureValue* venture_value) {
+  if (venture_value->GetReal() <= 0.0) { // Add acceptable epsilon error.
+                                         // What about zero?
+    throw std::exception("VentureSmoothedCount should be positive.");
   }
 }
 
@@ -19,21 +42,16 @@ VentureValue::VentureValue() {
 }
 VentureBoolean::VentureBoolean(const bool data) : data(data) {}
 VentureCount::VentureCount(const int data) : data(data) {
-  cout << "Creating: VentureCount" << endl; 
-  this->CheckMyData();
+  this->CheckMyData(this);
 }
-/*VentureCount::VentureCount(const string& input) : data(boost::lexical_cast<int>(data)) {
-  this->CheckMyData();
-}*/
 VentureReal::VentureReal(const real data) : data(data) {}
 VentureProbability::VentureProbability(const real data) : data(data) {
-  if (data < 0.0 || data > 1.0) { // Add acceptable epsilon error.
-    throw std::exception("VentureProbability should be non-negative.");
-  }
+  this->CheckMyData(this);
 }
 VentureSimplexPoint::VentureSimplexPoint(vector<real>& input_data)
   // : data(SOMEFUNCTION(data)) -- it should be implemented in this way? 
 {
+  this->CheckMyData(this); // Blank.
   if (input_data.size() <= 1) {
     throw std::exception("VentureSimplexPoint should be at least two-dimensional.");
   }
@@ -55,22 +73,22 @@ VentureSimplexPoint::VentureSimplexPoint(vector<real>& input_data)
   }
 }
 VentureAtom::VentureAtom(const int data) : data(data) {
-  if (data < 0) {
-    throw std::exception("VentureAtom should be non-negative.");
-  }
+  this->CheckMyData(this);
 }
 VentureSmoothedCount::VentureSmoothedCount(const real data) : data(data) {
-  if (data <= 0.0) { // Add acceptable epsilon error.
-                      // What about zero?
-    throw std::exception("VentureProbability should be positive.");
-  }
+  this->CheckMyData(this);
 }
 VentureNil::VentureNil() : VentureList(shared_ptr<VentureValue>()) {}
 VentureList::VentureList(shared_ptr<VentureValue> car)
   : car(car), cdr(NIL_INSTANCE) {}
 VentureXRP::VentureXRP(shared_ptr<XRP> xrp)
   : xrp(xrp) {}
-VentureSymbol::VentureSymbol(const string& symbol) : symbol(symbol) {}
+VentureSymbol::VentureSymbol(const string& symbol) : symbol(symbol) {
+  this->CheckMyData(this); // Blank.
+  if (legal_SYMBOL_name(symbol) == false) {
+    throw std::exception(("Incorrect symbol: " + symbol + ".").c_str());
+  }
+}
 VentureLambda::VentureLambda(shared_ptr<VentureList> formal_arguments,
               shared_ptr<NodeEvaluation> expressions,
               shared_ptr<NodeEnvironment> scope_environment)
@@ -96,7 +114,7 @@ VentureLambda::~VentureLambda() { cout << "Deleting: VentureLambda" << endl; }
 VentureXRP::~VentureXRP() { cout << "Deleting: VentureXRP" << endl; }
 */
 VentureBoolean::~VentureBoolean() {}
-VentureCount::~VentureCount() { cout << "Deleting: VentureCount" << endl; }
+VentureCount::~VentureCount() {}
 VentureReal::~VentureReal() {}
 VentureProbability::~VentureProbability() {}
 VentureAtom::~VentureAtom() {}
@@ -122,6 +140,37 @@ VentureDataTypes VentureNil::GetType() { return NIL; }
 VentureDataTypes VentureSymbol::GetType() { return SYMBOL; }
 VentureDataTypes VentureXRP::GetType() { return XRP_REFERENCE; }
 VentureDataTypes VentureLambda::GetType() { return LAMBDA; }
+
+// *** GetReal ***
+real VentureValue::GetReal() {
+  throw std::exception("GetReal() is not implemented for this type.");
+}
+real VentureCount::GetReal() {
+  return data;
+}
+real VentureReal::GetReal() {
+  return data;
+}
+real VentureProbability::GetReal() {
+  return data;
+}
+real VentureAtom::GetReal() {
+  return data;
+}
+real VentureSmoothedCount::GetReal() {
+  return data;
+}
+
+// *** GetInteger ***
+int VentureValue::GetInteger() {
+  throw std::exception("GetInteger() is not implemented for this type.");
+}
+int VentureCount::GetInteger() {
+  return data;
+}
+int VentureAtom::GetInteger() {
+  return data;
+}
 
 // *** GetString ***
 string VentureValue::GetString() { return "UNDEFINED"; }
@@ -163,6 +212,43 @@ string VentureList::GetString() {
   }
   output += ")";
   return output;
+}
+
+// *** Returning Python objects ***
+PyObject* VentureValue::GetAsPythonObject() { throw std::exception("Should not be called."); }
+PyObject* VentureBoolean::GetAsPythonObject() { if (this->data) { Py_INCREF(Py_True); return Py_True; } else { Py_INCREF(Py_False); return Py_False; } }
+PyObject* VentureCount::GetAsPythonObject() { return Py_BuildValue("i", this->data); }
+PyObject* VentureReal::GetAsPythonObject() { return Py_BuildValue("d", this->data); }
+PyObject* VentureAtom::GetAsPythonObject() { return Py_BuildValue("i", this->data); }
+PyObject* VentureProbability::GetAsPythonObject() { return Py_BuildValue("d", this->data); }
+PyObject* VentureSimplexPoint::GetAsPythonObject() {
+  double sum = 0.0;
+  PyObject* returning_tuple = PyTuple_New(data.size() + 1);
+  for (size_t index = 0; index < data.size(); index++) {
+    PyTuple_SetItem(returning_tuple, index, Py_BuildValue("d", data[index]));
+    sum += data[index];
+  }
+  PyTuple_SetItem(returning_tuple, data.size(), Py_BuildValue("d", 1.0 - sum));
+  return returning_tuple;
+}
+PyObject* VentureSmoothedCount::GetAsPythonObject() { return Py_BuildValue("d", this->data); }
+PyObject* VentureNil::GetAsPythonObject() { return Py_BuildValue("[]"); }
+PyObject* VentureSymbol::GetAsPythonObject() { return Py_BuildValue("s", this->symbol.c_str()); }
+PyObject* VentureLambda::GetAsPythonObject() { return Py_BuildValue("s", "LAMBDA"); } // Specify LAMBDA's reference.
+PyObject* VentureXRP::GetAsPythonObject() { return Py_BuildValue("s", "XRP_REFERENCE"); } // Specify LAMBDA's reference.
+PyObject* VentureList::GetAsPythonObject() {
+  vector< PyObject* > elements;
+  shared_ptr<VentureList> iterator = dynamic_pointer_cast<VentureList>(this->shared_from_this());
+  while (iterator->GetType() != NIL) {
+    assert(iterator != NIL_INSTANCE);
+    elements.push_back(iterator->car->GetAsPythonObject());
+    iterator = iterator->cdr;
+  }
+  PyObject* returning_list = PyList_New(elements.size());
+  for (size_t index = 0; index < elements.size(); index++) {
+    PyList_SetItem(returning_list, index, elements[index]);
+  }
+  return returning_list;
 }
 
 // *** Function for VentureSymbol ***
