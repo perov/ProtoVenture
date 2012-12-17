@@ -54,4 +54,10 @@ extern gsl_rng* random_generator;
 
 #include <ctime>
 
+// Using for Windows: http://sourceware.org/pthreads-win32/
+// (So requires the pthreadVC2.dll)
+#include <pthread.h>
+
+#include "Utilities.h"
+
 #endif

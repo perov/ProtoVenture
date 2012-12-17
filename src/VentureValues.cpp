@@ -8,7 +8,7 @@ void VentureValue::CheckMyData(VentureValue* venture_value) {
 }
 void VentureCount::CheckMyData(VentureValue* venture_value) {
   if (venture_value->GetInteger() < 0) {
-    throw std::exception("VentureCount should be non-negative.");
+    throw std::runtime_error("VentureCount should be non-negative.");
   }
 }
 void VentureReal::CheckMyData(VentureValue* venture_value) {
@@ -16,23 +16,23 @@ void VentureReal::CheckMyData(VentureValue* venture_value) {
 }
 void VentureProbability::CheckMyData(VentureValue* venture_value) {
   if (venture_value->GetReal() < 0.0 || venture_value->GetReal() > 1.0) { // Add acceptable epsilon error?
-    throw std::exception("VentureProbability should be non-negative.");
+    throw std::runtime_error("VentureProbability should be non-negative.");
   }
 }
 void VentureAtom::CheckMyData(VentureValue* venture_value) {
   if (venture_value->GetInteger() < 0) {
-    throw std::exception("VentureAtom should be non-negative.");
+    throw std::runtime_error("VentureAtom should be non-negative.");
   }
 }
 void VentureSimplexPoint::CheckMyData(VentureValue* venture_value) {
   if (venture_value->GetInteger() < 0) {
-    throw std::exception("VentureCount should be non-negative.");
+    throw std::runtime_error("VentureCount should be non-negative.");
   }
 }
 void VentureSmoothedCount::CheckMyData(VentureValue* venture_value) {
   if (venture_value->GetReal() <= 0.0) { // Add acceptable epsilon error.
                                          // What about zero?
-    throw std::exception("VentureSmoothedCount should be positive.");
+    throw std::runtime_error("VentureSmoothedCount should be positive.");
   }
 }
 
@@ -53,14 +53,14 @@ VentureSimplexPoint::VentureSimplexPoint(vector<real>& input_data)
 {
   this->CheckMyData(this); // Blank.
   if (input_data.size() <= 1) {
-    throw std::exception("VentureSimplexPoint should be at least two-dimensional.");
+    throw std::runtime_error("VentureSimplexPoint should be at least two-dimensional.");
   }
   double sum = 0.0;
   // Change the data size preliminary?
   for (size_t index = 0; index < input_data.size(); index++)
   {
     if (input_data[index] < 0.0) { // Add acceptable epsilon error?
-      throw std::exception("VentureSimplexPoint element should be non-negative.");
+      throw std::runtime_error("VentureSimplexPoint element should be non-negative.");
     }
     if (index + 1 != input_data.size())
     {
@@ -69,7 +69,7 @@ VentureSimplexPoint::VentureSimplexPoint(vector<real>& input_data)
     sum += input_data[index];
   }
   if (fabs(sum - 1.0) > comparison_epsilon) {
-    throw std::exception("Sum of VentureSimplexPoint elements should be equal to 1.0.");
+    throw std::runtime_error("Sum of VentureSimplexPoint elements should be equal to 1.0.");
   }
 }
 VentureAtom::VentureAtom(const int data) : data(data) {
@@ -86,7 +86,7 @@ VentureXRP::VentureXRP(shared_ptr<XRP> xrp)
 VentureSymbol::VentureSymbol(const string& symbol) : symbol(symbol) {
   this->CheckMyData(this); // Blank.
   if (legal_SYMBOL_name(symbol) == false) {
-    throw std::exception(("Incorrect symbol: " + symbol + ".").c_str());
+    throw std::runtime_error(("Incorrect symbol: " + symbol + ".").c_str());
   }
 }
 VentureLambda::VentureLambda(shared_ptr<VentureList> formal_arguments,
@@ -143,7 +143,7 @@ VentureDataTypes VentureLambda::GetType() { return LAMBDA; }
 
 // *** GetReal ***
 real VentureValue::GetReal() {
-  throw std::exception("GetReal() is not implemented for this type.");
+  throw std::runtime_error("GetReal() is not implemented for this type.");
 }
 real VentureCount::GetReal() {
   return data;
@@ -160,10 +160,17 @@ real VentureAtom::GetReal() {
 real VentureSmoothedCount::GetReal() {
   return data;
 }
+real VentureBoolean::GetReal() { // Should be deleted.
+  if (data == true) {
+    return 1.0;
+  } else {
+    return 0.0;
+  }
+}
 
 // *** GetInteger ***
 int VentureValue::GetInteger() {
-  throw std::exception("GetInteger() is not implemented for this type.");
+  throw std::runtime_error(("GetInteger() is not implemented for this type" + boost::lexical_cast<string>(this->GetType()) + ".").c_str());
 }
 int VentureCount::GetInteger() {
   return data;
@@ -215,7 +222,7 @@ string VentureList::GetString() {
 }
 
 // *** Returning Python objects ***
-PyObject* VentureValue::GetAsPythonObject() { throw std::exception("Should not be called."); }
+PyObject* VentureValue::GetAsPythonObject() { throw std::runtime_error("Should not be called."); }
 PyObject* VentureBoolean::GetAsPythonObject() { if (this->data) { Py_INCREF(Py_True); return Py_True; } else { Py_INCREF(Py_False); return Py_False; } }
 PyObject* VentureCount::GetAsPythonObject() { return Py_BuildValue("i", this->data); }
 PyObject* VentureReal::GetAsPythonObject() { return Py_BuildValue("d", this->data); }
@@ -270,7 +277,7 @@ bool VerifyVentureType(shared_ptr<VentureValue> value) {
 template <typename T>
 void AssertVentureType(shared_ptr<VentureValue> value) {
   if (!VerifyVentureType<T>(value)) {
-    throw std::exception("Assertion: not the right type.");
+    throw std::runtime_error(("Assertion: not the right type: has " + boost::lexical_cast<string>(value->GetType()) + ", we want '...'.").c_str());
   }
 }
 template <typename T>
@@ -279,9 +286,18 @@ shared_ptr<T> ToVentureType(shared_ptr<VentureValue> value) {
   return dynamic_pointer_cast<T>(value);
 }
 
+void __BlankFunction1() { // Why without this function the g++ (Unix) with -O2 returns that it cannot find them?
+  ToVentureType<VentureAtom>(shared_ptr<VentureValue>());
+  ToVentureType<VentureLambda>(shared_ptr<VentureValue>());
+  ToVentureType<VentureSymbol>(shared_ptr<VentureValue>());
+  ToVentureType<VentureReal>(shared_ptr<VentureValue>());
+  ToVentureType<VentureCount>(shared_ptr<VentureValue>());
+  ToVentureType<VentureBoolean>(shared_ptr<VentureValue>());
+}
+
 // *** CompareByValue ***
 bool VentureValue::CompareByValue(shared_ptr<VentureValue> another) {
-  throw std::exception("Should not be called.");
+  throw std::runtime_error("Should not be called.");
 }
 bool VentureSymbol::CompareByValue(shared_ptr<VentureValue> another) {
   return (this->symbol == ToVentureType<VentureSymbol>(another)->symbol);
@@ -347,7 +363,7 @@ shared_ptr<VentureValue> GetNth(shared_ptr<VentureList> list, size_t position) {
 }
 void AddToList(shared_ptr<VentureList> target_list, shared_ptr<VentureValue> element) {
   if (target_list->GetType() == NIL) {
-    throw std::exception("Function AddToList should not change NIL_INSTANCE.");
+    throw std::runtime_error("Function AddToList should not change NIL_INSTANCE.");
   }
   while (target_list->cdr != NIL_INSTANCE) {
     target_list = GetNext(target_list);
@@ -368,7 +384,7 @@ bool StandardPredicate(shared_ptr<VentureValue> value) {
 // *** DEPRECATED THINGS FOR WORK WITH VentureTypes ***
 void AssertVentureSymbol(shared_ptr<VentureValue> value) {
   if (dynamic_cast<VentureSymbol*>(value.get()) == 0 || value->GetType() != SYMBOL) {
-    throw std::exception(string(string("Assertion: it is not a symbol.") + value->GetString() + string(boost::lexical_cast<string>(value->GetType()))).c_str());
+    throw std::runtime_error(string(string("Assertion: it is not a symbol.") + value->GetString() + string(boost::lexical_cast<string>(value->GetType()))).c_str());
   }
 }
 shared_ptr<VentureSymbol> ToVentureSymbol(shared_ptr<VentureValue> value_reference) {
@@ -378,7 +394,7 @@ shared_ptr<VentureSymbol> ToVentureSymbol(shared_ptr<VentureValue> value_referen
 }
 void AssertVentureList(shared_ptr<VentureValue> value) {;
   if (dynamic_cast<VentureList*>(value.get()) == 0) { // If dynamic_cast returns NULL.
-    throw std::exception(string(string("Assertion: it is not a list.") + value->GetString() + string(boost::lexical_cast<string>(value->GetType()))).c_str());
+    throw std::runtime_error(string(string("Assertion: it is not a list.") + value->GetString() + string(boost::lexical_cast<string>(value->GetType()))).c_str());
   }
 }
 shared_ptr<VentureList> ToVentureList(shared_ptr<VentureValue> value_reference) {

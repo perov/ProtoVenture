@@ -4,6 +4,10 @@
 
 #include "Header.h"
 #include "Analyzer.h"
+#include "Evaluator.h"
+#include "ERPs.h"
+#include "Primitives.h"
+#include "MHProposal.h"
 
 struct directive_entry {
   // Notice:
@@ -23,5 +27,19 @@ extern size_t last_directive_id;
 extern map<size_t, directive_entry> directives;
 
 shared_ptr<NodeEvaluation> GetLastDirectiveNode();
+
+extern bool need_to_return_inference;
+extern int continuous_inference_status;
+void* ContinuousInference(void* arguments);
+void PauseInference();
+void ReturnInferenceIfNecessary();
+void DeleteRIPL();
+void ClearRIPL();
+void InitRIPL();
+shared_ptr<VentureValue> ReportValue(size_t directive_id);
+void ForgetDirective(size_t directive_id);
+size_t ExecuteDirective(string& directive_as_string,
+                        shared_ptr<NodeEvaluation> directive_node);
+void BindStandardElementsToGlobalEnvironment();
 
 #endif

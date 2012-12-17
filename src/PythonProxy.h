@@ -1,0 +1,59 @@
+
+#ifndef VENTURE___PYTHON_PROXY_H
+#define VENTURE___PYTHON_PROXY_H
+
+#include "Header.h"
+
+#include "VentureValues.h"
+#include "VentureParser.h"
+#include "Analyzer.h"
+#include "Evaluator.h"
+#include "XRP.h"
+#include "MHProposal.h"
+#include "RIPL.h"
+#include "ERPs.h"
+#include "Primitives.h"
+#include "PythonProxy.h"
+
+string PythonObjectAsString(PyObject* python_object);
+
+bool ConvertPythonObjectToVentureValue
+  (PyObject* python_object,
+   shared_ptr<VentureValue>* pointer_to_shared_pointer);
+
+PyObject*
+ForPython__report_value(PyObject *self, PyObject *args);
+
+PyObject*
+ForPython__report_directives(PyObject *self, PyObject *args);
+
+PyObject*
+ForPython__clear(PyObject *self, PyObject *args);
+
+PyObject*
+ForPython__forget(PyObject *self, PyObject *args);
+
+PyObject*
+ForPython__infer(PyObject *self, PyObject *args);
+
+PyObject*
+ForPython__start_continuous_inference(PyObject *self, PyObject *args);
+
+PyObject*
+ForPython__continuous_inference_status(PyObject *self, PyObject *args);
+
+PyObject*
+ForPython__stop_continuous_inference(PyObject *self, PyObject *args);
+
+PyObject*
+ForPython__assume(PyObject *self, PyObject *args);
+
+PyObject*
+ForPython__predict(PyObject *self, PyObject *args);
+
+PyObject*
+ForPython__observe(PyObject *self, PyObject *args);
+
+extern PyMethodDef MethodsForPythons[];
+
+#endif

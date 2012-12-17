@@ -42,7 +42,7 @@ ReevaluationParameters::ReevaluationParameters()
 shared_ptr<VentureValue>
 XRP::Sample(vector< shared_ptr<VentureValue> >& arguments,
             shared_ptr<NodeXRPApplication> caller) {
-  shared_ptr<VentureValue> new_sample = Sampler(arguments);
+  shared_ptr<VentureValue> new_sample = Sampler(arguments, caller);
   real loglikelihood = GetSampledLoglikelihood(arguments, new_sample);
   Incorporate(arguments, new_sample);
   caller->sampled_value = new_sample;
@@ -54,11 +54,12 @@ XRP::RescorerResampler(vector< shared_ptr<VentureValue> >& old_arguments,
                        vector< shared_ptr<VentureValue> >& new_arguments,
                        shared_ptr<NodeXRPApplication> caller,
                        bool forced_resampling) {
+  Freeze(old_arguments, caller);
   if (forced_resampling || !CouldBeRescored()) {
     Remove(old_arguments, caller->sampled_value);
     real old_loglikelihood = GetSampledLoglikelihood(old_arguments, caller->sampled_value);
     
-    shared_ptr<VentureValue> new_sample = Sampler(new_arguments);
+    shared_ptr<VentureValue> new_sample = Sampler(new_arguments, caller);
     real new_loglikelihood = GetSampledLoglikelihood(new_arguments, new_sample);
     Incorporate(new_arguments, new_sample);
     caller->new_sampled_value = new_sample;
@@ -78,265 +79,290 @@ XRP::RescorerResampler(vector< shared_ptr<VentureValue> >& old_arguments,
 }
 
 XRP::XRP() {}
-shared_ptr<VentureValue> XRP::Sampler(vector< shared_ptr<VentureValue> >& arguments) {
-  throw std::exception("It should not happen.");
+shared_ptr<VentureValue> XRP::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller) {
+  throw std::runtime_error("It should not happen.");
 } // Should be just ";"?
+void XRP::Unsampler(vector< shared_ptr<VentureValue> >& old_arguments, shared_ptr<NodeXRPApplication> caller) {
+  
+}
+void XRP::Freeze(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller) {
+  
+}
+void XRP::Unfreeze(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller) {
+  
+}
 real XRP::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
                                       shared_ptr<VentureValue> sampled_value) {
-  throw std::exception("It should not happen.");
+  throw std::runtime_error("It should not happen.");
 } // Should be just ";"?
 void XRP::Incorporate(vector< shared_ptr<VentureValue> >& arguments,
                               shared_ptr<VentureValue> sampled_value) {
-  throw std::exception("It should not happen.");
+  throw std::runtime_error("It should not happen.");
 } // Should be just ";"?
 void XRP::Remove(vector< shared_ptr<VentureValue> >& arguments,
                           shared_ptr<VentureValue> sampled_value) {
-  throw std::exception("It should not happen.");
+  throw std::runtime_error("It should not happen.");
 } // Should be just ";"?
   
 bool XRP::IsRandomChoice() { return false; }
 bool XRP::CouldBeRescored() { return false; }
 string XRP::GetName() { return "XRPClass"; }
 
-int UniformDiscrete(int a, int b) {
-  return gsl_ran_flat(random_generator, a, b + 1);
+// CRPmaker
+shared_ptr<VentureValue> XRP__CRPmaker::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller) {
+  if (arguments.size() != 1) {
+    throw std::runtime_error("Wrong number of arguments.");
+  }
+  VentureSmoothedCount::CheckMyData(arguments[0].get());
+
+  shared_ptr<XRP> new_xrp = shared_ptr<XRP>(new XRP__CRPsampler()); // If we put here XRP__CRPmaker() (it is stupid, but nevertheless), it raises some memory error. Why?
+  // Should be done on the line above (through the XRP__CRPsampler constructor!):
+  dynamic_pointer_cast<XRP__CRPsampler>(new_xrp)->alpha = arguments[0]->GetReal();
+  dynamic_pointer_cast<XRP__CRPsampler>(new_xrp)->current_number_of_clients = 0;
+  return shared_ptr<VentureXRP>(new VentureXRP(new_xrp));
 }
 
-bool VerifyOrderPattern(vector<size_t>& omit_pattern,
-                        vector<size_t>& checking_order) {
-  for (size_t index = 0; index < omit_pattern.size(); index++) {
-    if (index >= checking_order.size()) {
-      // If there is no bugs, it means that we have reached
-      // the necessary ApplicationCaller.
-      return false;
-    }
-    if (checking_order[index] != omit_pattern[index]) {
-      return false;
-    }
-  }
-  return true;
+real XRP__CRPmaker::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
+                                      shared_ptr<VentureValue> sampled_value) {
+  return log(1.0); // ?
 }
 
-void DeleteNode(shared_ptr<Node> node) {
-  if (node->GetNodeType() == LOOKUP) {
-    // See the notice "BAD-POINTER" in Analyzer.cpp
-    if (dynamic_pointer_cast<NodeLookup>(node)->where_lookuped != shared_ptr<NodeVariable>()) {
-      dynamic_pointer_cast<NodeLookup>(node)->where_lookuped->output_references.erase(node);
-    }
-  }
-  if (node->GetNodeType() == XRP_APPLICATION) {
-    // See the notice "BAD-POINTER" in Analyzer.cpp
-    if (dynamic_pointer_cast<NodeXRPApplication>(node)->xrp != shared_ptr<VentureXRP>() &&
-          dynamic_pointer_cast<NodeXRPApplication>(node)->xrp->xrp != shared_ptr<XRP>()) {
-      if (dynamic_pointer_cast<NodeXRPApplication>(node)->xrp->xrp->IsRandomChoice() == true) {
-        random_choices.erase(dynamic_pointer_cast<NodeXRPApplication>(node->shared_from_this()));
-      }
-    }
-  }
-  node->DeleteNode();
+void XRP__CRPmaker::Incorporate(vector< shared_ptr<VentureValue> >& arguments,
+                              shared_ptr<VentureValue> sampled_value) {
 }
 
-void DeleteBranch(shared_ptr<Node> first_node) {
-  ApplyToMeAndAllMyChildren(first_node, DeleteNode);
+void XRP__CRPmaker::Remove(vector< shared_ptr<VentureValue> >& arguments,
+                          shared_ptr<VentureValue> sampled_value) {
+}
+bool XRP__CRPmaker::IsRandomChoice() { return false; }
+bool XRP__CRPmaker::CouldBeRescored() { return true; }
+string XRP__CRPmaker::GetName() { return "XRP__CRPmaker"; }
+
+// CRPsampler
+shared_ptr<VentureValue> XRP__CRPsampler::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller) {
+  if (arguments.size() != 0) {
+    throw std::runtime_error("Wrong number of arguments.");
+  }
+  double random_uniform_0_1 = gsl_ran_flat(random_generator, 0, 1);
+  double accumulated_probability = 0.0;
+  double expected_sum = this->alpha +
+                          this->current_number_of_clients;
+  for (map<int, size_t>::const_iterator iterator = this->atoms.begin();
+         iterator != this->atoms.end();
+         iterator++) {
+    accumulated_probability += static_cast<double>((*iterator).second) / expected_sum;
+    if (random_uniform_0_1 <= accumulated_probability) {
+      return shared_ptr<VentureAtom>(new VentureAtom((*iterator).first));
+    }
+  }
+  next_gensym_atom++;
+  //cout << "Resampling XRP" << next_gensym_atom << endl;
+  return shared_ptr<VentureAtom>(new VentureAtom(next_gensym_atom));
 }
 
-void MakeMHProposal() {
-  size_t number_of_random_choices = random_choices.size();
-  if (number_of_random_choices == 0) {
-    return; // There is no random choices in the trace.
+real XRP__CRPsampler::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
+                                      shared_ptr<VentureValue> sampled_value) {
+  if (this->atoms.count(ToVentureType<VentureAtom>(sampled_value)->data) == 0) {
+    return log(this->alpha /
+                (this->alpha +
+                  this->current_number_of_clients));
+  } else {
+    // Not 100% true, but it is okay.
+    return log(this->atoms[ToVentureType<VentureAtom>(sampled_value)->data] /
+                (this->alpha +
+                  this->current_number_of_clients));
   }
+}
 
-  set< shared_ptr<NodeXRPApplication> >::iterator iterator = random_choices.begin();
-  int random_choice_id = UniformDiscrete(0, number_of_random_choices - 1);
-  std::advance(iterator, random_choice_id);
+void XRP__CRPsampler::Incorporate(vector< shared_ptr<VentureValue> >& arguments,
+                              shared_ptr<VentureValue> sampled_value) {
+  if (this->atoms.count(ToVentureType<VentureAtom>(sampled_value)->data) == 1) {
+    this->atoms[ToVentureType<VentureAtom>(sampled_value)->data]++;
+  } else {
+    this->atoms[ToVentureType<VentureAtom>(sampled_value)->data] = 1;
+  }
+  this->current_number_of_clients++;
+}
 
-  shared_ptr<NodeXRPApplication> // FIXME: Should be NodeEvaluation?
-    random_choice = *iterator;
-
-  set<ReevaluationEntry,
-      ReevaluationOrderComparer> reevaluation_queue;
-  reevaluation_queue.insert(ReevaluationEntry(random_choice,
-                                            shared_ptr<NodeEvaluation>(),
-                                            shared_ptr<VentureValue>()));
-
-  stack<OmitPattern> omit_patterns;
-
-  queue< shared_ptr<Node> > touched_nodes;
-  
-  ReevaluationParameters reevaluation_parameters;
-
-  while (reevaluation_queue.size() != 0) {
-    ReevaluationEntry current_reevaluation = *(reevaluation_queue.rbegin());
-    {
-      set<ReevaluationEntry,
-          ReevaluationOrderComparer>::iterator iterator_to_last_element = reevaluation_queue.end();
-      --iterator_to_last_element;
-      reevaluation_queue.erase(iterator_to_last_element);
+void XRP__CRPsampler::Remove(vector< shared_ptr<VentureValue> >& arguments,
+                          shared_ptr<VentureValue> sampled_value) {
+  if (this->atoms.count(ToVentureType<VentureAtom>(sampled_value)->data) == 0) {
+    throw std::runtime_error("CRP statistics does not have this atom.");
+  } else {
+    this->atoms[ToVentureType<VentureAtom>(sampled_value)->data]--;
+    if (this->atoms[ToVentureType<VentureAtom>(sampled_value)->data] == 0) {
+      this->atoms.erase(ToVentureType<VentureAtom>(sampled_value)->data);
     }
-    if (!omit_patterns.empty()) {
-      if (VerifyOrderPattern(omit_patterns.top().omit_pattern, current_reevaluation.reevaluation_node->myorder)) {
-        cout << "Omitting" << endl;
-        continue;
-      }
-      if (omit_patterns.top().stop_pattern == current_reevaluation.reevaluation_node->myorder) {
-        omit_patterns.pop();
-      }
+  }
+  this->current_number_of_clients--;
+}
+bool XRP__CRPsampler::IsRandomChoice() { return true; }
+bool XRP__CRPsampler::CouldBeRescored() { return true; }
+string XRP__CRPsampler::GetName() { return "XRP__CRPsampler"; }
+
+
+
+
+
+shared_ptr<VentureValue> XRP__memoizer::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller) {
+  if (arguments.size() != 1) {
+    throw std::runtime_error("Wrong number of arguments.");
+  }
+  // Check that it is LAMBDA or XRPApplication.
+
+  shared_ptr<XRP> new_xrp = shared_ptr<XRP>(new XRP__memoized_procedure());
+  dynamic_pointer_cast<XRP__memoized_procedure>(new_xrp)->operator_value = arguments[0]; // Should be done on the line above through its constructor.
+  return shared_ptr<VentureXRP>(new VentureXRP(new_xrp));
+}
+
+real XRP__memoizer::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
+                                      shared_ptr<VentureValue> sampled_value) {
+  return log(1.0); // ?
+}
+
+void XRP__memoizer::Incorporate(vector< shared_ptr<VentureValue> >& arguments,
+                              shared_ptr<VentureValue> sampled_value) {
+}
+
+void XRP__memoizer::Remove(vector< shared_ptr<VentureValue> >& arguments,
+                          shared_ptr<VentureValue> sampled_value) {
+}
+bool XRP__memoizer::IsRandomChoice() { return false; }
+bool XRP__memoizer::CouldBeRescored() { return false; }
+string XRP__memoizer::GetName() { return "XRP__memoizer"; }
+
+
+
+
+
+
+string XRP__memoized_procedure__MakeMapKeyFromArguments(vector< shared_ptr<VentureValue> >& arguments) {
+  string arguments_strings = "(";
+  for (size_t index = 0; index < arguments.size(); index++) {
+    if (index != 0) { arguments_strings += " "; }
+    arguments_strings += arguments[index]->GetString();
+  }
+  arguments_strings += ")";
+  return arguments_strings;
+}
+
+shared_ptr<VentureValue> XRP__memoized_procedure::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller) {
+  string mem_table_key = XRP__memoized_procedure__MakeMapKeyFromArguments(arguments);
+
+  if (this->mem_table.count(mem_table_key) == 0) {
+    shared_ptr<NodeSelfEvaluating> operator_node =
+      shared_ptr<NodeSelfEvaluating>(new NodeSelfEvaluating(operator_value));
+    vector< shared_ptr<NodeEvaluation> > operands_nodes;
+    for (size_t index = 0; index < arguments.size(); index++) {
+      operands_nodes.push_back(shared_ptr<NodeSelfEvaluating>(new NodeSelfEvaluating(arguments[index])));
     }
-#ifndef NDEBUG
-    std::deque< shared_ptr<Node> >::const_iterator already_existent_element =
-      std::find(touched_nodes._Get_container().begin(), touched_nodes._Get_container().end(), current_reevaluation.reevaluation_node);
-    if (!(already_existent_element == touched_nodes._Get_container().end())) {
-      int distance = std::distance(touched_nodes._Get_container().begin(), already_existent_element);
-      cout << "Pam: " << distance << endl;
-      DrawGraphDuringMH(GetLastDirectiveNode(), touched_nodes);
-    }
-#endif
-    assert(std::find(touched_nodes._Get_container().begin(), touched_nodes._Get_container().end(), current_reevaluation.reevaluation_node)
-      == touched_nodes._Get_container().end());
-    touched_nodes.push(current_reevaluation.reevaluation_node);
-    shared_ptr<ReevaluationResult> reevaluation_result =
-      current_reevaluation.reevaluation_node->Reevaluate(current_reevaluation.passing_value,
-                                                         current_reevaluation.caller,
-                                                         reevaluation_parameters);
+    shared_ptr<NodeApplicationCaller> application_caller =
+      shared_ptr<NodeApplicationCaller>(new NodeApplicationCaller(operator_node, operands_nodes));
     
-    if (reevaluation_result->pass_further == true) {
-      for (set< shared_ptr<Node> >::iterator iterator = current_reevaluation.reevaluation_node->output_references.begin();
-           iterator != current_reevaluation.reevaluation_node->output_references.end();
-           iterator++)
-      {
-        if ((*iterator)->GetNodeType() == VARIABLE) {
-          assert(std::find(touched_nodes._Get_container().begin(), touched_nodes._Get_container().end(), *iterator)
-            == touched_nodes._Get_container().end());
-          touched_nodes.push(*iterator);
-          assert(reevaluation_result->passing_value != shared_ptr<VentureValue>());
-          dynamic_pointer_cast<NodeVariable>(*iterator)->new_value = reevaluation_result->passing_value;
-          for (set< shared_ptr<Node> >::iterator variable_iterator =
-                 dynamic_pointer_cast<NodeVariable>(*iterator)->output_references.begin();
-               variable_iterator != dynamic_pointer_cast<NodeVariable>(*iterator)->output_references.end();
-               variable_iterator++)
-          {
-            assert((*variable_iterator)->GetNodeType() != VARIABLE);
-            reevaluation_queue.insert(ReevaluationEntry(dynamic_pointer_cast<NodeEvaluation>(*variable_iterator),
-                                                      current_reevaluation.caller, // Or just NULL?
-                                                      reevaluation_result->passing_value)); // Or also just NULL?
-          }
-        } else {
-          if (current_reevaluation.reevaluation_node->parent != shared_ptr<NodeEvaluation>()) {
-            if (current_reevaluation.reevaluation_node->parent->GetNodeType() == APPLICATION_CALLER &&
-                  dynamic_pointer_cast<NodeApplicationCaller>(current_reevaluation.reevaluation_node->parent)->application_operator ==
-                    current_reevaluation.reevaluation_node) {
-              if (CompareValue(reevaluation_result->passing_value,
-                               dynamic_pointer_cast<NodeApplicationCaller>(
-                                 current_reevaluation.reevaluation_node->parent)->saved_evaluated_operator)) {
-                continue; // The operator is the same.
-              }
-              omit_patterns.push(OmitPattern(dynamic_pointer_cast<NodeApplicationCaller>(
-                                               current_reevaluation.reevaluation_node->parent)->application_node->myorder,
-                                             current_reevaluation.reevaluation_node->parent->myorder));
-            }
-          }
-          assert(current_reevaluation.reevaluation_node != shared_ptr<NodeEvaluation>());
-          reevaluation_queue.insert(ReevaluationEntry(dynamic_pointer_cast<NodeEvaluation>(*iterator),
-                                                    current_reevaluation.reevaluation_node,
-                                                    reevaluation_result->passing_value));
+    this->mem_table.insert
+      (pair<string, XRP__memoizer_map_element>(mem_table_key, XRP__memoizer_map_element(application_caller)));
 
-        }
-      }
-    }
-  }
-  if (omit_patterns.size() > 0) {
-    throw std::exception("omit_patterns.size() > 0");
-  }
-
-  size_t posterior_number_of_random_choices =
-    number_of_random_choices + reevaluation_parameters.random_choices_delta;
-  real number_of_random_choices_formula_component =
-    log((1.0 / posterior_number_of_random_choices)
-          / (1.0 / number_of_random_choices));
-  real to_compare = number_of_random_choices_formula_component + reevaluation_parameters.loglikelihood_changes;
-  real random_value = log(gsl_ran_flat(random_generator, 0, 1));
-  //cout << random_value << " vs " << to_compare << " " << number_of_random_choices_formula_component <<
-  //  " " << reevaluation_parameters.loglikelihood_changes << endl;
-  MHDecision mh_decision;
-  if (random_value < to_compare) {
-    mh_decision = MH_APPROVED;
-    //cout << "Approved" << endl;
+    (*(this->mem_table.find(mem_table_key))).second.result =
+      Evaluator(this->mem_table[mem_table_key].application_caller_node,
+                caller->environment, // FIXME: Is it okay?
+                caller->parent, // FIXME: Is it okay?
+                caller);
   } else {
-    mh_decision = MH_DECLINED;
-    //cout << "Decline" << endl;
+    // Adding the output reference link by hand.
+    this->mem_table[mem_table_key].application_caller_node
+      ->output_references.insert(caller->parent);
   }
+  XRP__memoizer_map_element& mem_table_element =
+    (*(this->mem_table.find(mem_table_key))).second;
 
-  while (!touched_nodes.empty()) {
-    shared_ptr<Node> current_node = touched_nodes.front();
-    touched_nodes.pop();
-    if (current_node->GetNodeType() == VARIABLE) {
-      assert(dynamic_pointer_cast<NodeVariable>(current_node)->new_value != shared_ptr<VentureValue>());
-      if (mh_decision == MH_APPROVED) {
-        dynamic_pointer_cast<NodeVariable>(current_node)->value = dynamic_pointer_cast<NodeVariable>(current_node)->new_value;
-      }
-      dynamic_pointer_cast<NodeVariable>(current_node)->new_value = shared_ptr<VentureValue>();
-    } else if (current_node->GetNodeType() == APPLICATION_CALLER &&
-                 dynamic_pointer_cast<NodeApplicationCaller>(current_node)->new_application_node != shared_ptr<NodeEvaluation>())
-    {
-      if (mh_decision == MH_APPROVED) {
-        dynamic_pointer_cast<NodeApplicationCaller>(current_node)->application_node->environment->DeleteNode();
-        DeleteBranch(dynamic_pointer_cast<NodeApplicationCaller>(current_node)->application_node);
-        //cout << "Deleting" << endl;
-        //cout << dynamic_pointer_cast<NodeApplicationCaller>(current_node)->application_node->environment.use_count() << endl;
-        //cout << endl;
-      } else {
-        dynamic_pointer_cast<NodeApplicationCaller>(current_node)->new_application_node->environment->DeleteNode();
-        DeleteBranch(dynamic_pointer_cast<NodeApplicationCaller>(current_node)->new_application_node);
-      }
-      
-      if (mh_decision == MH_APPROVED) {
-        dynamic_pointer_cast<NodeApplicationCaller>(current_node)->application_node =
-          dynamic_pointer_cast<NodeApplicationCaller>(current_node)->new_application_node;
-        dynamic_pointer_cast<NodeApplicationCaller>(current_node)->saved_evaluated_operator =
-          dynamic_pointer_cast<NodeApplicationCaller>(current_node)->proposing_evaluated_operator;
-      }
-      dynamic_pointer_cast<NodeApplicationCaller>(current_node)->new_application_node = shared_ptr<NodeEvaluation>();
-      dynamic_pointer_cast<NodeApplicationCaller>(current_node)->proposing_evaluated_operator = shared_ptr<VentureValue>();
-    } else if (current_node->GetNodeType() == XRP_APPLICATION) {
-      // If it was resampled:
-      if (dynamic_pointer_cast<NodeXRPApplication>(current_node)->new_sampled_value != shared_ptr<VentureValue>()) {
-        // Should be implemented via the Remove and Incorporate!
-        if (mh_decision == MH_APPROVED) {
-          assert(dynamic_pointer_cast<NodeXRPApplication>(current_node)->new_sampled_value != shared_ptr<VentureValue>());
-          dynamic_pointer_cast<NodeXRPApplication>(current_node)->sampled_value =
-            dynamic_pointer_cast<NodeXRPApplication>(current_node)->new_sampled_value;
-        }
-        dynamic_pointer_cast<NodeXRPApplication>(current_node)->new_sampled_value = shared_ptr<VentureValue>();
-      }
-    } else if (current_node->GetNodeType() == DIRECTIVE_ASSUME) {
-      if (mh_decision == MH_APPROVED) {
-        dynamic_pointer_cast<NodeDirectiveAssume>(current_node)->my_value =
-          dynamic_pointer_cast<NodeDirectiveAssume>(current_node)->my_new_value;
-      }
-      dynamic_pointer_cast<NodeDirectiveAssume>(current_node)->my_new_value = shared_ptr<VentureValue>();
-    } else if (current_node->GetNodeType() == DIRECTIVE_PREDICT) {
-      if (mh_decision == MH_APPROVED) {
-        dynamic_pointer_cast<NodeDirectivePredict>(current_node)->my_value =
-          dynamic_pointer_cast<NodeDirectivePredict>(current_node)->my_new_value;
-      }
-      dynamic_pointer_cast<NodeDirectivePredict>(current_node)->my_new_value = shared_ptr<VentureValue>();
-    } else if (current_node->GetNodeType() == DIRECTIVE_ASSUME ||
-                current_node->GetNodeType() == DIRECTIVE_PREDICT ||
-                current_node->GetNodeType() == DIRECTIVE_OBSERVE ||
-                current_node->GetNodeType() == APPLICATION_CALLER ||
-                current_node->GetNodeType() == LOOKUP) {
-      // Nothing.
-    } else {
-      cout << current_node->GetNodeType() << endl;
-      throw std::exception("Unexpected node type.");
-    }
-  }
-  
-  /*
-  if (mh_decision == MH_APPROVED) {
-    cout << "Approved" << endl << endl << endl;
-  } else {
-    cout << "Decline" << endl << endl << endl;
-  }
-  */
+  mem_table_element.hidden_uses++;
+  return mem_table_element.result;
 }
+
+void XRP__memoized_procedure::Unsampler(vector< shared_ptr<VentureValue> >& old_arguments, shared_ptr<NodeXRPApplication> caller) {
+  string mem_table_key =
+    XRP__memoized_procedure__MakeMapKeyFromArguments(old_arguments);
+  if (this->mem_table.count(mem_table_key) == 0) {
+    throw std::runtime_error("Cannot find the necessary key in the mem table.");
+  }
+  XRP__memoizer_map_element& mem_table_element =
+    (*(this->mem_table.find(mem_table_key))).second;
+  if (caller->frozen == true) {
+    throw std::runtime_error("We should be never frozen at this time!"); // FIXME: What about the multi-thread version?
+  }
+  if (mem_table_element.hidden_uses == 0) {
+    throw std::runtime_error("(1) Cannot do 'mem_table_element.hidden_uses--'.");
+  }
+  mem_table_element.hidden_uses--;
+  if (mem_table_element.hidden_uses == 0 && mem_table_element.active_uses == 0) {
+    //cout << "*** Deleting the mem node" << endl;
+    ApplyToMeAndAllMyChildren(mem_table_element.application_caller_node, DeleteNode);
+    this->mem_table.erase(mem_table_key);
+  }
+}
+
+void XRP__memoized_procedure::Freeze(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller) {
+  if (caller->frozen == true) {
+    throw std::runtime_error("We should not be frozen yet at this time!");
+  }
+  string mem_table_key = XRP__memoized_procedure__MakeMapKeyFromArguments(arguments);
+  if (this->mem_table.count(mem_table_key) == 0) {
+    throw std::runtime_error("Cannot find the necessary key in the mem table.");
+  }
+  XRP__memoizer_map_element& mem_table_element =
+    (*(this->mem_table.find(mem_table_key))).second;
+  mem_table_element.frozen_elements++;
+  caller->frozen = true;
+}
+
+void XRP__memoized_procedure::Unfreeze(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller) {
+  if (caller->frozen == false) {
+    throw std::runtime_error("We should be already frozen at this time!");
+  }
+  string mem_table_key = XRP__memoized_procedure__MakeMapKeyFromArguments(arguments);
+  if (this->mem_table.count(mem_table_key) == 0) {
+    throw std::runtime_error("Cannot find the necessary key in the mem table.");
+  }
+  XRP__memoizer_map_element& mem_table_element =
+    (*(this->mem_table.find(mem_table_key))).second;
+  mem_table_element.frozen_elements--;
+  caller->frozen = false;
+}
+
+real XRP__memoized_procedure::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
+                                      shared_ptr<VentureValue> sampled_value) {
+  return log(1.0); // ?
+}
+
+void XRP__memoized_procedure::Incorporate(vector< shared_ptr<VentureValue> >& arguments,
+                              shared_ptr<VentureValue> sampled_value) {
+  string mem_table_key = XRP__memoized_procedure__MakeMapKeyFromArguments(arguments);
+  if (this->mem_table.count(mem_table_key) == 0) {
+    throw std::runtime_error("Cannot find the necessary key in the mem table.");
+  }
+  XRP__memoizer_map_element& mem_table_element =
+    (*(this->mem_table.find(mem_table_key))).second;
+  if (mem_table_element.hidden_uses == 0) {
+    throw std::runtime_error("(2) Cannot do 'mem_table_element.hidden_uses--'.");
+  }
+  mem_table_element.hidden_uses--;
+  mem_table_element.active_uses++;
+}
+
+void XRP__memoized_procedure::Remove(vector< shared_ptr<VentureValue> >& arguments,
+                          shared_ptr<VentureValue> sampled_value) {
+  string mem_table_key = XRP__memoized_procedure__MakeMapKeyFromArguments(arguments);
+  if (this->mem_table.count(mem_table_key) == 0) {
+    throw std::runtime_error("Cannot find the necessary key in the mem table.");
+  }
+  XRP__memoizer_map_element& mem_table_element =
+    (*(this->mem_table.find(mem_table_key))).second;
+  if (mem_table_element.active_uses == 0) {
+    throw std::runtime_error("Cannot do 'mem_table_element.active_uses--'.");
+  }
+  mem_table_element.hidden_uses++;
+  mem_table_element.active_uses--;
+}
+bool XRP__memoized_procedure::IsRandomChoice() { return false; }
+bool XRP__memoized_procedure::CouldBeRescored() { return false; }
+string XRP__memoized_procedure::GetName() { return "XRP__memoized_procedure"; }

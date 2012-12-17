@@ -32,6 +32,7 @@ shared_ptr<VentureValue> Evaluator(shared_ptr<NodeEvaluation> evaluation_node,
               dynamic_pointer_cast<NodeEvaluation>(evaluation_node->shared_from_this()));
   }
 
+  assert(evaluation_node->evaluated == false);
   evaluation_node->evaluated = true; // Not too early?
   return evaluation_node->Evaluate(environment);
 }
@@ -40,7 +41,7 @@ shared_ptr<Node> BindToEnvironment(shared_ptr<NodeEnvironment> target_environmen
                                   shared_ptr<VentureSymbol> variable_name,
                                   shared_ptr<VentureValue> binding_value) {
   if (target_environment->variables.count(variable_name->GetString()) != 0) {
-    throw std::exception(("Binding variable, which has been already bound: " + variable_name->GetString()).c_str());
+    throw std::runtime_error(("Binding variable, which has been already bound: " + variable_name->GetString()).c_str());
   }
   target_environment->variables[variable_name->GetString()] =
     shared_ptr<NodeVariable>(new NodeVariable(target_environment, binding_value));
@@ -52,7 +53,7 @@ void BindVariableToEnvironment(shared_ptr<NodeEnvironment> target_environment,
                                shared_ptr<VentureSymbol> variable_name,
                                shared_ptr<NodeVariable> binding_variable) {
   if (target_environment->variables.count(variable_name->GetString()) != 0) {
-    throw std::exception(("Binding variable, which has been already bound: " + variable_name->GetString()).c_str());
+    throw std::runtime_error(("Binding variable, which has been already bound: " + variable_name->GetString()).c_str());
   }
   target_environment->variables[variable_name->GetString()] =
     binding_variable;
@@ -81,7 +82,7 @@ shared_ptr<VentureValue> LookupValue(shared_ptr<NodeEnvironment> environment,
     }
   }
   //cout << "Error: " << variable_name->GetString() << endl;
-  throw std::exception((string("Unbound variable: ") + variable_name->GetString()).c_str());
+  throw std::runtime_error((string("Unbound variable: ") + variable_name->GetString()).c_str());
 }
 
 shared_ptr<VentureValue> LookupValue(shared_ptr<NodeEnvironment> environment,
@@ -89,7 +90,7 @@ shared_ptr<VentureValue> LookupValue(shared_ptr<NodeEnvironment> environment,
                                      shared_ptr<NodeEvaluation> lookuper,
                                      bool old_values) { // = false, see the header
   if (index >= environment->local_variables.size()) {
-    throw std::exception("LookupValue: out of bound.");
+    throw std::runtime_error("LookupValue: out of bound.");
   }
   if (lookuper->GetNodeType() == LOOKUP) {
     dynamic_pointer_cast<NodeLookup>(lookuper)->where_lookuped =

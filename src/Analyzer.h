@@ -8,7 +8,7 @@
 
 enum NodeTypes { UNDEFINED_NODE, ENVIRONMENT, VARIABLE, UNDEFINED_EVALUATION_NODE, DIRECTIVE_ASSUME,
                  DIRECTIVE_PREDICT, DIRECTIVE_OBSERVE, SELF_EVALUATING, LAMBDA_CREATOR,
-                 LOOKUP, APPLICATION_CALLER, XRP_APPLICATION};
+                 LOOKUP, APPLICATION_CALLER, XRP_APPLICATION, MEMOIZER};
 
 string GetNodeTypeAsString(size_t node_type);
 
@@ -218,7 +218,8 @@ struct NodeXRPApplication : public NodeEvaluation {
   shared_ptr<VentureXRP> xrp;
   shared_ptr<VentureValue> sampled_value;
   shared_ptr<VentureValue> new_sampled_value;
-
+  
+  bool frozen; // For mem.
   virtual void NodeXRPApplication::DeleteNode();
 };
 
@@ -239,8 +240,12 @@ EvaluateApplication(shared_ptr<VentureValue>,
 void ApplyToMeAndAllMyChildren(shared_ptr<Node>,
                                void (*f)(shared_ptr<Node>));
 
-void DrawGraphDuringMH(shared_ptr<Node> first_node, queue< shared_ptr<Node> >& touched_nodes);
+void DrawGraphDuringMH(shared_ptr<Node> first_node, stack< shared_ptr<Node> >& touched_nodes);
 
-size_t CalculateNumberOfRandomChoices(shared_ptr<Node>);
+size_t CalculateNumberOfRandomChoices(shared_ptr<Node> first_node);
+
+void FreezeBranch(shared_ptr<Node> first_node, ReevaluationParameters& reevaluation_parameters);
+
+void UnfreezeBranch(shared_ptr<Node> first_node);
 
 #endif

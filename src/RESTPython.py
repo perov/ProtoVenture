@@ -60,6 +60,44 @@ import venture_engine
   # print venture_engine.report_value(1)
   # venture_engine.infer(1)
 
+# venture_engine.assume("a", parse("(mem (lambda (x) (normal r[0.0] r[5.0])))"))
+# print venture_engine.predict(parse("(a 3)"))
+# print venture_engine.predict(parse("(a 3)"))
+# venture_engine.infer(1)
+# print venture_engine.report_value(2)
+# print venture_engine.report_value(3)
+
+# Just for compatibility
+class lisp_parser_Class:
+  def parse(__self__, what_to_parse):
+    return parse(what_to_parse)
+
+lisp_parser = lisp_parser_Class()
+    
+MyRIPL = venture_engine
+
+
+
+
+MyRIPL.assume("proc", lisp_parser.parse("(mem (lambda (x) (flip 0.8)))"))
+(last_directive, _) = MyRIPL.predict(lisp_parser.parse("(if (proc (uniform-discrete 1 3)) (proc (uniform-discrete 1 3)) false)"))
+
+while True:
+  # print venture_engine.report_value(1)
+  print venture_engine.report_value(last_directive)
+  print "*"
+  venture_engine.infer(1)
+
+# sys.exit()
+
+
+
+    
+# venture_engine.assume("a", parse("(mem (lambda (x) (+ x x)))"))
+# venture_engine.predict(parse("(a (uniform-continuous r[0.0] r[1.0]))"))
+# while True:
+  # print venture_engine.report_value(2)
+  # venture_engine.infer(1)
 
 # venture_engine.assume("order", parse("(uniform-discrete c[0] c[4])"))
 # venture_engine.assume("noise", parse("(uniform-continuous r[0.1] r[1.0])"))
@@ -70,7 +108,29 @@ import venture_engine
 # venture_engine.assume("c4", parse("(if (>= order c[4]) (normal r[0.0] r[0.001]) r[0.0])"))
 # venture_engine.assume("clean-func", parse("(lambda (x) (+ c0 (* c1 (power x r[1.0])) (* c2 (power x r[2.0])) (* c3 (power x r[3.0])) (* c4 (power x r[4.0]))))"))
 # venture_engine.predict(parse("(list order c0 c1 c2 c3 c4 noise)"))
-# a = venture_engine.observe(parse("(normal (clean-func (normal r[5.6] noise)) noise)"), "r[1.8]")
+# venture_engine.infer(10000)
+# for i in range(20):
+  # venture_engine.observe(parse("(normal (clean-func (normal r[" + str(i - 10) + "] noise)) noise)"), "r[1.0]")
+# while True:
+  # print venture_engine.report_value(9)
+  # venture_engine.infer(1000)
+  
+# venture_engine.assume("order", parse("(uniform-discrete 0 4)"))
+# venture_engine.assume("noise", parse("(uniform-continuous 0.1 1.0)"))
+# venture_engine.assume("c0", parse("(if (>= order c[0]) (normal r[0.0] r[10.0]) r[0.0])"))
+# venture_engine.assume("c1", parse("(if (>= order c[1]) (normal r[0.0] r[1]) r[0.0])"))
+# venture_engine.assume("c2", parse("(if (>= order c[2]) (normal r[0.0] r[0.1]) r[0.0])"))
+# venture_engine.assume("c3", parse("(if (>= order c[3]) (normal r[0.0] r[0.01]) r[0.0])"))
+# venture_engine.assume("c4", parse("(if (>= order c[4]) (normal r[0.0] r[0.001]) r[0.0])"))
+# venture_engine.assume("clean-func", parse("(lambda (x) (+ c0 (* c1 (power x r[1.0])) (* c2 (power x r[2.0])) (* c3 (power x r[3.0])) (* c4 (power x r[4.0]))))"))
+# venture_engine.predict(parse("(list order c0 c1 c2 c3 c4 noise)"))
+# for i in range(20):
+  # venture_engine.observe(parse("(normal (clean-func (normal " + str(i - 10) + ".0 noise)) noise)"), "1.0")
+  # print "(normal (clean-func (normal " + str(i - 10) + ".0 noise)) noise)"
+# while True:
+  # print venture_engine.report_value(9)
+  # venture_engine.infer(1000)
+  
 # venture_engine.infer(1000);
 # venture.forget(8)
 # venture.forget(9)
@@ -79,6 +139,21 @@ import venture_engine
 # venture_engine.assume("a", parse("(power-law 0.3 1)"))
 # (last_directive, _) = venture_engine.predict(parse("(< a 5)"))
 # venture_engine.infer(1000)
+
+# venture_engine.assume("draw-type", parse("(CRP/make 0.5)"))
+# venture_engine.assume("class1", parse("(draw-type)"))
+# venture_engine.assume("class2", parse("(draw-type)"))
+# venture_engine.assume("class3", parse("(draw-type)"))
+# venture_engine.observe(parse("(noisy-negate (= class1 class2) 0.000001)"), "true")
+# venture_engine.predict(parse("(= class1 class3)"))
+# venture_engine.infer(1000)
+
+# for i in range(100):
+  # venture_engine.infer(1)
+  # print "   " + str(venture_engine.report_value(2)) + " " + str(venture_engine.report_value(3)) #+ " " + str(venture_engine.report_value(4))
+
+# print "Ready"
+# sys.exit()
 
 import flask
 from flask import request
@@ -132,10 +207,15 @@ def observe():
 def start_cont_infer():
   venture_engine.start_continuous_inference();
   return get_response(json.dumps({"started": True}))
+
+@app.route('/stop_cont_infer', methods=['POST'])
+def stop_cont_infer():
+  venture_engine.stop_continuous_inference();
+  return get_response(json.dumps({"stopped": True}))
   
 @app.route('/cont_infer_status', methods=['GET'])
 def cont_infer_status():
-  print "Necessary to add additional information!"
+  # print "Necessary to add additional information!"
   if venture_engine.continuous_inference_status():
     return get_response(json.dumps({"status": "on"}))
   else:
@@ -155,7 +235,7 @@ def report_value(directive_id):
 @app.route('/', methods=['GET'])
 def report_directives():
   directives = venture_engine.report_directives();
-  return get_response(json.dumps({"val": directives}))
+  return get_response(json.dumps(directives))
   
 @app.route('/<int:directive_id>', methods=['POST'])
 # Check for DELETE!
@@ -178,4 +258,5 @@ def special_exception_handler(error):
 #try:
 app.config['DEBUG'] = False
 app.config['TESTING'] = False
-app.run(port=8081)
+# app.config['SERVER_NAME'] = "ec2-174-129-93-113.compute-1.amazonaws.com"
+app.run(port=81, host='0.0.0.0')
