@@ -234,9 +234,9 @@ from flask import request
 from flask import make_response
 
 # Why it disables the output for the flask?
-import logging
-flask_log = logging.getLogger("werkzeug")
-flask_log.setLevel(logging.DEBUG) # For some reason WARNING and ERROR! still prints requests to the console.
+# import logging
+# flask_log = logging.getLogger("werkzeug")
+# flask_log.setLevel(logging.DEBUG) # For some reason WARNING and ERROR! still prints requests to the console.
 
 try: # See for details: http://stackoverflow.com/questions/791561/python-2-5-json-module
     import json
@@ -329,8 +329,8 @@ def special_exception_handler(error):
   return get_response("Your query has invoked an error:\n" + str(error)), 500
   
   
-#try:
+# try:
 app.config['DEBUG'] = False
 app.config['TESTING'] = False
 # app.config['SERVER_NAME'] = "ec2-174-129-93-113.compute-1.amazonaws.com"
-app.run(port=81, host='0.0.0.0')
+# app.run(port=81, host='0.0.0.0')

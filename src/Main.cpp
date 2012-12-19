@@ -57,8 +57,12 @@ int main(int argc, char *argv[])
   InitRIPL();
 
   cout << "See why: Or just NULL? does not work!" << endl;
-
+  
+  int port = 5000;
   cout << argv[0] << endl;
+  if (argc > 1) {
+    port = boost::lexical_cast<int>(argv[1]);
+  }
 
   Py_SetProgramName(argv[0]); // Optional but recommended.
   Py_Initialize();
@@ -73,6 +77,8 @@ int main(int argc, char *argv[])
 #else
   PyRun_SimpleString("execfile(\"/home/ec2-user/venture/RESTPython.py\")");
 #endif
+
+  PyRun_SimpleString(("app.run(port=" + boost::lexical_cast<string>(port) + ", host='0.0.0.0')").c_str());
 
   Py_Finalize();
   return 0;
