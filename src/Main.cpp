@@ -34,13 +34,26 @@ int next_gensym_atom = 0; // Should become better for the multithread version.
 
 bool need_to_return_inference;
 
-int main(int argc, char *argv[])
-{
+void InitGSL() {
   random_generator = gsl_rng_alloc(gsl_rng_mt19937);
   unsigned long seed = time(NULL); // time(NULL)
   //cout << "WARNING: RANDOM SEED is not random!" << endl;
   gsl_rng_set(random_generator, seed);
+}
 
+PyMODINIT_FUNC initventure_engine(void) {
+  InitGSL();
+  InitRIPL();
+  Py_InitModule("venture_engine", MethodsForPythons);
+}
+
+int main(int argc, char *argv[])
+{
+#ifdef _MSC_VER
+  _CrtSetDbgFlag ( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
+#endif
+
+  InitGSL();
   InitRIPL();
 
   cout << "See why: Or just NULL? does not work!" << endl;

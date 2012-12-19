@@ -328,14 +328,18 @@ bool VentureSmoothedCount::CompareByValue(shared_ptr<VentureValue> another) {
 // would be unresolved?
 // Added later: I use it for figuring out if the operator has not changed or not.
 bool VentureLambda::CompareByValue(shared_ptr<VentureValue> another) {
+  assert(this->expressions.lock() != shared_ptr<NodeEvaluation>());
+  assert(ToVentureType<VentureLambda>(another)->expressions.lock() != shared_ptr<NodeEvaluation>());
   // It is enough to compare by expressions: ?
-  return (this->expressions == ToVentureType<VentureLambda>(another)->expressions);
+  return (this->expressions.lock() == ToVentureType<VentureLambda>(another)->expressions.lock());
 }
 // We do not need this function?
 // But without this function ToVentureType<VentureLambda>(...)
 // would be unresolved?
 // Added later: I use it for figuring out if the operator has not changed or not.
 bool VentureXRP::CompareByValue(shared_ptr<VentureValue> another) {
+  assert(this->xrp != shared_ptr<XRP>());
+  assert(ToVentureType<VentureXRP>(another)->xrp != shared_ptr<XRP>());
   // It is enough to compare by expressions: ?
   return (this->xrp == ToVentureType<VentureXRP>(another)->xrp);
 }

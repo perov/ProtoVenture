@@ -78,7 +78,7 @@ shared_ptr<VentureValue> LookupValue(shared_ptr<NodeEnvironment> environment,
         return inspecting_environment->variables[variable_name->GetString()]->new_value;
       }
     } else {
-      inspecting_environment = inspecting_environment->parent_environment;
+      inspecting_environment = inspecting_environment->parent_environment.lock();
     }
   }
   //cout << "Error: " << variable_name->GetString() << endl;

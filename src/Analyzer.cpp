@@ -51,7 +51,9 @@ string Node::GetUniqueID() {
   return boost::lexical_cast<string>(this);
 }
 
-Node::Node() {
+Node::Node()
+  : was_deleted(false)
+{
   //unique_id = ++NEXT_UNIQUE_ID; // FIXME: make transaction free!
 }
 
@@ -89,7 +91,9 @@ void Node::GetChildren(queue< shared_ptr<Node> >& processing_queue) {
   throw std::runtime_error("Should not be called.");
 };
 
-void Node::DeleteNode() {}
+void Node::DeleteNode() {
+  this->was_deleted = true;
+}
 
 
 
@@ -105,6 +109,7 @@ NodeVariable::NodeVariable(shared_ptr<NodeEnvironment> parent_environment, share
 NodeTypes NodeVariable::GetNodeType() { return VARIABLE; }
 
 void NodeVariable::DeleteNode() {
+  Node::DeleteNode();
   parent_environment = shared_ptr<NodeEnvironment>();
   output_references.clear();
 }
@@ -124,6 +129,7 @@ shared_ptr<NodeEvaluation> NodeEvaluation::clone() const {
 }
 
 void NodeEvaluation::DeleteNode() {
+  Node::DeleteNode();
   environment = shared_ptr<NodeEnvironment>();
   parent = shared_ptr<NodeEvaluation>();
   output_references.clear();
@@ -193,9 +199,7 @@ void NodeDirectiveAssume::GetChildren(queue< shared_ptr<Node> >& processing_queu
 };
 
 void NodeDirectiveAssume::DeleteNode() {
-  environment = shared_ptr<NodeEnvironment>();
-  parent = shared_ptr<NodeEvaluation>();
-  output_references.clear();
+  NodeEvaluation::DeleteNode();
 }
 
 
@@ -217,9 +221,7 @@ void NodeDirectivePredict::GetChildren(queue< shared_ptr<Node> >& processing_que
 };
 
 void NodeDirectivePredict::DeleteNode() {
-  environment = shared_ptr<NodeEnvironment>();
-  parent = shared_ptr<NodeEvaluation>();
-  output_references.clear();
+  NodeEvaluation::DeleteNode();
 }
 
 
@@ -251,9 +253,7 @@ void NodeDirectiveObserve::GetChildren(queue< shared_ptr<Node> >& processing_que
 }
 
 void NodeDirectiveObserve::DeleteNode() {
-  environment = shared_ptr<NodeEnvironment>();
-  parent = shared_ptr<NodeEvaluation>();
-  output_references.clear();
+  NodeEvaluation::DeleteNode();
 }
 
 
@@ -283,9 +283,7 @@ void NodeSelfEvaluating::GetChildren(queue< shared_ptr<Node> >& processing_queue
 };
 
 void NodeSelfEvaluating::DeleteNode() {
-  environment = shared_ptr<NodeEnvironment>();
-  parent = shared_ptr<NodeEvaluation>();
-  output_references.clear();
+  NodeEvaluation::DeleteNode();
 }
 
 
@@ -318,9 +316,7 @@ void NodeLambdaCreator::GetChildren(queue< shared_ptr<Node> >& processing_queue)
 // Using standard copy constructor.
 
 void NodeLambdaCreator::DeleteNode() {
-  environment = shared_ptr<NodeEnvironment>();
-  parent = shared_ptr<NodeEvaluation>();
-  output_references.clear();
+  NodeEvaluation::DeleteNode();
 }
 
 
@@ -339,9 +335,7 @@ void NodeLookup::GetChildren(queue< shared_ptr<Node> >& processing_queue) {
 };
 
 void NodeLookup::DeleteNode() {
-  environment = shared_ptr<NodeEnvironment>();
-  parent = shared_ptr<NodeEvaluation>();
-  output_references.clear();
+  NodeEvaluation::DeleteNode();
   where_lookuped = shared_ptr<NodeVariable>();
 }
 
@@ -400,10 +394,7 @@ void NodeApplicationCaller::GetChildren(queue< shared_ptr<Node> >& processing_qu
 };
 
 void NodeApplicationCaller::DeleteNode() {
-  // cout << "MyUniqueID: " << this->GetUniqueID() << endl;
-  environment = shared_ptr<NodeEnvironment>();
-  parent = shared_ptr<NodeEvaluation>();
-  output_references.clear();
+  NodeEvaluation::DeleteNode();
 }
 
 
@@ -426,9 +417,7 @@ void NodeXRPApplication::GetChildren(queue< shared_ptr<Node> >& processing_queue
 };
 
 void NodeXRPApplication::DeleteNode() {
-  environment = shared_ptr<NodeEnvironment>();
-  parent = shared_ptr<NodeEvaluation>();
-  output_references.clear();
+  NodeEvaluation::DeleteNode();
   xrp = shared_ptr<VentureXRP>(); // Is it necessary?
 }  
 
@@ -469,39 +458,9 @@ shared_ptr<NodeEvaluation> AnalyzeExpression(shared_ptr<VentureValue> expression
     if (CompareValue(GetFirst(expression_list), shared_ptr<VentureValue>(new VentureSymbol("quote")))) { // FIXME: without matching case?
       return shared_ptr<NodeEvaluation>(new NodeSelfEvaluating(GetNext(expression_list)));
     } else if (CompareValue(GetFirst(expression_list), shared_ptr<VentureValue>(new VentureSymbol("if")))) {
-      // (if predicate consequent alternative) is sugar for
-      // ( (condition-ERP predicate (lambda () consequent) (lambda () alternative)) )
-
-      shared_ptr<VentureList> condition_ERP_call =
-        shared_ptr<VentureList>(new VentureList(
-          shared_ptr<VentureValue>(new VentureSymbol("condition-ERP"))));
-      AddToList(condition_ERP_call,
-                GetNth(expression_list, 2));
-
-      shared_ptr<VentureList> lambda_consequent =
-        shared_ptr<VentureList>(new VentureList(
-          shared_ptr<VentureValue>(new VentureSymbol("lambda"))));
-      AddToList(lambda_consequent,
-                NIL_INSTANCE);
-      AddToList(lambda_consequent,
-                GetNth(expression_list, 3));
-      AddToList(condition_ERP_call,
-                lambda_consequent);
-
-      shared_ptr<VentureList> lambda_alternative =
-        shared_ptr<VentureList>(new VentureList(
-          shared_ptr<VentureValue>(new VentureSymbol("lambda"))));
-      AddToList(lambda_alternative,
-                NIL_INSTANCE);
-      AddToList(lambda_alternative,
-                GetNth(expression_list, 4));
-      AddToList(condition_ERP_call,
-                lambda_alternative);
-      
-      shared_ptr<VentureList> outer_list =
-        shared_ptr<VentureList>(new VentureList(condition_ERP_call));
-
-      return AnalyzeExpression(outer_list);
+      throw std::runtime_error("The 'if' sugar should be processed with the Python.");
+      // Previous processing C++ code could be found here:
+      // https://github.com/perov/Venture/blob/f67f9f36a9c5c3320403a2993ad5a57b32ed9cb5/src/Analyzer.cpp#L478
     } else if (CompareValue(GetFirst(expression_list), shared_ptr<VentureValue>(new VentureSymbol("lambda")))) {
       return shared_ptr<NodeEvaluation>(
                new NodeLambdaCreator(ToVentureList(GetNth(expression_list, 2)),
@@ -523,12 +482,13 @@ shared_ptr<NodeEvaluation> AnalyzeExpression(shared_ptr<VentureValue> expression
 }
 
 void NodeEnvironment::DeleteNode() {
+  Node::DeleteNode();
   for (size_t index = 0; index < local_variables.size(); index++) { // Assuming there are no (def)ed inside variables.
     local_variables[index]->DeleteNode();
   }
   parent_environment = shared_ptr<NodeEnvironment>();
   variables.clear();
-  local_variables.clear();
+  local_variables.clear(); // FIXME: restore it! It should be on?
 }
 
 shared_ptr<VentureValue>
@@ -617,7 +577,7 @@ EvaluateApplication(shared_ptr<VentureValue> evaluated_operator,
     }
     
     application_node =
-      shared_ptr<NodeEvaluation>(ToVentureType<VentureLambda>(evaluated_operator)->expressions->clone());
+      shared_ptr<NodeEvaluation>(ToVentureType<VentureLambda>(evaluated_operator)->expressions.lock()->clone());
     // cout << "***" << ToVentureType<VentureLambda>(evaluated_operator)->expressions->GetUniqueID();
     // cout << " " << application_node->GetUniqueID() << endl;
 
@@ -639,8 +599,6 @@ EvaluateApplication(shared_ptr<VentureValue> evaluated_operator,
                                                               // because we have checked
                                                               // the type in the IF condition.
     
-    cout << application_node << " with " << local_environment->local_variables.size() << endl;
-
     return Evaluator(application_node,
                      local_environment,
                      dynamic_pointer_cast<Node>(application_caller_ptr),
@@ -660,7 +618,7 @@ NodeApplicationCaller::Evaluate(shared_ptr<NodeEnvironment> environment) {
   
   shared_ptr<NodeEnvironment> previous_environment;
   if (evaluated_operator->GetType() == LAMBDA) {
-    previous_environment = ToVentureType<VentureLambda>(evaluated_operator)->scope_environment;
+    previous_environment = ToVentureType<VentureLambda>(evaluated_operator)->scope_environment.lock();
   } else {
     previous_environment = environment;
   }
@@ -879,6 +837,7 @@ bool NodeEvaluation::WasEvaluated() {
 }
 
 void DrawGraphDuringMH(shared_ptr<Node> first_node, stack< shared_ptr<Node> >& touched_nodes) {
+/*
   cout << "Writing the graph" << endl;
 
   std::ofstream graph_file;
@@ -926,6 +885,7 @@ void DrawGraphDuringMH(shared_ptr<Node> first_node, stack< shared_ptr<Node> >& t
   graph_file.close();
 
   cout << "The graph has been written" << endl;
+*/
 }
 
 size_t CalculateNumberOfRandomChoices(shared_ptr<Node> first_node) {

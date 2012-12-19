@@ -182,8 +182,8 @@ struct VentureLambda : public VentureValue {
   ~VentureLambda();
 
   shared_ptr<VentureList> formal_arguments;
-  shared_ptr<NodeEvaluation> expressions;
-  shared_ptr<NodeEnvironment> scope_environment;
+  weak_ptr<NodeEvaluation> expressions;
+  weak_ptr<NodeEnvironment> scope_environment;
 };
 
 struct VentureXRP : public VentureValue {

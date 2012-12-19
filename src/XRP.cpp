@@ -155,6 +155,15 @@ shared_ptr<VentureValue> XRP__CRPsampler::Sampler(vector< shared_ptr<VentureValu
       return shared_ptr<VentureAtom>(new VentureAtom((*iterator).first));
     }
   }
+
+  /*
+  int next_free_index = 0;
+  while (this->atoms.count(next_free_index) != 0) {
+    next_free_index++;
+  }
+  return shared_ptr<VentureAtom>(new VentureAtom(next_free_index));
+  */
+
   next_gensym_atom++;
   //cout << "Resampling XRP" << next_gensym_atom << endl;
   return shared_ptr<VentureAtom>(new VentureAtom(next_gensym_atom));
@@ -265,7 +274,7 @@ shared_ptr<VentureValue> XRP__memoized_procedure::Sampler(vector< shared_ptr<Ven
     (*(this->mem_table.find(mem_table_key))).second.result =
       Evaluator(this->mem_table[mem_table_key].application_caller_node,
                 caller->environment, // FIXME: Is it okay?
-                caller->parent, // FIXME: Is it okay?
+                caller->parent.lock(), // FIXME: Is it okay?
                 caller);
   } else {
     // Adding the output reference link by hand.
@@ -287,6 +296,7 @@ void XRP__memoized_procedure::Unsampler(vector< shared_ptr<VentureValue> >& old_
   }
   XRP__memoizer_map_element& mem_table_element =
     (*(this->mem_table.find(mem_table_key))).second;
+  mem_table_element.application_caller_node->output_references.erase(caller->parent);
   if (caller->frozen == true) {
     throw std::runtime_error("We should be never frozen at this time!"); // FIXME: What about the multi-thread version?
   }

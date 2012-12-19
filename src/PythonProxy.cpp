@@ -1,6 +1,9 @@
 
 #include "PythonProxy.h"
 
+// Call this error type when it is necessary just to pass the Python error.
+handling_python_error::handling_python_error() : std::runtime_error("No text is required here.") {}
+
 PyMethodDef MethodsForPythons[] = {
     {"report_directives", ForPython__report_directives, METH_VARARGS,
      "... Write description ..."},
@@ -46,6 +49,48 @@ bool ConvertPythonObjectToVentureValue
   (PyObject* python_object,
    shared_ptr<VentureValue>* pointer_to_shared_pointer)
 {
+  PyObject *suger_processing__main_module__name;
+  PyObject *suger_processing__main_module;
+  PyObject *suger_processing__process_sugars;
+  PyObject *suger_processing__process_sugars__arguments;
+  
+  suger_processing__main_module__name = PyString_FromString("__main__");
+  if (suger_processing__main_module__name == NULL) {
+    throw std::runtime_error("Strange, cannot create the string '__main__'.");
+  }
+  suger_processing__main_module = PyImport_Import(suger_processing__main_module__name);
+  Py_DECREF(suger_processing__main_module__name);
+  if (suger_processing__main_module__name == NULL) {
+    throw std::runtime_error("Strange, cannot find the module '__main__'.");
+  }
+  suger_processing__process_sugars = PyObject_GetAttrString(suger_processing__main_module, "process_sugars");
+  Py_DECREF(suger_processing__main_module);
+  if (suger_processing__main_module__name == NULL) {
+    throw std::runtime_error("For some reason the function 'process_sugars' is not defined.");
+  }
+  suger_processing__process_sugars__arguments = PyTuple_Pack(1, python_object);
+  if (suger_processing__main_module__name == NULL) {
+    throw std::runtime_error("Cannot execute the function 'python_object' with the provided argument.");
+  }
+
+  python_object = PyObject_CallObject(suger_processing__process_sugars, suger_processing__process_sugars__arguments);
+  Py_DECREF(suger_processing__process_sugars);
+  Py_DECREF(suger_processing__process_sugars__arguments);
+  if (python_object == NULL) {
+    // Assuming that Python raised some error.
+    // Pass this error further.
+    throw handling_python_error();
+    /* Old code to delete:
+      PyObject* error_string__as_Python_object = PyObject_Str(PyExc_Exception);
+      if (error_string__as_Python_object == NULL) {
+        throw std::runtime_error("The function 'python_object' has raised an error (or was not evaluated for some other reason). Cannot get the error message.");
+      }
+      const char* error_string = PyString_AsString(error_string__as_Python_object);
+      Py_DECREF(error_string__as_Python_object);
+      throw std::runtime_error("The function 'python_object' has raised an error (or was not evaluated for some other reason). The error message: " + string(error_string));
+    */
+  }
+
   if (PyString_Check(python_object)) {
     char* string_as_chars = PyString_AsString(python_object);
     *pointer_to_shared_pointer = ProcessAtom(string_as_chars);
@@ -84,6 +129,7 @@ bool ConvertPythonObjectToVentureValue
       }
     }
   } else {
+    Py_DECREF(python_object);
     throw std::runtime_error(("Unidentified Python object (its type: '" + PythonObjectAsString(PyObject_Type(python_object)) + "'): '" + PythonObjectAsString(python_object) + "'.").c_str());
     return false;
     // http://docs.python.org/release/1.5.2p2/ext/parseTuple.html
@@ -91,6 +137,7 @@ bool ConvertPythonObjectToVentureValue
     // has failed. When the conversion fails, the converter function should raise an exception."
     // How to understand these two issues at the same time?
   }
+  Py_DECREF(python_object);
   return true;
 }
 
@@ -106,7 +153,7 @@ ForPython__report_value(PyObject *self, PyObject *args)
   PyObject* returning_python_object = ReportValue(directive_id)->GetAsPythonObject();
   ReturnInferenceIfNecessary();
   return returning_python_object;
-} catch(std::runtime_error& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }
+} catch(handling_python_error&) { return NULL; } catch(std::runtime_error& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }
 
 PyObject*
 ForPython__report_directives(PyObject *self, PyObject *args)
@@ -149,7 +196,7 @@ ForPython__report_directives(PyObject *self, PyObject *args)
 
   ReturnInferenceIfNecessary();
   return returning_list;
-} catch(std::runtime_error& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }
+} catch(handling_python_error&) { return NULL; } catch(std::runtime_error& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }
 
 PyObject*
 ForPython__clear(PyObject *self, PyObject *args)
@@ -163,7 +210,7 @@ ForPython__clear(PyObject *self, PyObject *args)
   //ReturnInferenceIfNecessary();
   Py_INCREF(Py_None);
   return Py_None;
-} catch(std::runtime_error& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }
+} catch(handling_python_error&) { return NULL; } catch(std::runtime_error& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }
 
 PyObject*
 ForPython__forget(PyObject *self, PyObject *args)
@@ -179,7 +226,7 @@ ForPython__forget(PyObject *self, PyObject *args)
   ReturnInferenceIfNecessary();
   Py_INCREF(Py_None);
   return Py_None;
-} catch(std::runtime_error& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }
+} catch(handling_python_error&) { return NULL; } catch(std::runtime_error& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }
 
 PyObject*
 ForPython__infer(PyObject *self, PyObject *args)
@@ -200,7 +247,7 @@ ForPython__infer(PyObject *self, PyObject *args)
   ReturnInferenceIfNecessary();
   Py_INCREF(Py_None);
   return Py_None;
-} //catch(std::runtime_error& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }
+} //catch(handling_python_error&) { return NULL; } catch(std::runtime_error& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }
 
 PyObject*
 ForPython__start_continuous_inference(PyObject *self, PyObject *args)
@@ -220,7 +267,7 @@ ForPython__start_continuous_inference(PyObject *self, PyObject *args)
   } else {
     throw std::runtime_error("The continuous inference has been already started.");
   }
-} catch(std::runtime_error& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }
+} catch(handling_python_error&) { return NULL; } catch(std::runtime_error& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }
 
 PyObject*
 ForPython__continuous_inference_status(PyObject *self, PyObject *args)
@@ -234,7 +281,7 @@ ForPython__continuous_inference_status(PyObject *self, PyObject *args)
   } else {
     return Py_BuildValue("b", true);
   }
-} catch(std::runtime_error& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }
+} catch(handling_python_error&) { return NULL; } catch(std::runtime_error& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }
 
 PyObject*
 ForPython__stop_continuous_inference(PyObject *self, PyObject *args)
@@ -252,7 +299,7 @@ ForPython__stop_continuous_inference(PyObject *self, PyObject *args)
   } else {
     throw std::runtime_error("The continuous inference is not running.");
   }
-} catch(std::runtime_error& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }
+} catch(handling_python_error&) { return NULL; } catch(std::runtime_error& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }
 
 PyObject*
 ForPython__assume(PyObject *self, PyObject *args)
@@ -276,7 +323,7 @@ ForPython__assume(PyObject *self, PyObject *args)
   PyObject* returning_python_object = Py_BuildValue("(iO)", static_cast<int>(directive_id), directive_value->GetAsPythonObject());
   ReturnInferenceIfNecessary();
   return returning_python_object;
-} catch(std::runtime_error& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }
+} catch(handling_python_error&) { return NULL; } catch(std::runtime_error& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }
 
 PyObject*
 ForPython__predict(PyObject *self, PyObject *args)
@@ -297,7 +344,7 @@ ForPython__predict(PyObject *self, PyObject *args)
   PyObject* returning_python_object = Py_BuildValue("(iO)", static_cast<int>(directive_id), directive_value->GetAsPythonObject());
   ReturnInferenceIfNecessary();
   return returning_python_object;
-} catch(std::runtime_error& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }
+} catch(handling_python_error&) { return NULL; } catch(std::runtime_error& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }
 
 PyObject*
 ForPython__observe(PyObject *self, PyObject *args)
@@ -325,4 +372,4 @@ ForPython__observe(PyObject *self, PyObject *args)
   ReturnInferenceIfNecessary();
   cout << "Finishing to deal with OBSERVE" << endl;
   return returning_python_object;
-} catch(std::runtime_error& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }
+} catch(handling_python_error&) { return NULL; } catch(std::runtime_error& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }

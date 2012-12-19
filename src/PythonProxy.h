@@ -15,6 +15,11 @@
 #include "Primitives.h"
 #include "PythonProxy.h"
 
+class handling_python_error : std::runtime_error {
+public:
+  handling_python_error();
+};
+
 string PythonObjectAsString(PyObject* python_object);
 
 bool ConvertPythonObjectToVentureValue

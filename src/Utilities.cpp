@@ -33,8 +33,14 @@ const Container& GetQueueContainer // FIXME: Should be called GetStackContainer!
     return HackedStack::container(stack);
 }
 
-// FIXME: Should be called ...Stack...!
 void BlankFunction___ForGetQueueContainer() { // For some reason without this function
+                                              // "GetQueueContainer" is not generated.
+  queue< shared_ptr<Node> > touched_nodes;
+  GetQueueContainer(touched_nodes);
+}
+
+// FIXME: Should be called ...Stack...!
+void BlankFunction___ForGetStackContainer() { // For some reason without this function
                                               // "GetQueueContainer" is not generated.
   stack< shared_ptr<Node> > touched_nodes;
   GetQueueContainer(touched_nodes);

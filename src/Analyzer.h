@@ -28,6 +28,8 @@ struct Node : public VentureValue {
   ~Node();
 
   virtual void Node::DeleteNode();
+
+  bool was_deleted;
 };
 
 struct NodeVariable;
@@ -37,7 +39,7 @@ struct NodeEnvironment : public Node {
   virtual NodeTypes NodeEnvironment::GetNodeType();
   ~NodeEnvironment();
 
-  shared_ptr<NodeEnvironment> parent_environment;
+  weak_ptr<NodeEnvironment> parent_environment;
   map<string, shared_ptr<NodeVariable> > variables;
   vector< shared_ptr<NodeVariable> > local_variables;
   
@@ -49,10 +51,10 @@ struct NodeVariable : public Node {
   virtual NodeTypes NodeVariable::GetNodeType();
   ~NodeVariable();
 
-  shared_ptr<NodeEnvironment> parent_environment;
+  weak_ptr<NodeEnvironment> parent_environment;
   shared_ptr<VentureValue> value;
   shared_ptr<VentureValue> new_value;
-  set< shared_ptr<Node> > output_references;
+  set< weak_ptr<Node> > output_references;
   
   virtual void NodeVariable::DeleteNode();
 };
@@ -69,10 +71,10 @@ struct NodeEvaluation : public Node {
   ~NodeEvaluation();
 
   shared_ptr<NodeEnvironment> environment;
-  shared_ptr<NodeEvaluation> parent;
+  weak_ptr<NodeEvaluation> parent;
   shared_ptr<NodeEvaluation> earlier_evaluation_nodes;
   bool evaluated;
-  set< shared_ptr<Node> > output_references;
+  set< weak_ptr<Node> > output_references;
   vector<size_t> myorder;
   size_t last_child_order;
   

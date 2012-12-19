@@ -35,6 +35,8 @@ def atom(token):
             
 Symbol = str
           
+          
+        
 
 
           
@@ -50,8 +52,57 @@ print "Hello"
 
 
 
-import venture_engine
+def process_sugars(venture_input):
+  if type(venture_input) == list:
+    if len(venture_input) == 0:
+      return venture_input
+    else:
+      # "and" is implemented as in Clojure (FIXME: and is how in Scheme?)
+      if venture_input[0] == "and":
+        if len(venture_input) == 1:
+          return True
+        elif len(venture_input) == 2:
+          return venture_input[1]
+        else:
+          current_element = venture_input[1]
+          del venture_input[1]
+          return process_sugars(["if", current_element, process_sugars(venture_input), False])
+      # "or" is implemented almost as in Clojure (FIXME: and is how in Scheme?)
+      elif venture_input[0] == "or":
+        if len(venture_input) == 1:
+          return False
+        elif len(venture_input) == 2:
+          return venture_input[1]
+        else:
+          current_element = venture_input[1]
+          del venture_input[1]
+          return process_sugars(["if", current_element, True, process_sugars(venture_input)])
+      # (if predicate consequent alternative) is sugar for
+      # ( (condition-ERP predicate (lambda () consequent) (lambda () alternative)) )
+      elif venture_input[0] == "if":
+        if len(venture_input) == 3:
+          venture_input[3] = False
+          
+        if len(venture_input) == 4:
+          predicate = venture_input[1]
+          consequent = venture_input[2]
+          alternative = venture_input[3]
+          lambda_for_consequent = ["lambda", [], consequent]
+          lambda_for_alternative = ["lambda", [], alternative]
+          return [ ["condition-ERP", predicate, lambda_for_consequent, lambda_for_alternative] ]
+        else:
+          raise SyntaxError("'if' should have 3 or 4 arguments.")
+      else:
+        return venture_input
+  else:
+    return venture_input
 
+
+
+
+
+
+import venture_engine
 
 # venture_engine.assume("a", parse("(uniform-continuous r[0.0] r[1.0])"))
 # venture_engine.observe(parse("(normal a r[0.01])"), "r[0.7]")
@@ -77,16 +128,39 @@ lisp_parser = lisp_parser_Class()
 MyRIPL = venture_engine
 
 
+# MyRIPL.assume("uncertainty-factor", lisp_parser.parse("(flip)"))
+# MyRIPL.assume("my-function", lisp_parser.parse("(if uncertainty-factor flip (lambda (x) x))"))
+# MyRIPL.assume("my-function-mem", lisp_parser.parse("(mem my-function)"))
+# (last_directive, _) = MyRIPL.predict(lisp_parser.parse("(if (= (my-function-mem 0.3) 0.3) false (my-function-mem 0.3))"))
 
 
-MyRIPL.assume("proc", lisp_parser.parse("(mem (lambda (x) (flip 0.8)))"))
-(last_directive, _) = MyRIPL.predict(lisp_parser.parse("(if (proc (uniform-discrete 1 3)) (proc (uniform-discrete 1 3)) false)"))
 
-while True:
+# MyRIPL.assume("proc", lisp_parser.parse("(mem (lambda (x) (flip 0.8)))"))
+# (last_directive, _) = MyRIPL.predict(lisp_parser.parse("(and (proc 1) (proc 2) (proc 1) (proc 2))"))
+
+
+# MyRIPL.assume("proc", lisp_parser.parse("(mem (lambda (x) (flip 0.8)))"))
+# (last_directive, _) = MyRIPL.predict(lisp_parser.parse("(if (proc (uniform-discrete 1 3)) (if (proc (uniform-discrete 1 3)) (proc (uniform-discrete 1 3)) false) false)"))
+
+
+
+# MyRIPL.assume("proc", lisp_parser.parse("(mem (lambda (x) (flip 0.5)))"))
+# (last_directive, _) = MyRIPL.predict(lisp_parser.parse("(if (proc 1) (if (proc 1) (proc 1) false) false)"))
+
+# distribution_dictionary = {}
+# attempts = 0.0
+
+# while True:
   # print venture_engine.report_value(1)
-  print venture_engine.report_value(last_directive)
-  print "*"
-  venture_engine.infer(1)
+  # last_value = venture_engine.report_value(last_directive)
+  # distribution_dictionary[str(last_value)] = distribution_dictionary.get(str(last_value), 0) + 1
+  # attempts = attempts + 1.0
+  # distribution_as_100 = [(str(x) + " = " + str(distribution_dictionary[x] / attempts)) for x in distribution_dictionary]
+  # print distribution_as_100
+  # print "*"
+  # venture_engine.infer(10)
+  # if attempts == 20000:
+    # sys.exit()
 
 # sys.exit()
 

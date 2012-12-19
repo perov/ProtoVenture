@@ -34,8 +34,6 @@ void DeleteNode(shared_ptr<Node> node) {
     if (dynamic_pointer_cast<NodeXRPApplication>(node)->xrp != shared_ptr<VentureXRP>() &&
           dynamic_pointer_cast<NodeXRPApplication>(node)->xrp->xrp != shared_ptr<XRP>()) {
 
-      cout << "The question is " << node << endl;
-
       // FIXME: GetArgumentsFromEnvironment should be called without adding lookup references!
       vector< shared_ptr<VentureValue> > old_arguments = GetArgumentsFromEnvironment(dynamic_pointer_cast<NodeXRPApplication>(node)->environment, // Not efficient?
                                       dynamic_pointer_cast<NodeEvaluation>(node), // Are we sure that we have not deleted yet lookup links?
@@ -58,11 +56,11 @@ void DeleteNode(shared_ptr<Node> node) {
   }
 
   if (dynamic_pointer_cast<NodeEvaluation>(node) != shared_ptr<NodeEvaluation>() &&
-        dynamic_pointer_cast<NodeEvaluation>(node)->parent != shared_ptr<NodeEvaluation>() &&
-        dynamic_pointer_cast<NodeEvaluation>(node)->parent->GetType() == APPLICATION_CALLER) {
+        dynamic_pointer_cast<NodeEvaluation>(node)->parent.lock() != shared_ptr<NodeEvaluation>() &&
+        dynamic_pointer_cast<NodeEvaluation>(node)->parent.lock()->GetType() == APPLICATION_CALLER) {
     // Only now we can clean the environment.
     shared_ptr<NodeEvaluation>& application_node =
-      dynamic_pointer_cast<NodeApplicationCaller>(dynamic_pointer_cast<NodeEvaluation>(node)->parent)->application_node;
+      dynamic_pointer_cast<NodeApplicationCaller>(dynamic_pointer_cast<NodeEvaluation>(node)->parent.lock())->application_node;
     if (application_node != shared_ptr<NodeEvaluation>() &&
           application_node->environment != shared_ptr<NodeEnvironment>()) {
       // THIS NOTICE IS UNIVERSAL, AND IT IS CALLED "BAD-POINTER"
@@ -125,6 +123,7 @@ void MakeMHProposal() {
         omit_patterns.pop();
       }
     }
+#ifdef _MSC_VER // This IF should be removed. It is here only because the GetQueueContainer returns not the deque in Unix?
 #ifndef NDEBUG
     std::deque< shared_ptr<Node> >::const_iterator already_existent_element =
       std::find(GetQueueContainer(touched_nodes).begin(), GetQueueContainer(touched_nodes).end(), current_reevaluation.reevaluation_node);
@@ -134,8 +133,11 @@ void MakeMHProposal() {
       DrawGraphDuringMH(GetLastDirectiveNode(), touched_nodes);
     }
 #endif
+#endif
+#ifdef _MSC_VER // This IF should be removed. It is here only because the GetQueueContainer returns not the deque in Unix?
     assert(std::find(GetQueueContainer(touched_nodes).begin(), GetQueueContainer(touched_nodes).end(), current_reevaluation.reevaluation_node)
       == GetQueueContainer(touched_nodes).end());
+#endif
     touched_nodes.push(current_reevaluation.reevaluation_node);
     shared_ptr<ReevaluationResult> reevaluation_result =
       current_reevaluation.reevaluation_node->Reevaluate(current_reevaluation.passing_value,
@@ -143,43 +145,45 @@ void MakeMHProposal() {
                                                          reevaluation_parameters);
     
     if (reevaluation_result->pass_further == true) {
-      for (set< shared_ptr<Node> >::iterator iterator = current_reevaluation.reevaluation_node->output_references.begin();
+      for (set< weak_ptr<Node> >::iterator iterator = current_reevaluation.reevaluation_node->output_references.begin();
            iterator != current_reevaluation.reevaluation_node->output_references.end();
            iterator++)
       {
-        if ((*iterator)->GetNodeType() == VARIABLE) {
-          assert(std::find(GetQueueContainer(touched_nodes).begin(), GetQueueContainer(touched_nodes).end(), *iterator)
+        if (iterator->lock()->GetNodeType() == VARIABLE) {
+#ifdef _MSC_VER // This IF should be removed. It is here only because the GetQueueContainer returns not the deque in Unix?
+          assert(std::find(GetQueueContainer(touched_nodes).begin(), GetQueueContainer(touched_nodes).end(), iterator->lock())
             == GetQueueContainer(touched_nodes).end());
-          touched_nodes.push(*iterator);
+#endif
+          touched_nodes.push(iterator->lock());
           assert(reevaluation_result->passing_value != shared_ptr<VentureValue>());
-          dynamic_pointer_cast<NodeVariable>(*iterator)->new_value = reevaluation_result->passing_value;
-          for (set< shared_ptr<Node> >::iterator variable_iterator =
-                 dynamic_pointer_cast<NodeVariable>(*iterator)->output_references.begin();
-               variable_iterator != dynamic_pointer_cast<NodeVariable>(*iterator)->output_references.end();
+          dynamic_pointer_cast<NodeVariable>(iterator->lock())->new_value = reevaluation_result->passing_value;
+          for (set< weak_ptr<Node> >::iterator variable_iterator =
+                 dynamic_pointer_cast<NodeVariable>((*iterator).lock())->output_references.begin();
+               variable_iterator != dynamic_pointer_cast<NodeVariable>(iterator->lock())->output_references.end();
                variable_iterator++)
           {
-            assert((*variable_iterator)->GetNodeType() != VARIABLE);
-            reevaluation_queue.insert(ReevaluationEntry(dynamic_pointer_cast<NodeEvaluation>(*variable_iterator),
+            assert((variable_iterator->lock())->GetNodeType() != VARIABLE);
+            reevaluation_queue.insert(ReevaluationEntry(dynamic_pointer_cast<NodeEvaluation>(variable_iterator->lock()),
                                                       current_reevaluation.caller, // Or just NULL?
                                                       reevaluation_result->passing_value)); // Or also just NULL?
           }
         } else {
-          if (current_reevaluation.reevaluation_node->parent != shared_ptr<NodeEvaluation>()) {
-            if (current_reevaluation.reevaluation_node->parent->GetNodeType() == APPLICATION_CALLER &&
-                  dynamic_pointer_cast<NodeApplicationCaller>(current_reevaluation.reevaluation_node->parent)->application_operator ==
+          if (current_reevaluation.reevaluation_node->parent.lock() != shared_ptr<NodeEvaluation>()) {
+            if (current_reevaluation.reevaluation_node->parent.lock()->GetNodeType() == APPLICATION_CALLER &&
+                  dynamic_pointer_cast<NodeApplicationCaller>(current_reevaluation.reevaluation_node->parent.lock())->application_operator ==
                     current_reevaluation.reevaluation_node) {
               if (CompareValue(reevaluation_result->passing_value,
                                dynamic_pointer_cast<NodeApplicationCaller>(
-                                 current_reevaluation.reevaluation_node->parent)->saved_evaluated_operator)) {
+                                 current_reevaluation.reevaluation_node->parent.lock())->saved_evaluated_operator)) {
                 continue; // The operator is the same.
               }
               omit_patterns.push(OmitPattern(dynamic_pointer_cast<NodeApplicationCaller>(
-                                               current_reevaluation.reevaluation_node->parent)->application_node->myorder,
-                                             current_reevaluation.reevaluation_node->parent->myorder));
+                                               current_reevaluation.reevaluation_node->parent.lock())->application_node->myorder,
+                                             current_reevaluation.reevaluation_node->parent.lock()->myorder));
             }
           }
           assert(current_reevaluation.reevaluation_node != shared_ptr<NodeEvaluation>());
-          reevaluation_queue.insert(ReevaluationEntry(dynamic_pointer_cast<NodeEvaluation>(*iterator),
+          reevaluation_queue.insert(ReevaluationEntry(dynamic_pointer_cast<NodeEvaluation>(iterator->lock()),
                                                     current_reevaluation.reevaluation_node,
                                                     reevaluation_result->passing_value));
 
@@ -212,6 +216,7 @@ void MakeMHProposal() {
   while (!touched_nodes.empty()) {
     shared_ptr<Node> current_node = touched_nodes.top();
     touched_nodes.pop();
+    if (current_node->was_deleted == true) { continue; } // FIXME: Why do we need it?
     if (current_node->GetNodeType() == VARIABLE) {
       assert(dynamic_pointer_cast<NodeVariable>(current_node)->new_value != shared_ptr<VentureValue>());
       if (mh_decision == MH_APPROVED) {

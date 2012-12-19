@@ -23,6 +23,13 @@
 #include "boost/algorithm/string.hpp"
 #include "boost/enable_shared_from_this.hpp"
 
+#ifdef _MSC_VER
+  // Memory leaks control, see here: http://msdn.microsoft.com/en-us/library/x98tx3cf(v=vs.100).aspx
+  #define _CRTDBG_MAP_ALLOC
+  #include <stdlib.h>
+  #include <crtdbg.h>
+#endif
+
 using std::vector;
 using boost::weak_ptr;
 using boost::shared_ptr;
