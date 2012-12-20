@@ -31,7 +31,6 @@ PyMethodDef MethodsForPythons[] = {
 };
 
 string PythonObjectAsString(PyObject* python_object) {
-  PyObject* type = NULL;
   PyObject* pyString =  NULL;
   string result;
   if (python_object != NULL &&
@@ -130,7 +129,7 @@ bool ConvertPythonObjectToVentureValue
     }
   } else {
     Py_DECREF(python_object);
-    throw std::runtime_error(("Unidentified Python object (its type: '" + PythonObjectAsString(PyObject_Type(python_object)) + "'): '" + PythonObjectAsString(python_object) + "'.").c_str());
+    throw std::runtime_error(("Unidentified Python object (its type: '" + PythonObjectAsString(PyObject_Type(python_object)) + "'): '" + PythonObjectAsString(python_object) + "'.").c_str()); // FIXME: Decrement is necessary?
     return false;
     // http://docs.python.org/release/1.5.2p2/ext/parseTuple.html
     // "The returned status should be 1 for a successful conversion and 0 if the conversion

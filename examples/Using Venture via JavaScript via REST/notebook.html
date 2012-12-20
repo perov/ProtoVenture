@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Bootstrap, from Twitter</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <!-- Le styles -->
+    <link href="assets/css/bootstrap.css" rel="stylesheet">
+	<link href="jquery-terminal/css/jquery.terminal.css" rel="stylesheet"/>
+
+    <style type="text/css">
+      body {
+        padding-top: 60px;
+        padding-bottom: 40px;
+      }
+      .sidebar-nav {
+        padding: 9px 0;
+      }
+    </style>
+	<style type="text/css">
+	table.gridtable {
+		font-family: verdana,arial,sans-serif;
+		font-size:11px;
+		color:#333333;
+		border-width: 1px;
+		border-color: #666666;
+		border-collapse: collapse;
+	}
+	table.gridtable th {
+		border-width: 1px;
+		padding: 8px;
+		border-style: solid;
+		border-color: #666666;
+		background-color: #dedede;
+	}
+	table.gridtable td {
+		border-width: 1px;
+		padding: 8px;
+		border-style: solid;
+		border-color: #666666;
+		background-color: #ffffff;
+	}
+	</style>
+
+    <link href="assets/css/bootstrap-responsive.css" rel="stylesheet">
+    <link href="editor.css" rel="stylesheet">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le fav and touch icons -->
+    <link rel="shortcut icon" href="assets/ico/favicon.ico">
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="assets/ico/apple-touch-icon-144-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="assets/ico/apple-touch-icon-114-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="assets/ico/apple-touch-icon-72-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" href="assets/ico/apple-touch-icon-57-precomposed.png">
+
+    <script>
+      var TIMER = 0;
+      var REFRESH = 0;
+    </script>
+  
+  </head>
+
+  <body onload="nb=new notebook();setInterval('refreshInfButton();',1000);">
+
+    <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container-fluid">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <a class="brand" href="#">Venture IME</a>
+          <div class="nav-collapse">
+            <ul class="nav">
+	      <li><button onclick="conInf('CLEAR');" class="btn btn-mini btn-danger" type="button">CLEAR</button></li>
+              <li><button onclick="conInf('INFON');" class="btn btn-mini" type="button">START INF</button></li>
+              <li class="active"><button onclick="conInf('INFOFF');" class="btn btn-mini" type="button">STOP INF</button></li>
+              <li class="active"><button onclick="conInf('INFSTAT');" id="infstat" class="btn btn-mini" type="button">INF STATUS</button></li>
+              <li class="active"><button onclick="conInf('INFER');" class="btn btn-mini btn-primary" type="button">INFER</button></li>
+              <li class="active"><button onclick="conInf('REFRESH');" class="btn btn-mini btn-info" type="button">REFRESH DIRECTIVES</button></li>
+	      <li class="dropdown">
+			      <div class="btn-group">
+				<button class="btn btn-success dropdown-toggle" data-toggle="dropdown">Load Demo <span class="caret"></span></button>
+				<ul class="dropdown-menu">
+				  <li><a onclick="JustLoadProgramFromUserScript('vis-curvefitting.js')" href="#">Bayesian Curve Fitting</a></li>
+				  <li><a onclick="alert('We will support this in the future release');"href="#">Time Series</a></li>
+				</ul>
+			      </div>
+              </li>
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+
+	<div id="foo" style="position:fixed;top:50%;left:50%"></div>
+
+    <div class="container-fluid">
+      <div class="row-fluid">
+	  
+        <div class="span1">
+          <div class="well sidebar-nav">
+            <ul class="nav nav-list">
+              <li class="nav-header">Terminal</li>
+              <li><a href="index.html"><img src="assets/img/terminal.png"></a></li>
+	      
+		<hr style="color: GREY;background-color: GREY;height: 1px;">
+		
+	      <li class="nav-header">Notebook</li>
+              <li><a href="#"><img src="assets/img/notebook.png"></a></li>
+
+		<hr style="color: GREY;background-color: GREY;height: 1px;">
+
+	      <li class="nav-header">Code</li>
+              <li><a href="textview.html"><img src="assets/img/textview.png"></a></li>
+
+		<hr style="color: GREY;background-color: GREY;height: 1px;">
+
+	      <li class="nav-header">Visualize</li>
+              <li><a href="loadedvis.html"><img src="assets/img/vis.png"></a></li>
+
+		<hr style="color: GREY;background-color: GREY;height: 1px;">
+
+	      <li class="nav-header">Develop</li>
+              <li><a href="graphing.html"><img src="assets/img/demo.png"></a></li>
+
+            </ul>
+          </div><!--/.well -->
+        </div><!--/span-->
+
+	<div class="span10">
+		<h2>Notebook View</h2><hr>
+		<div class="container-fluid">
+			<div class="span5">
+				<!-- <button onclick="TIMER = window.setInterval('nb.ShowDirectives()',70);REFRESH = 1;" class="btn btn-mini btn-primary" type="button">AUTO UPDATE DIRECTIVES ON</button>&nbsp;&nbsp;&nbsp;&nbsp;
+				<button onclick="window.clearInterval(TIMER);REFRESH = 0;nb.ShowDirectives();" class="btn btn-mini btn-danger" type="button">AUTO UPDATE DIRECTIVES OFF</button>&nbsp;&nbsp;&nbsp;&nbsp;
+				<hr> 
+				
+				<p style="font-size:14px;font-weight:bold;float:left;">INFER&nbsp;&nbsp;&nbsp;&nbsp;</p> <input type="text" id="infer" class="input-small" placeholder="Enter Int Val"> 
+				
+				&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				<a onclick="nb.SendProgramLine(0,'INFER');"><img style="width:40px;height:auto;" src="assets/img/play_icon.png"></img></a>
+				<br><br>
+				<hr>
+-->
+
+				<!--<div id="allSnippets"> 
+					<div id="snippet"></div>
+				</div> -->
+				<h3> Commands </h3><br>
+				<p style="font-size:14px;font-weight:bold;float:left;">ASSUME &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</p> 
+				<input class="input-small" type="text" id="ASSUMEname" placeholder="Name">
+				<input class="input-small" type="text" id="ASSUMEexpr" placeholder="Expr">
+				&nbsp;&nbsp;
+				<a onclick="nb.SendProgramLine(0,'ASSUME');"> <img style="width:40px;height:auto;" src="assets/img/play_icon.png"></img></a>
+				<br><br>
+
+				<p style="font-size:14px;font-weight:bold;float:left;">OBSERVE&nbsp;&nbsp;&nbsp;&nbsp;</p> 
+				<input class="input-small" type="text" id="OBSERVEexpr" placeholder="Expr">
+				<input class="input-small" type="text" id="OBSERVEvalue" placeholder="Value">
+				&nbsp;&nbsp;&nbsp;&nbsp;
+				<a onclick="nb.SendProgramLine(0,'OBSERVE');"><img style="width:40px;height:auto;" src="assets/img/play_icon.png"></img></a>
+				<br><br>
+
+				<p style="font-size:14px;font-weight:bold;float:left;">PREDICT&nbsp;&nbsp;&nbsp;&nbsp;</p>
+				<input class="input-small" type="text" id="PREDICTexpr" placeholder="Expr">
+				&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				<a onclick="nb.SendProgramLine(0,'PREDICT');"><img style="width:40px;height:auto;" src="assets/img/play_icon.png"></img></a>
+				<hr>
+
+				<h3> Church Code</h3>
+				<div id="churchcode"> </div>
+			</div>
+
+
+			<div class="span7">
+				<!--<h4> Load Examples 
+				 	<a onclick="nb.loadEX(0);"><span class="label label-important">Coin<span></a>
+					<a onclick="nb.loadEX(1);"><span class="label label-inverse">PCFG</span></a>
+					<a onclick="nb.loadEX(2);"><span class="label label-default">Ising</span></a> </h4>
+				<hr> -->
+
+				<h3> Directive List </h3>
+				<div id="directiveTable"> </div>
+			</div>
+		</div>
+
+      </div><!--/row-->
+    </div><!--/.fluid-container-->
+      
+
+	<hr>
+      <footer>
+        <p>&copy; MIT BCS - Probabilistic Computing Group 2012</p>
+      </footer>
+    <!-- Le javascript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="assets/js/jquery.js"></script>
+    <script src="assets/js/bootstrap-transition.js"></script>
+    <script src="assets/js/bootstrap-alert.js"></script>
+    <script src="assets/js/bootstrap-modal.js"></script>
+    <script src="assets/js/bootstrap-dropdown.js"></script>
+    <script src="assets/js/bootstrap-scrollspy.js"></script>
+    <script src="assets/js/bootstrap-tab.js"></script>
+    <script src="assets/js/bootstrap-tooltip.js"></script>
+    <script src="assets/js/bootstrap-popover.js"></script>
+    <script src="assets/js/bootstrap-button.js"></script>
+    <script src="assets/js/bootstrap-collapse.js"></script>
+    <script src="assets/js/bootstrap-carousel.js"></script>
+    <script src="assets/js/bootstrap-typeahead.js"></script>
+    <script src="jquery-terminal/js/jquery-1.7.1.min.js"></script>
+    <script src="jquery-terminal/js/jquery.mousewheel-min.js"></script>
+    <script src="jquery-terminal/js/jquery.terminal-min.js"></script>
+    <script src="http://d3js.org/d3.v2.js"></script>
+    <script src="common-scripts.js"></script>
+    <script src="spin.min.js"></script>
+    <script src="Base.js"></script>
+    <script src="ripl.js"></script>
+    <script src="lispy.js"></script>
+    <script src="notebook.js"></script>
+    <script src="vis-module.js"></script>
+  </body>
+</html>

@@ -40,10 +40,11 @@ void InitGSL() {
   //cout << "WARNING: RANDOM SEED is not random!" << endl;
   gsl_rng_set(random_generator, seed);
 }
-
+  
 PyMODINIT_FUNC initventure_engine(void) {
   InitGSL();
   InitRIPL();
+  PyRun_SimpleString("execfile(\"/home/picloud/venture/__PythonModule.py\")"); // FIXME: absolute path.
   Py_InitModule("venture_engine", MethodsForPythons);
 }
 
@@ -75,7 +76,7 @@ int main(int argc, char *argv[])
 #ifdef _MSC_VER
   PyRun_SimpleString("execfile(\"C:/Users/Yura Perov/workspace/VentureAlpha/src/RESTPython.py\")");
 #else
-  PyRun_SimpleString("execfile(\"/home/ec2-user/venture/RESTPython.py\")");
+  PyRun_SimpleString("execfile(\"./RESTPython.py\")");
 #endif
 
   PyRun_SimpleString(("app.run(port=" + boost::lexical_cast<string>(port) + ", host='0.0.0.0')").c_str());

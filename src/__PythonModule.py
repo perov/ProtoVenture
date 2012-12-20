@@ -1,57 +1,4 @@
 
-def read(s):
-    "Read a Scheme expression from a string."
-    return read_from(tokenize(s))
-
-parse = read
-
-def tokenize(s):
-    "Convert a string into a list of tokens."
-    return s.replace('(',' ( ').replace(')',' ) ').split()
-
-def read_from(tokens):
-    "Read an expression from a sequence of tokens."
-    if len(tokens) == 0:
-        raise SyntaxError('unexpected EOF while reading')
-    token = tokens.pop(0)
-    if '(' == token:
-        L = []
-        while tokens[0] != ')':
-            L.append(read_from(tokens))
-        tokens.pop(0) # pop off ')'
-        return L
-    elif ')' == token:
-        raise SyntaxError('unexpected )')
-    else:
-        return atom(token)
-
-def atom(token):
-    "Numbers become numbers; every other token is a symbol."
-    try: return int(token)
-    except ValueError:
-        try: return float(token)
-        except ValueError:
-            return Symbol(token)
-            
-Symbol = str
-          
-          
-        
-
-
-          
-import sys
-sys.path.append("C:\\Python2.7.3\\DLLs")
-
-print sys.path
-
-import socket
-socket._socket
-
-print "Hello"
-
-
-
 def process_sugars(venture_input):
   if type(venture_input) == list:
     if len(venture_input) == 0:
@@ -96,29 +43,3 @@ def process_sugars(venture_input):
         return venture_input
   else:
     return venture_input
-
-
-
-
-import cloud
-
-def add():
-  import venture_engine
-  # venture_engine.clear()
-  a = venture_engine.assume("a", parse("(uniform-continuous r[0.0] r[1.0])"))
-  # venture_engine.observe(parse("(normal a r[0.01])"), "r[0.7]")
-  # import subprocess
-  # result = subprocess.check_output(["wget", "Hello World!"])
-  return a #venture_engine.report_value(1)
-
-jid = cloud.call(add, _env='venture-yura')
-
-print cloud.result(jid)
-  
-
-# venture_engine.assume("a", parse("(uniform-continuous r[0.0] r[1.0])"))
-# venture_engine.observe(parse("(normal a r[0.01])"), "r[0.7]")
-
-# while True:
-  # print venture_engine.report_value(1)
-  # venture_engine.infer(1)

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+
+    <title>Venture IDE</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <!-- Le styles -->
+    <link href="assets/css/bootstrap.css" rel="stylesheet">
+	<link href="jquery-terminal/css/jquery.terminal.css" rel="stylesheet"/>
+
+    <style type="text/css">
+      body {
+        padding-top: 60px;
+        padding-bottom: 40px;
+      }
+      .sidebar-nav {
+        padding: 9px 0;
+      }
+    </style>
+    <link href="assets/css/bootstrap-responsive.css" rel="stylesheet">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le fav and touch icons -->
+    <link rel="shortcut icon" href="assets/ico/favicon.ico">
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="assets/ico/apple-touch-icon-144-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="assets/ico/apple-touch-icon-114-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="assets/ico/apple-touch-icon-72-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" href="assets/ico/apple-touch-icon-57-precomposed.png">
+
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.18/jquery-ui.min.js"></script>
+  <link href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.18/themes/base/jquery-ui.css" rel="stylesheet" type="text/css"/>
+  <script type="text/javascript" src="jqwidgets/jqxcore.js"></script>
+  <script type="text/javascript" src="jqwidgets/jqxlistbox.js"></script>
+  <script type="text/javascript" src="jqwidgets/jqxscrollbar.js"></script>
+  <script type="text/javascript" src="jqwidgets/jqxbuttons.js"></script> 
+  <link href="assets/css/jqx.base.css" rel="stylesheet">
+
+  <script>
+  	function fetchUserScript() {
+		//vs = new visualizer();
+		//vs.dynamicLoadJS($('#getLibLocation').val(), "js"); //isnt working for some reason
+		ex = new vistemplate();
+		ex.run();
+	}
+  </script>
+
+  </head>
+
+  <body onload="$('#terminalWindow').attr('style','height:500px;');">
+
+    <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container-fluid">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <a class="brand" href="#">Venture IME</a>
+          <div class="btn-group pull-right">
+            <ul class="dropdown-menu">
+              <li><a href="#">Profile</a></li>
+              <li class="divider"></li>
+              <li><a href="#">Sign Out</a></li>
+            </ul>
+          </div>
+          <div class="nav-collapse">
+            <ul class="nav">
+              <li class="active"><a href="#">Home</a></li>
+              <li><a href="#about">About</a></li>
+              <li><a href="#contact">Contact</a></li>
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+
+    <div class="container-fluid">
+      <div class="row-fluid">
+	  
+        <div class="span1">
+          <div class="well sidebar-nav">
+            <ul class="nav nav-list">
+              <li class="nav-header">Terminal</li>
+              <li><a href="index.html"><img src="assets/img/terminal.png"></a></li>
+	      
+		<hr style="color: GREY;background-color: GREY;height: 1px;">
+		
+	      <li class="nav-header">Notebook</li>
+              <li><a href="notebook.html"><img src="assets/img/notebook.png"></a></li>
+
+		<hr style="color: GREY;background-color: GREY;height: 1px;">
+
+	      <li class="nav-header">Graphing</li>
+              <li><a href="#"><img src="assets/img/vis.png"></a></li>
+
+            </ul>
+          </div><!--/.well -->
+        </div><!--/span-->
+		
+	<div class="vis-holder" style="margin-left:100px;">
+		<div style="margin-left: auto ;margin-right: auto ;width: 700px ;">
+			<h3> Specify path to your Javascript visualization module </h3> <hr>
+			<form class="navbar-form">
+			  <div style="float:left;">
+			  	<input type="text" id="getLibLocation" class="input-xxlarge" value="vis-curvefitting-lecture.js">
+			  </div>
+			   &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+			  <a class="btn btn-primary btn-large" onclick="fetchUserScript()">Load Module</a>
+			<p style="font-size:14px; color:grey;font-style:oblique;"> To try Bayesian Curve fitting demo, type : <b style="font-style:normal;color:black;">vis-curvefitting.js</b></p>
+			</form>
+
+		</div>
+	</div>
+
+      <hr>
+
+      <footer>
+        <p><i>&copy; MIT BCS - Probabilistic Computing Group 2012. The JavaScript terminal is based on JQueryTerminal Emulator (GNU LGPL3), jQuery Storage plugin (MIT), jQuery LiveQuery plugin (MIT/GPL), jQuary Timers (WTFPL), jQuery (MIT/GPL).</i></p>
+      </footer>
+
+    </div><!--/.fluid-container-->
+
+
+
+    <!-- Le javascript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="assets/js/jquery.js"></script>
+    <script src="assets/js/bootstrap-transition.js"></script>
+    <script src="assets/js/bootstrap-alert.js"></script>
+    <script src="assets/js/bootstrap-modal.js"></script>
+    <script src="assets/js/bootstrap-dropdown.js"></script>
+    <script src="assets/js/bootstrap-scrollspy.js"></script>
+    <script src="assets/js/bootstrap-tab.js"></script>
+    <script src="assets/js/bootstrap-tooltip.js"></script>
+    <script src="assets/js/bootstrap-popover.js"></script>
+    <script src="assets/js/bootstrap-button.js"></script>
+    <script src="assets/js/bootstrap-collapse.js"></script>
+    <script src="assets/js/bootstrap-carousel.js"></script>
+    <script src="assets/js/bootstrap-typeahead.js"></script>
+    <script src="jquery-terminal/js/jquery-1.7.1.min.js"></script>
+    <script src="jquery-terminal/js/jquery.mousewheel-min.js"></script>
+    <script src="jquery-terminal/js/jquery.terminal-min.js"></script>
+    <script src="raphael-min.js"></script>
+    <script src="http://d3js.org/d3.v2.js"></script>
+    <script src="Base.js"></script>
+    <script src="ripl.js"></script>
+    <script src="lispy.js"></script>
+    <script src="vis-module.js"></script>
+    <script src="vis-curvefitting-lecture.js"></script>
+    <script src="index-load.js"></script>
+    <script src="terminal-management.js"></script>
+	
+  </body>
+</html>

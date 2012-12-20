@@ -1,0 +1,11 @@
+#commentBox {
+     display: block;
+     width: 60%;
+     height: 20px;
+     padding: 8px;
+     border: 1px solid #cccccc;
+     line-height: 130%;
+     font-size: 15px;
+     float:left;
+}
+

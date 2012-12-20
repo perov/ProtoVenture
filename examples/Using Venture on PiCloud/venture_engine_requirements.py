@@ -35,23 +35,6 @@ def atom(token):
             
 Symbol = str
           
-          
-        
-
-
-          
-import sys
-sys.path.append("C:\\Python2.7.3\\DLLs")
-
-print sys.path
-
-import socket
-socket._socket
-
-print "Hello"
-
-
-
 def process_sugars(venture_input):
   if type(venture_input) == list:
     if len(venture_input) == 0:
@@ -96,29 +79,3 @@ def process_sugars(venture_input):
         return venture_input
   else:
     return venture_input
-
-
-
-
-import cloud
-
-def add():
-  import venture_engine
-  # venture_engine.clear()
-  a = venture_engine.assume("a", parse("(uniform-continuous r[0.0] r[1.0])"))
-  # venture_engine.observe(parse("(normal a r[0.01])"), "r[0.7]")
-  # import subprocess
-  # result = subprocess.check_output(["wget", "Hello World!"])
-  return a #venture_engine.report_value(1)
-
-jid = cloud.call(add, _env='venture-yura')
-
-print cloud.result(jid)
-  
-
-# venture_engine.assume("a", parse("(uniform-continuous r[0.0] r[1.0])"))
-# venture_engine.observe(parse("(normal a r[0.01])"), "r[0.7]")
-
-# while True:
-  # print venture_engine.report_value(1)
-  # venture_engine.infer(1)
