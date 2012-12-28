@@ -158,6 +158,17 @@ void BindStandardElementsToGlobalEnvironment() {
   BindToEnvironment(global_environment,
                     shared_ptr<VentureSymbol>(new VentureSymbol("mem")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new XRP__memoizer()))));
+  BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol("symmetric-dirichlet-multinomial/make")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new XRP__SymmetricDirichletMultinomial_maker()))));
+  BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol("dirichlet-multinomial/make")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new XRP__DirichletMultinomial_maker()))));
+  BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol("beta-binomial/make")), // Make just via the std::string?
+                                                                                        // FIXME: add check that there are 2 arguments!
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new XRP__DirichletMultinomial_maker()))));
+
 
   BindToEnvironment(global_environment,
                     shared_ptr<VentureSymbol>(new VentureSymbol("flip")), // Make just via the std::string?

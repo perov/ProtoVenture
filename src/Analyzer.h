@@ -4,7 +4,7 @@
 
 #include "Header.h"
 #include "VentureValues.h"
-#include "XRP.h"
+#include "XRPCore.h"
 
 enum NodeTypes { UNDEFINED_NODE, ENVIRONMENT, VARIABLE, UNDEFINED_EVALUATION_NODE, DIRECTIVE_ASSUME,
                  DIRECTIVE_PREDICT, DIRECTIVE_OBSERVE, SELF_EVALUATING, LAMBDA_CREATOR,
@@ -13,6 +13,7 @@ enum NodeTypes { UNDEFINED_NODE, ENVIRONMENT, VARIABLE, UNDEFINED_EVALUATION_NOD
 string GetNodeTypeAsString(size_t node_type);
 
 extern size_t DIRECTIVE_COUNTER;
+extern size_t TMP_number_of_created_XRPSamplers;
 
 struct Node : public VentureValue {
   Node::Node();
@@ -49,6 +50,7 @@ struct NodeEnvironment : public Node {
 struct NodeVariable : public Node {
   NodeVariable::NodeVariable(shared_ptr<NodeEnvironment> parent_environment, shared_ptr<VentureValue> value);
   virtual NodeTypes NodeVariable::GetNodeType();
+  shared_ptr<VentureValue> NodeVariable::GetCurrentValue();
   ~NodeVariable();
 
   weak_ptr<NodeEnvironment> parent_environment;
@@ -81,6 +83,7 @@ struct NodeEvaluation : public Node {
   virtual void NodeEvaluation::DeleteNode();
 };
 
+const size_t STANDARD_REEVALUATION_PRIORITY = 10;
 struct ReevaluationOrderComparer {
   bool ReevaluationOrderComparer::operator()(const ReevaluationEntry& first, const ReevaluationEntry& second);
 };
@@ -222,6 +225,7 @@ struct NodeXRPApplication : public NodeEvaluation {
   shared_ptr<VentureValue> new_sampled_value;
   
   bool frozen; // For mem.
+  
   virtual void NodeXRPApplication::DeleteNode();
 };
 
@@ -245,9 +249,5 @@ void ApplyToMeAndAllMyChildren(shared_ptr<Node>,
 void DrawGraphDuringMH(shared_ptr<Node> first_node, stack< shared_ptr<Node> >& touched_nodes);
 
 size_t CalculateNumberOfRandomChoices(shared_ptr<Node> first_node);
-
-void FreezeBranch(shared_ptr<Node> first_node, ReevaluationParameters& reevaluation_parameters);
-
-void UnfreezeBranch(shared_ptr<Node> first_node);
 
 #endif

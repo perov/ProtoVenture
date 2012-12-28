@@ -135,6 +135,7 @@ struct VentureList : public VentureValue {
   VentureList::VentureList(shared_ptr<VentureValue> car);
   virtual VentureDataTypes VentureList::GetType(); // Should be virtual for NIL?..
   // FIXME: add CompareByValue? Do not forget about the NIL, that it has another type?
+  virtual bool VentureList::CompareByValue(shared_ptr<VentureValue>);
   virtual string VentureList::GetString();
   virtual PyObject* VentureList::GetAsPythonObject();
   ~VentureList();
@@ -212,6 +213,8 @@ shared_ptr<VentureList> GetNext(shared_ptr<VentureList>);
 shared_ptr<VentureValue> GetNth(shared_ptr<VentureList>, size_t);
 
 void AddToList(shared_ptr<VentureList>, shared_ptr<VentureValue>);
+
+size_t GetSize(shared_ptr<VentureList> list);
 
 bool StandardPredicate(shared_ptr<VentureValue>);
 

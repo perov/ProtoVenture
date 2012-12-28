@@ -3,7 +3,7 @@
 #include "VentureValues.h"
 #include "VentureParser.h"
 #include "Analyzer.h"
-#include "XRP.h"
+#include "XRPCore.h"
 #include "RIPL.h"
 #include "ERPs.h"
 #include "Primitives.h"

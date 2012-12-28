@@ -13,8 +13,6 @@ bool IsReal(const string&);
 
 string ToLower(string);
 
-list<string> Tokenize(const string&);
-
 shared_ptr<VentureValue> ProcessAtom(const string&);
 
 shared_ptr<VentureValue> ProcessTokens(list<string>&);

@@ -3,7 +3,8 @@
 #include "VentureParser.h"
 #include "Analyzer.h"
 #include "Evaluator.h"
-#include "XRP.h"
+#include "XRPCore.h"
+#include "XRPmem.h"
 #include "RIPL.h"
 
 string GetNodeTypeAsString(size_t node_type) {
@@ -88,7 +89,7 @@ NodeXRPApplication::~NodeXRPApplication() {}
 VentureDataTypes Node::GetType() { return NODE; }
 NodeTypes Node::GetNodeType() { return UNDEFINED_NODE; }
 void Node::GetChildren(queue< shared_ptr<Node> >& processing_queue) {
-  throw std::runtime_error("Should not be called.");
+  throw std::runtime_error("Should not be called (3).");
 };
 
 void Node::DeleteNode() {
@@ -106,6 +107,17 @@ NodeVariable::NodeVariable(shared_ptr<NodeEnvironment> parent_environment, share
     value(value),
     new_value(shared_ptr<VentureValue>())
 {}
+shared_ptr<VentureValue> NodeVariable::GetCurrentValue() {
+  // FIXME for multicore:
+  // 1) This function should be used anywhere instead of ...->some_variable->value;
+  // 2) This function should check that the this->new_value is not provided
+  //    by another MHProposal on another thread.
+  if (this->new_value != shared_ptr<VentureValue>()) {
+    return this->new_value;
+  } else {
+    return this->value;
+  }
+}
 NodeTypes NodeVariable::GetNodeType() { return VARIABLE; }
 
 void NodeVariable::DeleteNode() {
@@ -145,7 +157,10 @@ bool ReevaluationOrderComparer::operator()(const ReevaluationEntry& first, const
   for (size_t index = 0;; index++) {
     if (index >= first.reevaluation_node->myorder.size() &&
         index >= second.reevaluation_node->myorder.size()) {
-      return false; // They are the same.
+      // Same orders.
+      return (first.priority > second.priority);
+      // The higher priority number (size_t), the lower the priority.
+      // Therefore the priority = 0 is the highest.
     } else {
       if (index >= first.reevaluation_node->myorder.size()) {
         return true; // The first should be reevaluated later than the second.
@@ -304,7 +319,7 @@ NodeLambdaCreator::NodeLambdaCreator(shared_ptr<VentureList> arguments, shared_p
 
 }
 shared_ptr<NodeEvaluation> NodeLambdaCreator::clone() const {
-  return shared_ptr<NodeLambdaCreator>(new NodeLambdaCreator(this->arguments, this->expressions));
+  return shared_ptr<NodeLambdaCreator>(new NodeLambdaCreator(this->arguments, this->expressions->clone()));
 }
 void NodeLambdaCreator::GetChildren(queue< shared_ptr<Node> >& processing_queue) {
   if (earlier_evaluation_nodes != shared_ptr<NodeEvaluation>()) {
@@ -663,11 +678,9 @@ shared_ptr<VentureValue>
 NodeXRPApplication::Evaluate(shared_ptr<NodeEnvironment> environment) {
   if (this->xrp->xrp->IsRandomChoice() == true) {
     random_choices.insert(dynamic_pointer_cast<NodeXRPApplication>(this->shared_from_this()));
+    TMP_number_of_created_XRPSamplers++;
   }
 
-  //if (this->xrp->xrp->SaveReferencesToItsSamplers() == true) {
-  //  this->xrp->xrp->references_to_its_samplers.insert(this->shared_from_this());
-  //}
   //cout << "SIZE: " << GetArgumentsFromEnvironment(environment,
   //                                dynamic_pointer_cast<NodeEvaluation>(this->shared_from_this())).size() << endl;
   vector< shared_ptr<VentureValue> > got_arguments = GetArgumentsFromEnvironment(environment, // Not efficient?
@@ -690,7 +703,8 @@ NodeXRPApplication::Reevaluate(shared_ptr<VentureValue> passing_value,
       got_old_arguments,
       got_new_arguments,
       dynamic_pointer_cast<NodeXRPApplication>(this->shared_from_this()),
-      (sender == shared_ptr<Node>()));
+      (sender == shared_ptr<Node>()),
+      reevaluation_parameters);
   if (result->new_value == shared_ptr<VentureValue>()) { // Rescored.
     //cout << "Adding: " << result->new_loglikelihood << " - " << result->old_loglikelihood << endl;
     reevaluation_parameters.loglikelihood_changes += result->new_loglikelihood;
@@ -698,6 +712,7 @@ NodeXRPApplication::Reevaluate(shared_ptr<VentureValue> passing_value,
     return shared_ptr<ReevaluationResult>(
       new ReevaluationResult(shared_ptr<VentureValue>(), false));
   } else { // Resampled.
+    this->new_sampled_value = result->new_value;
     return shared_ptr<ReevaluationResult>(
       new ReevaluationResult(result->new_value, true));
   }
@@ -738,8 +753,16 @@ NodeApplicationCaller::Reevaluate(shared_ptr<VentureValue> passing_value,
     this->proposing_evaluated_operator = passing_value;
     shared_ptr<VentureValue> evaluated_operator = passing_value;
 
+    shared_ptr<NodeEnvironment> previous_environment; // This part should be in the "EvaluateApplication(...)"
+                                                      // in order to avoid duplication.
+    if (evaluated_operator->GetType() == LAMBDA) {
+      previous_environment = ToVentureType<VentureLambda>(evaluated_operator)->scope_environment.lock();
+    } else {
+      previous_environment = environment;
+    }
+
     shared_ptr<NodeEnvironment> local_environment =
-      shared_ptr<NodeEnvironment>(new NodeEnvironment(environment));
+      shared_ptr<NodeEnvironment>(new NodeEnvironment(previous_environment));
     for (size_t index = 0; index < application_operands.size(); index++) {
       shared_ptr<VentureValue> binding_value =
         this->application_node->environment->local_variables[index]->value;
@@ -749,6 +772,8 @@ NodeApplicationCaller::Reevaluate(shared_ptr<VentureValue> passing_value,
       application_operands[index]->output_references.insert(new_variable_node);
     }
 
+    TMP_number_of_created_XRPSamplers = 0;
+
     shared_ptr<VentureValue> new_value =
       EvaluateApplication(passing_value,
                           local_environment,
@@ -756,18 +781,15 @@ NodeApplicationCaller::Reevaluate(shared_ptr<VentureValue> passing_value,
                           new_application_node,
                           dynamic_pointer_cast<NodeApplicationCaller>(this->shared_from_this()));
     
-    reevaluation_parameters.random_choices_delta += CalculateNumberOfRandomChoices(new_application_node);
+    reevaluation_parameters.random_choices_delta += TMP_number_of_created_XRPSamplers; // CalculateNumberOfRandomChoices(new_application_node);
+    // Two below should be "connected" (the first should be part of the second).
     reevaluation_parameters.random_choices_delta -= CalculateNumberOfRandomChoices(application_node);
     FreezeBranch(application_node, reevaluation_parameters);
     
     return shared_ptr<ReevaluationResult>(
       new ReevaluationResult(new_value, true));
   } else {
-    // throw std::runtime_error("NodeApplicationCaller::Reevaluate: strange sender.");
-    // It is from memoizer.
-    // Just passing up:
-    return shared_ptr<ReevaluationResult>(
-      new ReevaluationResult(passing_value, true));
+    throw std::runtime_error("NodeApplicationCaller::Reevaluate: strange sender.");
   }
 }
 
@@ -837,7 +859,7 @@ bool NodeEvaluation::WasEvaluated() {
 }
 
 void DrawGraphDuringMH(shared_ptr<Node> first_node, stack< shared_ptr<Node> >& touched_nodes) {
-/*
+#ifdef _MSC_VER
   cout << "Writing the graph" << endl;
 
   std::ofstream graph_file;
@@ -885,7 +907,7 @@ void DrawGraphDuringMH(shared_ptr<Node> first_node, stack< shared_ptr<Node> >& t
   graph_file.close();
 
   cout << "The graph has been written" << endl;
-*/
+#endif
 }
 
 size_t CalculateNumberOfRandomChoices(shared_ptr<Node> first_node) {
@@ -901,71 +923,4 @@ size_t CalculateNumberOfRandomChoices(shared_ptr<Node> first_node) {
     processing_queue.pop();
   }
   return number_of_random_choices;
-};
-
-void FreezeBranch(shared_ptr<Node> first_node, ReevaluationParameters& reevaluation_parameters) {
-  queue< shared_ptr<Node> > processing_queue;
-  processing_queue.push(first_node);
-  while (!processing_queue.empty()) {
-    processing_queue.front()->GetChildren(processing_queue);
-    if (processing_queue.front()->GetNodeType() == XRP_APPLICATION &&
-          dynamic_pointer_cast<NodeXRPApplication>(processing_queue.front())->xrp->xrp->GetName() == "XRP__memoized_procedure") {
-      // It is stupid that we check here by GetName().
-      // It means that the Freeze(...) should be implemented in another way...
-
-      // FIXME: GetArgumentsFromEnvironment should be called without adding lookup references!
-      vector< shared_ptr<VentureValue> > got_arguments = GetArgumentsFromEnvironment(dynamic_pointer_cast<NodeXRPApplication>(processing_queue.front())->environment, // Not efficient?
-                                      dynamic_pointer_cast<NodeEvaluation>(processing_queue.front()), // Are we sure that we have not deleted yet lookup links?
-                                      false); // FIXME: we should be sure that we are receiving old arguments!
-
-      string mem_table_key = XRP__memoized_procedure__MakeMapKeyFromArguments(got_arguments);
-      XRP__memoizer_map_element& mem_table_element =
-        (*(dynamic_pointer_cast<XRP__memoized_procedure>(dynamic_pointer_cast<NodeXRPApplication>(processing_queue.front())->xrp->xrp)->mem_table.find(mem_table_key))).second;
-
-      dynamic_pointer_cast<NodeXRPApplication>(processing_queue.front())->xrp->xrp->Freeze(got_arguments, dynamic_pointer_cast<NodeXRPApplication>(processing_queue.front()));
-
-      if (mem_table_element.hidden_uses +
-            mem_table_element.active_uses ==
-            mem_table_element.frozen_elements) {
-        reevaluation_parameters.random_choices_delta -= CalculateNumberOfRandomChoices(mem_table_element.application_caller_node);
-        processing_queue.push(mem_table_element.application_caller_node);
-      }
-    }
-    processing_queue.pop();
-  }
-};
-
-void UnfreezeBranch(shared_ptr<Node> first_node) {
-  queue< shared_ptr<Node> > processing_queue;
-  processing_queue.push(first_node);
-  while (!processing_queue.empty()) {
-    processing_queue.front()->GetChildren(processing_queue);
-    if (processing_queue.front()->GetNodeType() == XRP_APPLICATION &&
-          dynamic_pointer_cast<NodeXRPApplication>(processing_queue.front())->xrp->xrp->GetName() == "XRP__memoized_procedure") {
-      // It is stupid that we check here by GetName().
-      // It means that the Freeze(...) should be implemented in another way...
-
-      if (dynamic_pointer_cast<NodeXRPApplication>(processing_queue.front())->frozen == false) {
-        throw std::runtime_error("We should be frozen at this time!"); // Not right for the multi-thread version?
-      }
-
-      // FIXME: GetArgumentsFromEnvironment should be called without adding lookup references!
-      vector< shared_ptr<VentureValue> > got_arguments = GetArgumentsFromEnvironment(dynamic_pointer_cast<NodeXRPApplication>(processing_queue.front())->environment, // Not efficient?
-                                      dynamic_pointer_cast<NodeEvaluation>(processing_queue.front()), // Are we sure that we have not deleted yet lookup links?
-                                      false); // FIXME: we should be sure that we are receiving old arguments!
-
-      string mem_table_key = XRP__memoized_procedure__MakeMapKeyFromArguments(got_arguments);
-      XRP__memoizer_map_element& mem_table_element =
-        (*(dynamic_pointer_cast<XRP__memoized_procedure>(dynamic_pointer_cast<NodeXRPApplication>(processing_queue.front())->xrp->xrp)->mem_table.find(mem_table_key))).second;
-
-      dynamic_pointer_cast<NodeXRPApplication>(processing_queue.front())->xrp->xrp->Unfreeze(got_arguments, dynamic_pointer_cast<NodeXRPApplication>(processing_queue.front()));
-
-      if (mem_table_element.hidden_uses +
-            mem_table_element.active_uses ==
-            mem_table_element.frozen_elements + 1) {
-        processing_queue.push(mem_table_element.application_caller_node);
-      }
-    }
-    processing_queue.pop();
-  }
 };

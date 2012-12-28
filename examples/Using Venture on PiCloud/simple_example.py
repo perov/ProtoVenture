@@ -1,10 +1,12 @@
 
 import cloud
+cloud.setkey(5529, api_secretkey='d492275c1761470b0add06d6ece2c89d406482d7')
+cloud_environment = 'venture-2-6'
 from venture_engine_requirements import *
 import time
 
 NumberOfSamples = 20
-IntermediateMHIterations = 500000
+IntermediateMHIterations = 100
 
 def sample_once(void_argument):
   import venture_engine
@@ -35,7 +37,7 @@ def run_test():
 
 start_time = time.time()
 print "Without mapping:"
-jid = cloud.call(run_test, _env='venture-yura', _type='c1')
+jid = cloud.call(run_test, _env=cloud_environment, _type='c1')
 result = cloud.result(jid)
 print "** Time: " + str(time.time() - start_time)
 print "** " + result
@@ -46,7 +48,7 @@ print ""
 
 print "With mapping:"
 start_time = time.time()
-jids = cloud.map(sample_once, range(NumberOfSamples), _env='venture-yura', _type='c1')
+jids = cloud.map(sample_once, range(NumberOfSamples), _env=cloud_environment, _type='c1')
 result = cloud.result(jids)
 HowManyTimesIsTricky = 0
 for sample in result:

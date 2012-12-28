@@ -1,4 +1,10 @@
 
+disable_REST_server_server = True
+
+
+
+
+
 def read(s):
     "Read a Scheme expression from a string."
     return read_from(tokenize(s))
@@ -52,6 +58,7 @@ print "Hello"
 
 
 
+
 def process_sugars(venture_input):
   if type(venture_input) == list:
     if len(venture_input) == 0:
@@ -100,8 +107,6 @@ def process_sugars(venture_input):
 
 
 
-
-
 import venture_engine
 
 # venture_engine.assume("a", parse("(uniform-continuous r[0.0] r[1.0])"))
@@ -127,29 +132,60 @@ lisp_parser = lisp_parser_Class()
     
 MyRIPL = venture_engine
 
+# MyRIPL.assume("bb", lisp_parser.parse("(dirichlet-multinomial/make (list 0.5 0.5 0.5))"))
+# (last_directive, _) = MyRIPL.predict(lisp_parser.parse("(= (bb) (bb))"))
+# while True:
+  # print MyRIPL.report_value(2)
+  # MyRIPL.infer(100)
 
+# (last_directive, _) = MyRIPL.predict(lisp_parser.parse("((mem (if (flip) flip +)) 0.5)"))
+
+# MyRIPL.clear()
 # MyRIPL.assume("uncertainty-factor", lisp_parser.parse("(flip)"))
 # MyRIPL.assume("my-function", lisp_parser.parse("(if uncertainty-factor flip (lambda (x) x))"))
 # MyRIPL.assume("my-function-mem", lisp_parser.parse("(mem my-function)"))
-# (last_directive, _) = MyRIPL.predict(lisp_parser.parse("(if (= (my-function-mem 0.3) 0.3) false (my-function-mem 0.3))"))
+# (last_directive, _) = MyRIPL.predict(lisp_parser.parse("(if (= (my-function-mem 0.3) 0.3) 0.3 (my-function-mem 0.3))"))
 
+# MyRIPL.assume("draw-type", lisp_parser.parse("(CRP/make 0.5)"))
+# MyRIPL.assume("class1", lisp_parser.parse("(draw-type)"))
+# MyRIPL.assume("class2", lisp_parser.parse("(draw-type)"))
+# MyRIPL.assume("class3", lisp_parser.parse("(draw-type)"))
+# MyRIPL.observe(lisp_parser.parse("(noisy-negate (= class1 class2) 0.000001)"), "true")
+# (last_directive, _) = MyRIPL.predict(lisp_parser.parse("(= class1 class3)"))
 
-
-# MyRIPL.assume("proc", lisp_parser.parse("(mem (lambda (x) (flip 0.8)))"))
+# MyRIPL.assume("proc1", lisp_parser.parse("(flip)"))
+# MyRIPL.assume("proc2", lisp_parser.parse("(flip)"))
+# MyRIPL.assume("proc", lisp_parser.parse("(mem (lambda (x) (flip 0.5)))"))
+# (last_directive, value) = MyRIPL.predict(lisp_parser.parse("(and (proc 1) (proc 1) (proc 1))"))
 # (last_directive, _) = MyRIPL.predict(lisp_parser.parse("(and (proc 1) (proc 2) (proc 1) (proc 2))"))
-
+# print value
+# MyRIPL.infer(0)
+# (last_directive, _) = MyRIPL.predict(lisp_parser.parse("(and proc1 proc2 proc1 proc2)"))
+# sys.exit()
 
 # MyRIPL.assume("proc", lisp_parser.parse("(mem (lambda (x) (flip 0.8)))"))
 # (last_directive, _) = MyRIPL.predict(lisp_parser.parse("(if (proc (uniform-discrete 1 3)) (if (proc (uniform-discrete 1 3)) (proc (uniform-discrete 1 3)) false) false)"))
+
+
+# MyRIPL.assume("proc", lisp_parser.parse("(mem (lambda () (flip 0.5)))"))
+# (last_directive, _) = MyRIPL.predict(lisp_parser.parse("(if (proc) (proc) false)"))
 
 
 
 # MyRIPL.assume("proc", lisp_parser.parse("(mem (lambda (x) (flip 0.5)))"))
 # (last_directive, _) = MyRIPL.predict(lisp_parser.parse("(if (proc 1) (if (proc 1) (proc 1) false) false)"))
 
+# import random
+
+# MyRIPL.assume("draw-type", lisp_parser.parse("(CRP/make 0.5)"))
+# MyRIPL.assume("class1", lisp_parser.parse("(draw-type)"))
+# MyRIPL.assume("class2", lisp_parser.parse("(draw-type)"))
+# MyRIPL.assume("class3", lisp_parser.parse("(draw-type)"))
+# MyRIPL.observe(lisp_parser.parse("(noisy-negate (= class1 class2) 0.000001)"), "true")
+# (last_directive, _) = MyRIPL.predict(lisp_parser.parse("(= class1 class3)"))
+
 # distribution_dictionary = {}
 # attempts = 0.0
-
 # while True:
   # print venture_engine.report_value(1)
   # last_value = venture_engine.report_value(last_directive)
@@ -158,8 +194,8 @@ MyRIPL = venture_engine
   # distribution_as_100 = [(str(x) + " = " + str(distribution_dictionary[x] / attempts)) for x in distribution_dictionary]
   # print distribution_as_100
   # print "*"
-  # venture_engine.infer(10)
-  # if attempts == 20000:
+  # venture_engine.infer(100)
+  # if attempts == 200000:
     # sys.exit()
 
 # sys.exit()
@@ -234,9 +270,10 @@ from flask import request
 from flask import make_response
 
 # Why it disables the output for the flask?
-# import logging
-# flask_log = logging.getLogger("werkzeug")
-# flask_log.setLevel(logging.DEBUG) # For some reason WARNING and ERROR! still prints requests to the console.
+if disable_REST_server_server is True:
+  import logging
+  flask_log = logging.getLogger("werkzeug")
+  flask_log.setLevel(logging.DEBUG) # For some reason WARNING and ERROR! still prints requests to the console.
 
 try: # See for details: http://stackoverflow.com/questions/791561/python-2-5-json-module
     import json

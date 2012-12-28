@@ -1,10 +1,4 @@
 
-#include "Header.h"
-#include "VentureValues.h"
-#include "VentureParser.h"
-#include "Analyzer.h"
-#include "XRP.h"
-#include "RIPL.h"
 #include "ERPs.h"
 
 void ERP::Incorporate(vector< shared_ptr<VentureValue> >& arguments,

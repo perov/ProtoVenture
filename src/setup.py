@@ -11,7 +11,7 @@ module1 = Extension('venture_engine',
                     libraries = ['gsl', 'gslcblas'],
                     extra_compile_args = ['-O2', '-fpermissive'],
                     #library_dirs = ['/usr/local/lib'],
-                    sources = ['Utilities.cpp', 'VentureValues.cpp', 'VentureParser.cpp', 'Primitives.cpp', 'Evaluator.cpp', 'Main.cpp', 'XRP.cpp', 'RIPL.cpp', 'Analyzer.cpp', 'ERPs.cpp', 'MHProposal.cpp', 'PythonProxy.cpp'])
+                    sources = ['Utilities.cpp', 'VentureValues.cpp', 'VentureParser.cpp', 'Primitives.cpp', 'Evaluator.cpp', 'Main.cpp', 'XRPCore.cpp', 'XRPmem.cpp', 'XRPs.cpp', 'RIPL.cpp', 'Analyzer.cpp', 'ERPs.cpp', 'MHProposal.cpp', 'PythonProxy.cpp'])
 #-lpython2.6 -lgsl -lgslcblas
 
 setup (name = 'Venture engine',

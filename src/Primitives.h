@@ -5,7 +5,7 @@
 #include "Header.h"
 #include "VentureValues.h"
 #include "VentureParser.h"
-#include "XRP.h"
+#include "XRPCore.h"
 #include "ERPs.h"
 
 class Primitive : public ERP {

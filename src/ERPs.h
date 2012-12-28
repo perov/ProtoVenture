@@ -5,7 +5,8 @@
 #include "Header.h"
 #include "VentureValues.h"
 #include "VentureParser.h"
-#include "XRP.h"
+#include "Analyzer.h"
+#include "XRPCore.h"
 
 class ERP : public XRP {
   virtual void ERP::Incorporate(vector< shared_ptr<VentureValue> >& arguments,

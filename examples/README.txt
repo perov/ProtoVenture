@@ -1,47 +1,124 @@
 
-1. SECTION "HOW TO START/STOP VENTURE ENGINE"
+USING VENTURE REMOTELY ON EC2 INSTANCE
 
-1.1.  Starting the engine's copy
+0. SECTION "USERS LIST"
+  
+      EMAIL                 DEFAULT PORT
+      maxhkw@gmail.com      5011
+      tejask@mit.edu        5012
+      jhuggins@mit.edu      5013
+      ardavans@mit.edu      5014
+      d.roy@eng.cam.ac.uk   5015
+      dlovell@gmail.com     5016
+      malmaud@mit.edu       5017
+      vkm@mit.edu           5018
+      
+      Your user name is the part of your email before @ symbol. 
+     
+1. SECTION "CONNECTION TO 'VENTURE' AMAZON EC2 INSTANCE"
 
-      $ ssh ec2-184-72-149-80.compute-1.amazonaws.com -l probcomp
+      $ ssh ec2-184-72-149-80.compute-1.amazonaws.com -l *YOUR-USER-NAME*
 
-      User: probcomp
+      User: *YOUR-USER-NAME* (the part of your email before @ symbol)
       Password: metropolis1953
+      
+      Copy examples directory to your home directory:
+      
+      $ cp -r /usr/venture/examples ~
 
-      $ sudo /home/ec2-user/venture/venture PORT
-      (sudo password is the same: metropolis1953)
+
+2. SECTION "HOW TO USE THE VENTURE VIA PYTHON SCRIPT AS PYTHON MODULE"
+   *** Correspondent example: "examples/Using Venture via Python as Python module/" ***
+   *** You can work on this section ONLY from the 'Venture' EC2 instance            ***
+
+      You can write some Python script, which will import the Venture engine,
+      which was previously compiled as Python module. Example of Python code:
+      
+        import venture_engine
+        venture_engine.clear()
+        venture_engine.predict(parse("(uniform-continuous 0.1 0.9)"))
+      
+      There is built and installed Python module on the 'Venture' EC2 instance.
+      
+      You can see the real example in the examples folder
+      "examples/Using Venture via Python as Python module/".
+      
+      Just run:
+      
+      $ python simple_example.py
+      
+      For your own code it is enough to use the necessary provided Python script
+      "venture_engine_requirements.py" (which is utilities to use the Venture Python module),
+      and write your own Python script, e.g. "my_Church_code.py"
+      (using as basis the "simple_example.py").
+      
+3. SECTION "HOW TO USE THE VENTURE VIA PYTHON SCRIPT AS PYTHON MODULE ON PICLOUD"
+   *** Correspondent example: "examples/Using Venture on PiCloud/"                  ***
+   *** You can work on this section ONLY from the 'Venture' EC2 instance            ***
+
+      Additionally to the previous section, you can run your Python script,
+      which uses the Venture engine as Python module, not on that one 'Venture' EC2
+      instance, but thanks to PiCloud, on the cloud. And it is not harder at all! :)
+   
+      You can see the real example in the examples folder
+      "examples/Using Venture on PiCloud/".
+      
+      Just run:
+      
+      $ python simple_example.py
+      
+      For your own code it is enough to use the necessary provided Python script
+      "venture_engine_requirements.py" (which is utilities to use the Venture Python module),
+      and write your own Python script, e.g. "my_Church_code.py"
+      (using as basis the "simple_example.py").
+      
+4. SECTION "HOW TO START/STOP VENTURE ENGINE AS REST SERVER"
+   (It is necessary to start the Venture engine as REST server
+    to be able to connect to it from client side, see for details
+    the section #5 "HOW TO USE THE VENTURE VIA PYTHON SCRIPT VIA REST"
+    and the section #6 "HOW TO USE THE VENTURE VIA JAVASCRIPT VIA REST")
+
+4.1.  Starting the engine's REST server copy on EC2 instance
+
+      $ /usr/venture/venture PORT
       where PORT is a desired port from the range [5000, 5100] (inclusive both 5000 and 5100)
 
       If you can the engine in "background" by adding the "&":
 
-      $ sudo /home/ec2-user/venture/venture PORT &
+      $ /usr/venture/venture PORT &
+      
+      (Though it is better to start the server in one SSH window, and to try examples in another,
+       because the engine itself outputs some logs to the console.)
 
-1.2.  Stopping the engine's copy (which was previously started by you)
+4.2.  Stopping the engine's REST server copy on EC2 instance (which was previously started by you)
 
       You can stop then the engine by killing its process:
 
       $ ps aux | grep venture
 
-      root      7278  0.0  0.0 173056  2388 pts/1    S    13:52   0:00 sudo /home/ec2-user/venture/venture 5000
-      root      7279  0.5  0.2 212716 14456 pts/1    S    13:52   0:00 /home/ec2-user/venture/venture 5000
+      user1    16233  0.4  0.2 212744 14488 pts/5    S    05:14   0:00 /usr/venture/venture 5001
 
-      $ sudo kill 7279
+      $ kill 16233
 
-1.3.  Use "screen", if necessary.
+4.3.  Use "screen", if necessary.
 
       If you want to start the engine's copy for prolonged continuous job
       it is better to run it in Unix "screen".
       
       $ screen
-      $ sudo /home/ec2-user/venture/venture PORT &
+      $ /usr/venture/venture PORT &
       
       If you closed your ssh connection, you can resume the screen:
       $ screen -r
       
-2. SECTION "HOW TO USE THE VENTURE VIA PYTHON SCRIPT VIA REST"
+5. SECTION "HOW TO USE THE VENTURE VIA PYTHON SCRIPT VIA REST"
+   *** Correspondent example: "examples/Using Venture via Python via REST/" ***
+   *** You can work on this section BOTH from your local machine            ***
+   *** and from 'Venture' EC2 instance                                      ***
 
       You can write some Python script, which will connect to Venture remote server
-      via REST protocol.
+      via REST protocol. In our case this Venture remote server would be
+      the EC2 instance described in the section #4.
       
       You need to have (on your computer) the Python's module "requests",
       which you can install with Python's "easy_install":
@@ -56,21 +133,23 @@
       and write your own Python script, e.g. "my_Church_code.py"
       (using as basis the "simple_example.py").
       
-3. SECTION "HOW TO USE THE VENTURE VIA JAVASCRIPT VIA REST"
+      PLEASE, SPECIFY YOUR PORT ON THE LINE #4 IN THE FILE "simple_example.py".
+      YOUR PORT IS THE PORT ON WHICH YOU JUST HAVE STARTED YOUR REST SERVER COPY
+      ACCORDING TO THE SECTION #4.
+      
+6. SECTION "HOW TO USE THE VENTURE VIA JAVASCRIPT VIA REST"
+   *** Correspondent example: "examples/Using Venture via JavaScript via REST/" ***
+   *** You can work on this section from your local machine                     ***
 
       You can address to Venture with JavaScript too.
       The basic example is provided in the folder "Using Venture via JavaScript via REST".
-      It is necessary to specify the port in the file "ripl.js" (line #20).
-      You can use the basic example, the "Bayesian curve fitting demo" and the "CRP/Mixture demo",
+      It is necessary to specify the port in the file "ripl.js" (line #9).
+      You can use the basic example, the "Bayesian curve fitting demo",
       to get familiar how to address to remote Venture engine server via JavaScript.
       
       "Bayesian curve fitting demo":
-      a) HTML file to run: "loadedvis.html" (follow instructions on the page how to run the demo).
-      b) JavaScript file to see: "vis-curvefitting.js"
-      
-      "CRP/Mixture":
-      a) HTML file to run: "graphingCRP.html" (to run demo press the blue button "Load Module" on the page).
-      b) JavaScript file to see: "vis-crp.js"
+      a) HTML file to run: "curvefitting.html".
+      b) JavaScript file to see: "curvefitting.js".
       
 IF YOU HAVE ANY QUESTIONS, PLEASE CONTACT US. WE WOULD BE GLAD TO HELP WITH ANY ISSUES.
 

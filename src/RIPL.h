@@ -6,6 +6,8 @@
 #include "Analyzer.h"
 #include "Evaluator.h"
 #include "ERPs.h"
+#include "XRPmem.h"
+#include "XRPs.h"
 #include "Primitives.h"
 #include "MHProposal.h"
 

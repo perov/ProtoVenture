@@ -222,7 +222,7 @@ string VentureList::GetString() {
 }
 
 // *** Returning Python objects ***
-PyObject* VentureValue::GetAsPythonObject() { throw std::runtime_error("Should not be called."); }
+PyObject* VentureValue::GetAsPythonObject() { throw std::runtime_error("Should not be called (2)."); }
 PyObject* VentureBoolean::GetAsPythonObject() { if (this->data) { Py_INCREF(Py_True); return Py_True; } else { Py_INCREF(Py_False); return Py_False; } }
 PyObject* VentureCount::GetAsPythonObject() { return Py_BuildValue("i", this->data); }
 PyObject* VentureReal::GetAsPythonObject() { return Py_BuildValue("d", this->data); }
@@ -293,11 +293,12 @@ void __BlankFunction1() { // Why without this function the g++ (Unix) with -O2 r
   ToVentureType<VentureReal>(shared_ptr<VentureValue>());
   ToVentureType<VentureCount>(shared_ptr<VentureValue>());
   ToVentureType<VentureBoolean>(shared_ptr<VentureValue>());
+  ToVentureType<VentureList>(shared_ptr<VentureValue>());
 }
 
 // *** CompareByValue ***
 bool VentureValue::CompareByValue(shared_ptr<VentureValue> another) {
-  throw std::runtime_error("Should not be called.");
+  throw std::runtime_error("Should not be called (1).");
 }
 bool VentureSymbol::CompareByValue(shared_ptr<VentureValue> another) {
   return (this->symbol == ToVentureType<VentureSymbol>(another)->symbol);
@@ -322,6 +323,23 @@ bool VentureSimplexPoint::CompareByValue(shared_ptr<VentureValue> another) {
 }
 bool VentureSmoothedCount::CompareByValue(shared_ptr<VentureValue> another) {
   return (this->data == ToVentureType<VentureSmoothedCount>(another)->data);
+}
+bool VentureList::CompareByValue(shared_ptr<VentureValue> another) {
+  shared_ptr<VentureList> this_list = dynamic_pointer_cast<VentureList>(this->shared_from_this());
+  shared_ptr<VentureList> another_list = ToVentureType<VentureList>(another);
+  while (this_list != NIL_INSTANCE) {
+    if (another_list == NIL_INSTANCE) { return false; } // Different sizes.
+    if (GetFirst(this_list)->GetType() != GetFirst(another_list)->GetType()) {
+      return false; // Different types.
+    }
+    if (GetFirst(this_list)->CompareByValue(GetFirst(another_list)) == false) {
+      return false; // The current elements are different.
+    }
+    this_list = GetNext(this_list);
+    another_list = GetNext(another_list);
+  }
+  if (another_list != NIL_INSTANCE) { return false; } // Different sizes.
+  return true;
 }
 // We do not need this function?
 // But without this function ToVentureType<VentureLambda>(...)
@@ -373,6 +391,14 @@ void AddToList(shared_ptr<VentureList> target_list, shared_ptr<VentureValue> ele
     target_list = GetNext(target_list);
   }
   target_list->cdr = shared_ptr<VentureList>(new VentureList(element));
+}
+size_t GetSize(shared_ptr<VentureList> list) {
+  size_t size = 0;
+  while (list != NIL_INSTANCE) {
+    list = GetNext(list);
+    size++;
+  }
+  return size;
 }
 
 // *** Different things ***

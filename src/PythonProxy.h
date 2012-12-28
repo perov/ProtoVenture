@@ -8,7 +8,7 @@
 #include "VentureParser.h"
 #include "Analyzer.h"
 #include "Evaluator.h"
-#include "XRP.h"
+#include "XRPCore.h"
 #include "MHProposal.h"
 #include "RIPL.h"
 #include "ERPs.h"

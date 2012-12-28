@@ -31,26 +31,6 @@ string ToLower(string processing_string) {
   return processing_string;
 }
 
-list<string> Tokenize(const string& code)
-{
-  list<string> tokens;
-  const char* s = code.c_str();
-  while (*s) {
-    while (*s == ' ')
-      ++s;
-    if (*s == '(' || *s == ')')
-      tokens.push_back(*s++ == '(' ? "(" : ")");
-    else {
-      const char* t = s;
-      while (*t && *t != ' ' && *t != '(' && *t != ')')
-        ++t;
-      tokens.push_back(string(s, t));
-      s = t;
-    }
-  }
-  return tokens;
-}
-
 shared_ptr<VentureValue> ProcessAtom(const string& token)
 {
   if (token == "b[0]" || token == "b[false]") {
