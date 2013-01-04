@@ -7,14 +7,14 @@
 enum VentureDataTypes { UNDEFINED_TYPE, BOOLEAN, COUNT, REAL, PROBABILITY, ATOM, SIMPLEXPOINT, SMOOTHEDCOUNT, NIL, LIST, SYMBOL, LAMBDA, XRP_REFERENCE, NODE };
 
 struct VentureValue : public boost::enable_shared_from_this<VentureValue> {
-  VentureValue::VentureValue();
+  VentureValue();
   static void CheckMyData(VentureValue* venture_value);
-  virtual VentureDataTypes VentureValue::GetType();
-  virtual bool VentureValue::CompareByValue(shared_ptr<VentureValue>);
-  virtual string VentureValue::GetString();
-  virtual real VentureValue::GetReal();
-  virtual int VentureValue::GetInteger();
-  virtual PyObject* VentureValue::GetAsPythonObject();
+  virtual VentureDataTypes GetType();
+  virtual bool CompareByValue(shared_ptr<VentureValue>);
+  virtual string GetString();
+  virtual real GetReal();
+  virtual int GetInteger();
+  virtual PyObject* GetAsPythonObject();
   ~VentureValue();
 };
 
@@ -28,98 +28,98 @@ template <typename T>
 shared_ptr<T> ToVentureType(shared_ptr<VentureValue>);
 
 struct VentureBoolean : public VentureValue {
-  VentureBoolean::VentureBoolean(const bool);
-  virtual VentureDataTypes VentureBoolean::GetType();
-  virtual bool VentureBoolean::CompareByValue(shared_ptr<VentureValue>);
-  virtual string VentureBoolean::GetString();
-  virtual real VentureBoolean::GetReal(); // Should be deleted!
-  virtual PyObject* VentureBoolean::GetAsPythonObject();
+  VentureBoolean(const bool);
+  virtual VentureDataTypes GetType();
+  virtual bool CompareByValue(shared_ptr<VentureValue>);
+  virtual string GetString();
+  virtual real GetReal(); // Should be deleted!
+  virtual PyObject* GetAsPythonObject();
   ~VentureBoolean();
 
   bool data;
 };
 
 struct VentureCount : public VentureValue {
-  VentureCount::VentureCount(const int);
-  //VentureCount::VentureCount(const string&);
+  VentureCount(const int);
+  //VentureCount(const string&);
   static void CheckMyData(VentureValue* venture_value);
   // Question: where would be the type transformation happen?
   //           Before this function, it seems?
-  virtual VentureDataTypes VentureCount::GetType();
-  virtual bool VentureCount::CompareByValue(shared_ptr<VentureValue>);
-  virtual string VentureCount::GetString();
-  virtual real VentureCount::GetReal();
-  virtual int VentureCount::GetInteger();
-  virtual PyObject* VentureCount::GetAsPythonObject();
+  virtual VentureDataTypes GetType();
+  virtual bool CompareByValue(shared_ptr<VentureValue>);
+  virtual string GetString();
+  virtual real GetReal();
+  virtual int GetInteger();
+  virtual PyObject* GetAsPythonObject();
   ~VentureCount();
 
   int data;
 };
 
 struct VentureReal : public VentureValue {
-  VentureReal::VentureReal(const real);
+  VentureReal(const real);
   static void CheckMyData(VentureValue* venture_value);
-  virtual VentureDataTypes VentureReal::GetType();
-  virtual bool VentureReal::CompareByValue(shared_ptr<VentureValue>);
-  virtual string VentureReal::GetString();
-  virtual real VentureReal::GetReal();
-  virtual PyObject* VentureReal::GetAsPythonObject();
+  virtual VentureDataTypes GetType();
+  virtual bool CompareByValue(shared_ptr<VentureValue>);
+  virtual string GetString();
+  virtual real GetReal();
+  virtual PyObject* GetAsPythonObject();
   ~VentureReal();
 
   real data;
 };
 
 struct VentureProbability : public VentureValue {
-  VentureProbability::VentureProbability(const real);
+  VentureProbability(const real);
   static void CheckMyData(VentureValue* venture_value);
-  virtual VentureDataTypes VentureProbability::GetType();
-  virtual bool VentureProbability::CompareByValue(shared_ptr<VentureValue>);
-  virtual string VentureProbability::GetString();
-  virtual real VentureProbability::GetReal();
-  virtual PyObject* VentureProbability::GetAsPythonObject();
+  virtual VentureDataTypes GetType();
+  virtual bool CompareByValue(shared_ptr<VentureValue>);
+  virtual string GetString();
+  virtual real GetReal();
+  virtual PyObject* GetAsPythonObject();
   ~VentureProbability();
 
   real data;
 };
 
 struct VentureAtom : public VentureValue {
-  VentureAtom::VentureAtom(const int);
+  VentureAtom(const int);
   static void CheckMyData(VentureValue* venture_value);
   // Question: where would be the type transformation happen?
   //           Before this function, it seems?
-  virtual VentureDataTypes VentureAtom::GetType();
-  virtual bool VentureAtom::CompareByValue(shared_ptr<VentureValue>);
-  virtual string VentureAtom::GetString();
-  virtual real VentureAtom::GetReal();
-  virtual int VentureAtom::GetInteger();
-  virtual PyObject* VentureAtom::GetAsPythonObject();
+  virtual VentureDataTypes GetType();
+  virtual bool CompareByValue(shared_ptr<VentureValue>);
+  virtual string GetString();
+  virtual real GetReal();
+  virtual int GetInteger();
+  virtual PyObject* GetAsPythonObject();
   ~VentureAtom();
 
   int data;
 };
 
 struct VentureSimplexPoint : public VentureValue {
-  VentureSimplexPoint::VentureSimplexPoint(vector<real>&);
+  VentureSimplexPoint(vector<real>&);
   static void CheckMyData(VentureValue* venture_value);
   // Question: where would be the type transformation happen?
   //           Before this function, it seems?
-  virtual VentureDataTypes VentureSimplexPoint::GetType();
-  virtual bool VentureSimplexPoint::CompareByValue(shared_ptr<VentureValue>);
-  virtual string VentureSimplexPoint::GetString();
-  virtual PyObject* VentureSimplexPoint::GetAsPythonObject();
+  virtual VentureDataTypes GetType();
+  virtual bool CompareByValue(shared_ptr<VentureValue>);
+  virtual string GetString();
+  virtual PyObject* GetAsPythonObject();
   ~VentureSimplexPoint();
 
   vector<real> data;
 };
 
 struct VentureSmoothedCount : public VentureValue {
-  VentureSmoothedCount::VentureSmoothedCount(const real);
+  VentureSmoothedCount(const real);
   static void CheckMyData(VentureValue* venture_value);
-  virtual VentureDataTypes VentureSmoothedCount::GetType();
-  virtual bool VentureSmoothedCount::CompareByValue(shared_ptr<VentureValue>);
-  virtual string VentureSmoothedCount::GetString();
-  virtual real VentureSmoothedCount::GetReal();
-  virtual PyObject* VentureSmoothedCount::GetAsPythonObject();
+  virtual VentureDataTypes GetType();
+  virtual bool CompareByValue(shared_ptr<VentureValue>);
+  virtual string GetString();
+  virtual real GetReal();
+  virtual PyObject* GetAsPythonObject();
   ~VentureSmoothedCount();
 
   real data;
@@ -132,12 +132,12 @@ extern shared_ptr<VentureList> const NIL_INSTANCE;
 // Should be references constants?
 // Should be renamed to the VentureCons!
 struct VentureList : public VentureValue {
-  VentureList::VentureList(shared_ptr<VentureValue> car);
-  virtual VentureDataTypes VentureList::GetType(); // Should be virtual for NIL?..
+  VentureList(shared_ptr<VentureValue> car);
+  virtual VentureDataTypes GetType(); // Should be virtual for NIL?..
   // FIXME: add CompareByValue? Do not forget about the NIL, that it has another type?
-  virtual bool VentureList::CompareByValue(shared_ptr<VentureValue>);
-  virtual string VentureList::GetString();
-  virtual PyObject* VentureList::GetAsPythonObject();
+  virtual bool CompareByValue(shared_ptr<VentureValue>);
+  virtual string GetString();
+  virtual PyObject* GetAsPythonObject();
   ~VentureList();
 
   shared_ptr<VentureValue> car;
@@ -145,10 +145,10 @@ struct VentureList : public VentureValue {
 };
 
 struct VentureNil : public VentureList {
-  VentureNil::VentureNil();
-  virtual VentureDataTypes VentureNil::GetType();
-  virtual string VentureNil::GetString();
-  virtual PyObject* VentureNil::GetAsPythonObject();
+  VentureNil();
+  virtual VentureDataTypes GetType();
+  virtual string GetString();
+  virtual PyObject* GetAsPythonObject();
   ~VentureNil();
 };
 
@@ -158,11 +158,11 @@ bool legal_SYMBOL_name(const string&); // static inline?
 
 // Where is the check implemented?
 struct VentureSymbol : public VentureValue {
-  VentureSymbol::VentureSymbol(const string&);
-  virtual VentureDataTypes VentureSymbol::GetType();
-  virtual bool VentureSymbol::CompareByValue(shared_ptr<VentureValue>);
-  virtual string VentureSymbol::GetString();
-  virtual PyObject* VentureSymbol::GetAsPythonObject();
+  VentureSymbol(const string&);
+  virtual VentureDataTypes GetType();
+  virtual bool CompareByValue(shared_ptr<VentureValue>);
+  virtual string GetString();
+  virtual PyObject* GetAsPythonObject();
   ~VentureSymbol();
 
   string symbol;
@@ -173,13 +173,13 @@ struct NodeEnvironment;
 class XRP;
 
 struct VentureLambda : public VentureValue {
-  VentureLambda::VentureLambda(shared_ptr<VentureList>,
+  VentureLambda(shared_ptr<VentureList>,
                 shared_ptr<NodeEvaluation>,
                 shared_ptr<NodeEnvironment>);
-  virtual VentureDataTypes VentureLambda::GetType();
-  virtual bool VentureLambda::CompareByValue(shared_ptr<VentureValue>); // We really do not need this function?
-  virtual string VentureLambda::GetString();
-  virtual PyObject* VentureLambda::GetAsPythonObject();
+  virtual VentureDataTypes GetType();
+  virtual bool CompareByValue(shared_ptr<VentureValue>); // We really do not need this function?
+  virtual string GetString();
+  virtual PyObject* GetAsPythonObject();
   ~VentureLambda();
 
   shared_ptr<VentureList> formal_arguments;
@@ -188,11 +188,11 @@ struct VentureLambda : public VentureValue {
 };
 
 struct VentureXRP : public VentureValue {
-  VentureXRP::VentureXRP(shared_ptr<XRP>);
-  virtual VentureDataTypes VentureXRP::GetType();
-  virtual bool VentureXRP::CompareByValue(shared_ptr<VentureValue>); // We really do not need this function?
-  virtual string VentureXRP::GetString();
-  virtual PyObject* VentureXRP::GetAsPythonObject();
+  VentureXRP(shared_ptr<XRP>);
+  virtual VentureDataTypes GetType();
+  virtual bool CompareByValue(shared_ptr<VentureValue>); // We really do not need this function?
+  virtual string GetString();
+  virtual PyObject* GetAsPythonObject();
   ~VentureXRP();
 
   shared_ptr<XRP> xrp;

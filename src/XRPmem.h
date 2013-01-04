@@ -30,40 +30,40 @@ struct XRP__memoizer_map_element {
 };
 
 class XRP__memoizer : public XRP { // So called "mem-maker".
-  virtual shared_ptr<VentureValue> XRP__memoizer::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller);
-  virtual real XRP__memoizer::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >&,
+  virtual shared_ptr<VentureValue> Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller);
+  virtual real GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >&,
                                        shared_ptr<VentureValue>);
-  virtual void XRP__memoizer::Incorporate(vector< shared_ptr<VentureValue> >&,
+  virtual void Incorporate(vector< shared_ptr<VentureValue> >&,
                                 shared_ptr<VentureValue>);
-  virtual void XRP__memoizer::Remove(vector< shared_ptr<VentureValue> >&,
+  virtual void Remove(vector< shared_ptr<VentureValue> >&,
                            shared_ptr<VentureValue>);
 
 public:
-  shared_ptr<VentureValue> XRP__memoizer::Sample(vector< shared_ptr<VentureValue> >&,
+  shared_ptr<VentureValue> Sample(vector< shared_ptr<VentureValue> >&,
                                        shared_ptr<NodeXRPApplication>);
-  virtual bool XRP__memoizer::IsRandomChoice();
-  virtual bool XRP__memoizer::CouldBeRescored();
-  virtual string XRP__memoizer::GetName();
+  virtual bool IsRandomChoice();
+  virtual bool CouldBeRescored();
+  virtual string GetName();
 };
 
 string XRP__memoized_procedure__MakeMapKeyFromArguments(vector< shared_ptr<VentureValue> >& arguments);
 
 class XRP__memoized_procedure : public XRP { // So called "mem-sampler".
-  virtual shared_ptr<VentureValue> XRP__memoized_procedure::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller);
-  virtual real XRP__memoized_procedure::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >&,
+  virtual shared_ptr<VentureValue> Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller);
+  virtual real GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >&,
                                        shared_ptr<VentureValue>);
-  virtual void XRP__memoized_procedure::Incorporate(vector< shared_ptr<VentureValue> >&,
+  virtual void Incorporate(vector< shared_ptr<VentureValue> >&,
                                 shared_ptr<VentureValue>);
-  virtual void XRP__memoized_procedure::Remove(vector< shared_ptr<VentureValue> >&,
+  virtual void Remove(vector< shared_ptr<VentureValue> >&,
                            shared_ptr<VentureValue>);
 
 public:
-  shared_ptr<VentureValue> XRP__memoized_procedure::Sample(vector< shared_ptr<VentureValue> >&,
+  shared_ptr<VentureValue> Sample(vector< shared_ptr<VentureValue> >&,
                                        shared_ptr<NodeXRPApplication>);
-  virtual void XRP__memoized_procedure::Unsampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller); // Unsampler or sampler?
-  virtual bool XRP__memoized_procedure::IsRandomChoice();
-  virtual bool XRP__memoized_procedure::CouldBeRescored();
-  virtual string XRP__memoized_procedure::GetName();
+  virtual void Unsampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller); // Unsampler or sampler?
+  virtual bool IsRandomChoice();
+  virtual bool CouldBeRescored();
+  virtual string GetName();
   
   shared_ptr<VentureValue> operator_value; // FIXME: VentureValue is not too ambiguous?
   map<string, XRP__memoizer_map_element> mem_table;

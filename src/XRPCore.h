@@ -54,29 +54,30 @@ struct ReevaluationParameters {
 
 class XRP : public boost::enable_shared_from_this<XRP> {
 public: // Should be private.
-  virtual shared_ptr<VentureValue> XRP::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller);
-  virtual real XRP::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >&,
+  virtual shared_ptr<VentureValue> Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller);
+  virtual real GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >&,
                                        shared_ptr<VentureValue>);
-  virtual void XRP::Incorporate(vector< shared_ptr<VentureValue> >&,
+  virtual void Incorporate(vector< shared_ptr<VentureValue> >&,
                                 shared_ptr<VentureValue>);
-  virtual void XRP::Remove(vector< shared_ptr<VentureValue> >&,
+  virtual void Remove(vector< shared_ptr<VentureValue> >&,
                            shared_ptr<VentureValue>);
 
 public:
   //XRP(shared_ptr<XRP> maker) : maker(maker) {}
-  XRP::XRP();
-  shared_ptr<VentureValue> XRP::Sample(vector< shared_ptr<VentureValue> >&, // FIXME: why not virtual?
+  XRP();
+  shared_ptr<VentureValue> Sample(vector< shared_ptr<VentureValue> >&, // FIXME: why not virtual?
                                        shared_ptr<NodeXRPApplication>);
-  virtual void XRP::Unsampler(vector< shared_ptr<VentureValue> >& old_arguments, shared_ptr<NodeXRPApplication> caller); // Unsampler or sampler?
+  virtual void Unsampler(vector< shared_ptr<VentureValue> >& old_arguments, shared_ptr<NodeXRPApplication> caller); // Unsampler or sampler?
   shared_ptr<RescorerResamplerResult>
-  XRP::RescorerResampler(vector< shared_ptr<VentureValue> >& old_arguments,
+  RescorerResampler(vector< shared_ptr<VentureValue> >& old_arguments,
                          vector< shared_ptr<VentureValue> >& new_arguments,
                          shared_ptr<NodeXRPApplication> caller,
                          bool forced_resampling,
                          ReevaluationParameters& reevaluation_parameters);
-  virtual bool XRP::IsRandomChoice();
-  virtual bool XRP::CouldBeRescored();
-  virtual string XRP::GetName();
+  virtual bool IsRandomChoice();
+  virtual bool CouldBeRescored();
+  virtual bool SaveReferencesToItsSamplers() { return false; } // FIXME: Should be in the XRP.cpp.
+  virtual string GetName();
 
 public: // Should be private?
 };

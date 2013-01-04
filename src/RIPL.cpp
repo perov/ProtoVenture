@@ -26,7 +26,7 @@ void* ContinuousInference(void* arguments) {
     //cout << " <I> ";
     if (continuous_inference_status == 1) {
       try {
-        MakeMHProposal();
+        MakeMHProposal(0);
       } catch (std::runtime_error& e) {
         continuous_inference_status = 0;
         cout << "Exception has been raised during continuous inference: " << e.what() << endl;

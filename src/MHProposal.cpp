@@ -52,7 +52,7 @@ void DeleteNode(shared_ptr<Node> node) {
 
   if (dynamic_pointer_cast<NodeEvaluation>(node) != shared_ptr<NodeEvaluation>() &&
         dynamic_pointer_cast<NodeEvaluation>(node)->parent.lock() != shared_ptr<NodeEvaluation>() &&
-        dynamic_pointer_cast<NodeEvaluation>(node)->parent.lock()->GetType() == APPLICATION_CALLER) {
+        dynamic_pointer_cast<NodeEvaluation>(node)->parent.lock()->GetNodeType() == APPLICATION_CALLER) {
     // Only now we can clean the environment.
     shared_ptr<NodeEvaluation>& application_node =
       dynamic_pointer_cast<NodeApplicationCaller>(dynamic_pointer_cast<NodeEvaluation>(node)->parent.lock())->application_node;
@@ -74,7 +74,37 @@ void DeleteBranch(shared_ptr<Node> first_node) {
   ApplyToMeAndAllMyChildren(first_node, DeleteNode);
 }
 
-void MakeMHProposal() {
+VentureException__ForcedMHDecline::VentureException__ForcedMHDecline()
+  : std::runtime_error("VentureException__ForcedMHDecline")
+{
+
+}
+
+void TouchNode(shared_ptr<Node> node, stack< shared_ptr<Node> >& touched_nodes, ProposalInfo& proposal_info) {
+  while (true) {
+    boost::lock_guard<boost::mutex> locking_guard(node->occupying_mutex);
+    if (node->occupying_proposal_info == shared_ptr<ProposalInfo>()) {
+      break;
+    } else if (node->occupying_proposal_info == proposal_info.shared_from_this()) {
+      throw std::runtime_error("Attempt to occupy the same node twice!");
+    } else {
+      assert(node->occupying_proposal_info->proposal_unique_id != proposal_info.proposal_unique_id);
+      if (node->occupying_proposal_info->proposal_unique_id > proposal_info.proposal_unique_id) {
+        node->occupying_proposal_info->request_to_terminate = true;
+        continue;
+      } else {
+        throw VentureException__ForcedMHDecline();
+      }
+    }
+  }
+  touched_nodes.push(node);
+}
+
+void MakeMHProposal(int proposal_unique_id) {
+  ProposalInfo this_proposal;
+  this_proposal.proposal_unique_id = proposal_unique_id; // FIXME: through constructor
+  this_proposal.request_to_terminate = false; // FIXME: through constructor
+
   size_t number_of_random_choices = random_choices.size();
   if (number_of_random_choices == 0) {
     return; // There is no random choices in the trace.
@@ -92,7 +122,7 @@ void MakeMHProposal() {
   reevaluation_queue.insert(ReevaluationEntry(random_choice,
                                             shared_ptr<NodeEvaluation>(),
                                             shared_ptr<VentureValue>(),
-                                            STANDARD_REEVALUATION_PRIORITY));
+                                            REEVALUATION_PRIORITY__STANDARD));
 
   stack<OmitPattern> omit_patterns;
 
@@ -109,15 +139,9 @@ void MakeMHProposal() {
       --iterator_to_last_element;
       reevaluation_queue.erase(iterator_to_last_element);
     }
-    //cout << "Touching: " << current_reevaluation.reevaluation_node << " with ";
-    //if (current_reevaluation.passing_value != shared_ptr<VentureValue>()) {
-    //  cout << current_reevaluation.passing_value->GetString();
-    //}
-    //cout << endl;
     if (!omit_patterns.empty()) {
       if (VerifyOrderPattern(omit_patterns.top().omit_pattern, current_reevaluation.reevaluation_node->myorder)) {
         omit_patterns.pop();
-        //cout << "Omitting" << endl;
         continue;
       }
       if (omit_patterns.top().stop_pattern == current_reevaluation.reevaluation_node->myorder) {
@@ -139,12 +163,12 @@ void MakeMHProposal() {
     assert(std::find(GetQueueContainer(touched_nodes).begin(), GetQueueContainer(touched_nodes).end(), current_reevaluation.reevaluation_node)
       == GetQueueContainer(touched_nodes).end());
 #endif
-    touched_nodes.push(current_reevaluation.reevaluation_node);
+    TouchNode(current_reevaluation.reevaluation_node, touched_nodes, this_proposal);
     
     shared_ptr<ReevaluationResult> reevaluation_result;
     if (current_reevaluation.reevaluation_node->GetNodeType() == XRP_APPLICATION &&
         dynamic_pointer_cast<NodeXRPApplication>(current_reevaluation.reevaluation_node)->xrp->xrp->GetName() == "XRP__memoized_procedure" &&
-        current_reevaluation.priority == STANDARD_REEVALUATION_PRIORITY) {
+        current_reevaluation.priority == REEVALUATION_PRIORITY__STANDARD) {
       // If it is memoized procedure, and it has received update from the memoizer node.
       reevaluation_result = shared_ptr<ReevaluationResult>(new ReevaluationResult(current_reevaluation.passing_value, true));
       // FIXME: make here also necessary blocking.
@@ -164,7 +188,7 @@ void MakeMHProposal() {
           reevaluation_queue.erase(ReevaluationEntry(dynamic_pointer_cast<NodeEvaluation>(current_reevaluation.reevaluation_node),
                                                      shared_ptr<NodeEvaluation>(),
                                                      shared_ptr<VentureValue>(),
-                                                     STANDARD_REEVALUATION_PRIORITY));
+                                                     REEVALUATION_PRIORITY__STANDARD));
         }
       }
 
@@ -177,9 +201,11 @@ void MakeMHProposal() {
           assert(std::find(GetQueueContainer(touched_nodes).begin(), GetQueueContainer(touched_nodes).end(), iterator->lock())
             == GetQueueContainer(touched_nodes).end());
 #endif
-          touched_nodes.push(iterator->lock());
+          TouchNode(iterator->lock(), touched_nodes, this_proposal);
           assert(reevaluation_result->passing_value != shared_ptr<VentureValue>());
-          dynamic_pointer_cast<NodeVariable>(iterator->lock())->new_value = reevaluation_result->passing_value;
+          dynamic_pointer_cast<NodeVariable>(iterator->lock())->Reevaluate(current_reevaluation.passing_value,
+                                                                           current_reevaluation.caller,
+                                                                           reevaluation_parameters);
           for (set< weak_ptr<Node> >::iterator variable_iterator =
                  dynamic_pointer_cast<NodeVariable>((*iterator).lock())->output_references.begin();
                variable_iterator != dynamic_pointer_cast<NodeVariable>(iterator->lock())->output_references.end();
@@ -189,7 +215,7 @@ void MakeMHProposal() {
             reevaluation_queue.insert(ReevaluationEntry(dynamic_pointer_cast<NodeEvaluation>(variable_iterator->lock()),
                                                         current_reevaluation.caller, // Or just NULL?
                                                         reevaluation_result->passing_value, // Or also just NULL?
-                                                        STANDARD_REEVALUATION_PRIORITY - 1));
+                                                        REEVALUATION_PRIORITY__STANDARD - 1));
           }
         } else {
           if (current_reevaluation.reevaluation_node->parent.lock() != shared_ptr<NodeEvaluation>()) {
@@ -210,7 +236,7 @@ void MakeMHProposal() {
           reevaluation_queue.insert(ReevaluationEntry(dynamic_pointer_cast<NodeEvaluation>(iterator->lock()),
                                                       current_reevaluation.reevaluation_node,
                                                       reevaluation_result->passing_value,
-                                                      STANDARD_REEVALUATION_PRIORITY));
+                                                      REEVALUATION_PRIORITY__STANDARD));
 
         }
       }
@@ -336,30 +362,4 @@ void MakeMHProposal() {
       throw std::runtime_error("Unexpected node type.");
     }
   }
-  
-  /*if (mh_decision == MH_APPROVED) {
-    cout << "Approved" << endl;
-  } else {
-    cout << "Decline" << endl;
-  }*/
-
-  /*size_t number_of_positive = 0;
-  for (
-    set< shared_ptr<NodeXRPApplication> >::iterator it = random_choices.begin();
-    it != random_choices.end();
-    it++)
-  {
-    if ((*it)->sampled_value->GetString() == "#t") {
-      number_of_positive++;
-    }
-    cout << (*it)->sampled_value->GetString() << " ";
-  }
-  cout << dynamic_pointer_cast<NodeDirectivePredict>(GetLastDirectiveNode())->my_value->GetString();
-  if (number_of_positive == 2 &&
-        dynamic_pointer_cast<NodeDirectivePredict>(GetLastDirectiveNode())->my_value->GetString() != "#t") {
-    stack< shared_ptr<Node> > tmp;
-    DrawGraphDuringMH(GetLastDirectiveNode(), touched_nodes_copy);
-    throw std::runtime_error("Error!");
-  }
-  cout << "***" << endl;*/
 }

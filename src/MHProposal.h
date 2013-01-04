@@ -18,7 +18,19 @@ void DeleteNode(shared_ptr<Node>);
 void DeleteBranch
 (shared_ptr<Node>);
 
-void MakeMHProposal();
+class VentureException__ForcedMHDecline : std::runtime_error {
+public:
+  VentureException__ForcedMHDecline();
+};
+
+void TouchNode(shared_ptr<Node> node, stack< shared_ptr<Node> >& touched_nodes, int proposal_unique_id);
+
+void MakeMHProposal(int proposal_unique_id);
+
+struct ProposalInfo : public boost::enable_shared_from_this<ProposalInfo> {
+  size_t proposal_unique_id;
+  bool request_to_terminate;
+};
 
 enum MHDecision { MH_DECLINED, MH_APPROVED };
 

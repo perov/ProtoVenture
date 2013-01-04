@@ -17,9 +17,9 @@ struct directive_entry {
   // i.e. has a constructor and a destructor,
   // and i.e. some issues below could be
   // done here (I mean deletion of all nodes).
-  directive_entry::directive_entry(string directice_as_string,
+  directive_entry(string directice_as_string,
                   shared_ptr<NodeEvaluation> directive_node);
-  directive_entry::directive_entry();
+  directive_entry();
 
   string directice_as_string;
   shared_ptr<NodeEvaluation> directive_node;

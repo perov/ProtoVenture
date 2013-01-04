@@ -2,7 +2,7 @@ import client
 import lisp_parser # From here: http://norvig.com/lispy.html
 
 Port = 5001
-MyRIPL = client.RemoteRIPL("http://ec2-184-72-149-80.compute-1.amazonaws.com:" + str(Port))
+MyRIPL = client.RemoteRIPL("http://ec2-54-235-201-199.compute-1.amazonaws.com:" + str(Port))
 
 # Tricky coin
 MyRIPL.clear() # To delete previous sessions data.

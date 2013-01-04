@@ -65,6 +65,8 @@ extern gsl_rng* random_generator;
 // (So requires the pthreadVC2.dll)
 #include <pthread.h>
 
+#include <boost/thread.hpp>
+
 #include "Utilities.h"
 
 #endif

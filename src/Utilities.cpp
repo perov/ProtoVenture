@@ -47,5 +47,5 @@ void BlankFunction___ForGetStackContainer() { // For some reason without this fu
 }
 
 int UniformDiscrete(int a, int b) {
-  return gsl_ran_flat(random_generator, a, b + 1);
+  return static_cast<int>(gsl_ran_flat(random_generator, a, b + 1));
 }

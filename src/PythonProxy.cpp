@@ -240,8 +240,8 @@ ForPython__infer(PyObject *self, PyObject *args)
     PyErr_SetString(PyExc_TypeError, "infer: wrong arguments.");
     return NULL; // ReturnInferenceIfNecessary(); ?
   }
-  for (size_t iteration = 0; iteration < number_of_required_inferences; iteration++) {
-    MakeMHProposal();
+  for (size_t iteration = 0; iteration < static_cast<size_t>(number_of_required_inferences); iteration++) {
+    MakeMHProposal(0);
   }
 
   //stack< shared_ptr<Node> > tmp;
@@ -293,7 +293,6 @@ ForPython__stop_continuous_inference(PyObject *self, PyObject *args)
     PyErr_SetString(PyExc_TypeError, "stop_continuous_inference: wrong arguments.");
     return NULL;
   }
-  pthread_t new_thread;
   if (continuous_inference_status != 0) {
     continuous_inference_status = 0;
     // Here we should wait until the inference will realy finish.
@@ -354,7 +353,6 @@ ForPython__observe(PyObject *self, PyObject *args)
 { try {
   PauseInference();
   cout << "Starting to deal with OBSERVE" << endl;
-  char* variable_name_as_chars;
   shared_ptr<VentureValue> expression;
   shared_ptr<VentureValue> literal_value;
   if(!PyArg_ParseTuple(args, "O&O&:observe",

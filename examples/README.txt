@@ -17,7 +17,7 @@ USING VENTURE REMOTELY ON EC2 INSTANCE
      
 1. SECTION "CONNECTION TO 'VENTURE' AMAZON EC2 INSTANCE"
 
-      $ ssh ec2-184-72-149-80.compute-1.amazonaws.com -l *YOUR-USER-NAME*
+      $ ssh ec2-54-235-201-199.compute-1.amazonaws.com -l *YOUR-USER-NAME*
 
       User: *YOUR-USER-NAME* (the part of your email before @ symbol)
       Password: metropolis1953

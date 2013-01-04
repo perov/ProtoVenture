@@ -154,7 +154,7 @@ bool ReevaluationOrderComparer::operator()(const ReevaluationEntry& first, const
   if (second.reevaluation_node->myorder.size() == 0) {
     throw std::runtime_error("The second node has not been evaluated yet!");
   }
-  for (size_t index = 0;; index++) {
+  for (size_t index = 0; true; index++) {
     if (index >= first.reevaluation_node->myorder.size() &&
         index >= second.reevaluation_node->myorder.size()) {
       // Same orders.
@@ -730,6 +730,15 @@ Node::Reevaluate(shared_ptr<VentureValue> passing_value,
                  shared_ptr<Node> sender,
                  ReevaluationParameters& reevaluation_parameters) {
   throw std::runtime_error(("This node does not have the Reevaluation function (node type " + boost::lexical_cast<string>(this->GetNodeType()) + ").").c_str());
+}
+
+shared_ptr<ReevaluationResult>
+NodeVariable::Reevaluate(shared_ptr<VentureValue> passing_value,
+                 shared_ptr<Node> sender,
+                 ReevaluationParameters& reevaluation_parameters) {
+  this->new_value = passing_value;
+  return shared_ptr<ReevaluationResult>( // FIXME: Not it does not change anything.
+    new ReevaluationResult(passing_value, true));
 }
 
 shared_ptr<ReevaluationResult>

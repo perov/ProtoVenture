@@ -41,7 +41,7 @@ size_t TMP_number_of_created_XRPSamplers;
 
 void InitGSL() {
   random_generator = gsl_rng_alloc(gsl_rng_mt19937);
-  unsigned long seed = time(NULL); // time(NULL)
+  unsigned long seed = static_cast<unsigned long>(time(NULL)); // time(NULL)
   //cout << "WARNING: RANDOM SEED is not random!" << endl;
   gsl_rng_set(random_generator, seed);
 }
