@@ -84,7 +84,7 @@ int main(int argc, char *argv[])
 #ifdef _MSC_VER
   PyRun_SimpleString("execfile(\"C:/Users/Yura Perov/workspace/VentureAlpha/src/RESTPython.py\")");
 #else
-  PyRun_SimpleString("execfile(\"/usr/venture/RESTPython.py\")");
+  PyRun_SimpleString("execfile(\"RESTPython.py\")");
 #endif
 
   PyRun_SimpleString(("app.run(port=" + boost::lexical_cast<string>(port) + ", host='0.0.0.0')").c_str());
