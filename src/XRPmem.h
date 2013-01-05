@@ -39,8 +39,6 @@ class XRP__memoizer : public XRP { // So called "mem-maker".
                            shared_ptr<VentureValue>);
 
 public:
-  shared_ptr<VentureValue> Sample(vector< shared_ptr<VentureValue> >&,
-                                       shared_ptr<NodeXRPApplication>);
   virtual bool IsRandomChoice();
   virtual bool CouldBeRescored();
   virtual string GetName();
@@ -58,8 +56,6 @@ class XRP__memoized_procedure : public XRP { // So called "mem-sampler".
                            shared_ptr<VentureValue>);
 
 public:
-  shared_ptr<VentureValue> Sample(vector< shared_ptr<VentureValue> >&,
-                                       shared_ptr<NodeXRPApplication>);
   virtual void Unsampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller); // Unsampler or sampler?
   virtual bool IsRandomChoice();
   virtual bool CouldBeRescored();

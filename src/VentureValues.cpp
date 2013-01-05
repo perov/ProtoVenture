@@ -143,7 +143,7 @@ VentureDataTypes VentureLambda::GetType() { return LAMBDA; }
 
 // *** GetReal ***
 real VentureValue::GetReal() {
-  throw std::runtime_error("GetReal() is not implemented for this type.");
+  throw std::runtime_error("GetReal() is not implemented for this type (type: " + boost::lexical_cast<string>(this->GetType()) + ").");
 }
 real VentureCount::GetReal() {
   return data;

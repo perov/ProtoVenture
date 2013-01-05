@@ -76,7 +76,6 @@ public:
                          ReevaluationParameters& reevaluation_parameters);
   virtual bool IsRandomChoice();
   virtual bool CouldBeRescored();
-  virtual bool SaveReferencesToItsSamplers() { return false; } // FIXME: Should be in the XRP.cpp.
   virtual string GetName();
 
 public: // Should be private?

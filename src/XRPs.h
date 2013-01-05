@@ -17,8 +17,6 @@ class XRP__CRPmaker : public XRP {
                            shared_ptr<VentureValue>);
 
 public:
-  shared_ptr<VentureValue> Sample(vector< shared_ptr<VentureValue> >&,
-                                       shared_ptr<NodeXRPApplication>);
   virtual bool IsRandomChoice();
   virtual bool CouldBeRescored();
   virtual string GetName();
@@ -34,8 +32,6 @@ class XRP__CRPsampler : public XRP {
                            shared_ptr<VentureValue>);
 
 public:
-  shared_ptr<VentureValue> Sample(vector< shared_ptr<VentureValue> >&,
-                                       shared_ptr<NodeXRPApplication>);
   virtual bool IsRandomChoice();
   virtual bool CouldBeRescored();
   virtual string GetName();
@@ -59,8 +55,6 @@ class XRP__SymmetricDirichletMultinomial_maker : public XRP {
                            shared_ptr<VentureValue>);
 
 public:
-  shared_ptr<VentureValue> Sample(vector< shared_ptr<VentureValue> >&,
-                                       shared_ptr<NodeXRPApplication>);
   virtual bool IsRandomChoice();
   virtual bool CouldBeRescored();
   virtual string GetName();
@@ -76,8 +70,6 @@ class XRP__DirichletMultinomial_maker : public XRP {
                            shared_ptr<VentureValue>);
 
 public:
-  shared_ptr<VentureValue> Sample(vector< shared_ptr<VentureValue> >&,
-                                       shared_ptr<NodeXRPApplication>);
   virtual bool IsRandomChoice();
   virtual bool CouldBeRescored();
   virtual string GetName();
@@ -94,8 +86,6 @@ class XRP__DirichletMultinomial_sampler : public XRP {
   real GetSumOfStatistics();
 
 public:
-  shared_ptr<VentureValue> Sample(vector< shared_ptr<VentureValue> >&,
-                                       shared_ptr<NodeXRPApplication>);
   virtual bool IsRandomChoice();
   virtual bool CouldBeRescored();
   virtual string GetName();

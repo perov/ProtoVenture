@@ -52,7 +52,8 @@ void DeleteNode(shared_ptr<Node> node) {
 
   if (dynamic_pointer_cast<NodeEvaluation>(node) != shared_ptr<NodeEvaluation>() &&
         dynamic_pointer_cast<NodeEvaluation>(node)->parent.lock() != shared_ptr<NodeEvaluation>() &&
-        dynamic_pointer_cast<NodeEvaluation>(node)->parent.lock()->GetNodeType() == APPLICATION_CALLER) {
+        dynamic_pointer_cast<NodeEvaluation>(node)->parent.lock()->GetNodeType() == APPLICATION_CALLER &&
+        1 == 2) {
     // Only now we can clean the environment.
     shared_ptr<NodeEvaluation>& application_node =
       dynamic_pointer_cast<NodeApplicationCaller>(dynamic_pointer_cast<NodeEvaluation>(node)->parent.lock())->application_node;
@@ -81,7 +82,7 @@ VentureException__ForcedMHDecline::VentureException__ForcedMHDecline()
 }
 
 void TouchNode(shared_ptr<Node> node, stack< shared_ptr<Node> >& touched_nodes, ProposalInfo& proposal_info) {
-  while (true) {
+  /*while (true) {
     boost::lock_guard<boost::mutex> locking_guard(node->occupying_mutex);
     if (node->occupying_proposal_info == shared_ptr<ProposalInfo>()) {
       break;
@@ -96,7 +97,7 @@ void TouchNode(shared_ptr<Node> node, stack< shared_ptr<Node> >& touched_nodes, 
         throw VentureException__ForcedMHDecline();
       }
     }
-  }
+  }*/
   touched_nodes.push(node);
 }
 
@@ -203,8 +204,8 @@ void MakeMHProposal(int proposal_unique_id) {
 #endif
           TouchNode(iterator->lock(), touched_nodes, this_proposal);
           assert(reevaluation_result->passing_value != shared_ptr<VentureValue>());
-          dynamic_pointer_cast<NodeVariable>(iterator->lock())->Reevaluate(current_reevaluation.passing_value,
-                                                                           current_reevaluation.caller,
+          dynamic_pointer_cast<NodeVariable>(iterator->lock())->Reevaluate(reevaluation_result->passing_value,
+                                                                           current_reevaluation.reevaluation_node,
                                                                            reevaluation_parameters);
           for (set< weak_ptr<Node> >::iterator variable_iterator =
                  dynamic_pointer_cast<NodeVariable>((*iterator).lock())->output_references.begin();

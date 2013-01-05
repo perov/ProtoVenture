@@ -37,6 +37,10 @@ shared_ptr<VentureValue> ProcessAtom(const string& token)
     return shared_ptr<VentureValue>(new VentureBoolean(false));
   } else if (token == "b[1]" || token == "b[true]") {
     return shared_ptr<VentureValue>(new VentureBoolean(true));
+  } else if (token == "True") { // Deprecated?
+    return shared_ptr<VentureValue>(new VentureBoolean(true));
+  } else if (token == "False") { // Deprecated?
+    return shared_ptr<VentureValue>(new VentureBoolean(false));
   } else if (token == "true") { // Deprecated?
     return shared_ptr<VentureValue>(new VentureBoolean(true));
   } else if (token == "false") { // Deprecated?

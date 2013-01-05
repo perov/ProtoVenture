@@ -12,6 +12,7 @@ USING VENTURE REMOTELY ON EC2 INSTANCE
       dlovell@gmail.com     5016
       malmaud@mit.edu       5017
       vkm@mit.edu           5018
+      atyurina@sipan.org    5019
       
       Your user name is the part of your email before @ symbol. 
      

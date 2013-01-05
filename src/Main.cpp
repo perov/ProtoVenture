@@ -67,7 +67,7 @@ int main(int argc, char *argv[])
   cout << "Notice: get rid of TMP_number_of_created_XRPSamplers!" << endl;
   cout << "IMPORTANT! Delete touched_nodes_copy!" << endl;
   
-  int port = 8081;
+  int port = 8082;
   cout << argv[0] << endl;
   if (argc > 1) {
     port = boost::lexical_cast<int>(argv[1]);
@@ -81,11 +81,20 @@ int main(int argc, char *argv[])
   // Read here: http://docs.python.org/2/faq/windows.html#pyrun-simplefile-crashes-on-windows-but-not-on-unix-why
   // It seems it is necessary to recompile pythonXY.lib and *.dll.
   // Now using this variant:
-#ifdef _MSC_VER
-  PyRun_SimpleString("execfile(\"C:/Users/Yura Perov/workspace/VentureAlpha/src/RESTPython.py\")");
-#else
-  PyRun_SimpleString("execfile(\"RESTPython.py\")");
-#endif
+//#ifdef _MSC_VER
+//  PyRun_SimpleString("execfile(\"C:/Users/Yura Perov/workspace/VentureAlpha/src/RESTPython.py\")");
+//#else
+  PyRun_SimpleString("import os.path");
+  PyRun_SimpleString((string("if os.path.exists(\"/usr/venture/RESTPython.py\"):\n") +
+                             "  execfile(\"/usr/venture/RESTPython.py\")\n" +
+                             "elif os.path.exists(\"C:/Users/Yura Perov/workspace/VentureAlpha/src/RESTPython.py\"):\n" +
+                             "  execfile(\"C:/Users/Yura Perov/workspace/VentureAlpha/src/RESTPython.py\")\n" +
+                             "elif os.path.exists(\"RESTPython.py\"):\n" +
+                             "  execfile(\"RESTPython.py\")\n" +
+                             "else:\n" +
+                             "  print(\"Cannot find RESTPython.py!\")\n" +
+                             "").c_str());
+//#endif
 
   PyRun_SimpleString(("app.run(port=" + boost::lexical_cast<string>(port) + ", host='0.0.0.0')").c_str());
 
