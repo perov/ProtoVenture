@@ -57,7 +57,7 @@ shared_ptr<VentureValue> XRP__CRPsampler::Sampler(vector< shared_ptr<VentureValu
   return shared_ptr<VentureAtom>(new VentureAtom(next_free_index));
 
   next_gensym_atom++;
-  //cout << "Resampling XRP" << next_gensym_atom << endl;
+  // cout << "Resampling XRP" << next_gensym_atom << endl;
   return shared_ptr<VentureAtom>(new VentureAtom(next_gensym_atom));
 }
 
