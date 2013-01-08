@@ -50,6 +50,8 @@ PyMODINIT_FUNC initventure_engine(void) {
                              "  execfile(\"/home/picloud/venture/__PythonModule.py\")\n" +
                              "elif os.path.exists(\"/home/ec2-user/venture/__PythonModule.py\"):\n" +
                              "  execfile(\"/home/ec2-user/venture/__PythonModule.py\")\n" +
+                             "elif os.path.exists(\"/home/ec2-user/Venture/src/__PythonModule.py\"):\n" +
+                             "  execfile(\"/home/ec2-user/Venture/src/__PythonModule.py\")\n" +
                              "else:\n" +
                              "  print(\"Cannot find __PythonModule.py!\")\n" +
                              "").c_str());
