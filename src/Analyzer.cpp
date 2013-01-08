@@ -507,16 +507,17 @@ void NodeEnvironment::DeleteNode() {
 }
 
 shared_ptr<VentureValue>
-NodeEvaluation::Evaluate(shared_ptr<NodeEnvironment> environment) { // It seems we do not need this function, do we?
+NodeEvaluation::Evaluate(shared_ptr<NodeEnvironment> environment, EvaluationConfig& evaluation_config) { // It seems we do not need this function, do we?
   throw std::runtime_error("It should not happen.");
 }
 
 shared_ptr<VentureValue>
-NodeDirectiveAssume::Evaluate(shared_ptr<NodeEnvironment> environment) {
+NodeDirectiveAssume::Evaluate(shared_ptr<NodeEnvironment> environment, EvaluationConfig& evaluation_config) {
   this->my_value =              Evaluator(this->expression,
                                 environment,
                                 dynamic_pointer_cast<Node>(this->shared_from_this()),
-                                dynamic_pointer_cast<NodeEvaluation>(this->shared_from_this()));
+                                dynamic_pointer_cast<NodeEvaluation>(this->shared_from_this()),
+                                evaluation_config);
   this->output_references.insert(
     BindToEnvironment(environment,
                       this->name,
@@ -525,46 +526,47 @@ NodeDirectiveAssume::Evaluate(shared_ptr<NodeEnvironment> environment) {
 }
 
 shared_ptr<VentureValue>
-NodeDirectivePredict::Evaluate(shared_ptr<NodeEnvironment> environment) {
+NodeDirectivePredict::Evaluate(shared_ptr<NodeEnvironment> environment, EvaluationConfig& evaluation_config) {
    this->my_value =
          Evaluator(this->expression,
                    environment,
                    dynamic_pointer_cast<Node>(this->shared_from_this()),
-                   dynamic_pointer_cast<NodeEvaluation>(this->shared_from_this()));
+                   dynamic_pointer_cast<NodeEvaluation>(this->shared_from_this()),
+                   evaluation_config);
    cout << this->my_value->GetString() << "$" << endl;
    return this->my_value;
 }
 
 shared_ptr<VentureValue>
-NodeDirectiveObserve::Evaluate(shared_ptr<NodeEnvironment> environment) {
+NodeDirectiveObserve::Evaluate(shared_ptr<NodeEnvironment> environment, EvaluationConfig& evaluation_config) {
+  assert(evaluation_config.should_be_forced_for_OBSERVE == shared_ptr<NodeDirectiveObserve>());
+  evaluation_config.should_be_forced_for_OBSERVE = dynamic_pointer_cast<NodeDirectiveObserve>(this->shared_from_this());
+
   Evaluator(this->expression,
             environment,
             dynamic_pointer_cast<Node>(this->shared_from_this()),
-            dynamic_pointer_cast<NodeEvaluation>(this->shared_from_this()));
+            dynamic_pointer_cast<NodeEvaluation>(this->shared_from_this()),
+            evaluation_config);
 
-  // Silly:
-  dynamic_pointer_cast<NodeXRPApplication>(
-    dynamic_pointer_cast<NodeApplicationCaller>(this->expression)->application_node)->sampled_value =
-      this->observed_value;
-  random_choices.erase(
-    dynamic_pointer_cast<NodeXRPApplication>(
-      dynamic_pointer_cast<NodeApplicationCaller>(this->expression)->application_node));
+  if (evaluation_config.should_be_forced_for_OBSERVE != shared_ptr<NodeDirectiveObserve>()) {
+    throw std::runtime_error("Evaluator has not found proper XRP sampler application to force its value (1).");
+  }
 
   return NIL_INSTANCE;
 }
 
 shared_ptr<VentureValue>
-NodeSelfEvaluating::Evaluate(shared_ptr<NodeEnvironment> environment) {
+NodeSelfEvaluating::Evaluate(shared_ptr<NodeEnvironment> environment, EvaluationConfig& evaluation_config) {
   return this->value;
 }
 
 shared_ptr<VentureValue>
-NodeLambdaCreator::Evaluate(shared_ptr<NodeEnvironment> environment) {
+NodeLambdaCreator::Evaluate(shared_ptr<NodeEnvironment> environment, EvaluationConfig& evaluation_config) {
   return shared_ptr<VentureValue>(new VentureLambda(this->arguments, this->expressions, environment));
 }
 
 shared_ptr<VentureValue>
-NodeLookup::Evaluate(shared_ptr<NodeEnvironment> environment) {
+NodeLookup::Evaluate(shared_ptr<NodeEnvironment> environment, EvaluationConfig& evaluation_config) {
   return LookupValue(environment, this->symbol, dynamic_pointer_cast<NodeEvaluation>(this->shared_from_this()), false);
 }
 
@@ -573,7 +575,8 @@ EvaluateApplication(shared_ptr<VentureValue> evaluated_operator,
                     shared_ptr<NodeEnvironment> local_environment,
                     size_t number_of_operands,
                     shared_ptr<NodeEvaluation>& application_node, // "By reference" is because we also set it in the application caller node.
-                    shared_ptr<NodeApplicationCaller> application_caller_ptr) {
+                    shared_ptr<NodeApplicationCaller> application_caller_ptr,
+                    EvaluationConfig& evaluation_config) {
   if (evaluated_operator->GetType() == LAMBDA) {
     shared_ptr<VentureList> enumerate_arguments = ToVentureType<VentureLambda>(evaluated_operator)->formal_arguments;
     size_t index = 0;
@@ -597,9 +600,10 @@ EvaluateApplication(shared_ptr<VentureValue> evaluated_operator,
     // cout << " " << application_node->GetUniqueID() << endl;
 
     return Evaluator(application_node,
-                      local_environment,
-                      dynamic_pointer_cast<Node>(application_caller_ptr),
-                      dynamic_pointer_cast<NodeEvaluation>(application_caller_ptr));
+                     local_environment,
+                     dynamic_pointer_cast<Node>(application_caller_ptr),
+                     dynamic_pointer_cast<NodeEvaluation>(application_caller_ptr),
+                     evaluation_config);
   } else if (evaluated_operator->GetType() == XRP_REFERENCE) {
     // Just for mem now.
     // Maybe, implement it in the future in a better way.
@@ -617,18 +621,23 @@ EvaluateApplication(shared_ptr<VentureValue> evaluated_operator,
     return Evaluator(application_node,
                      local_environment,
                      dynamic_pointer_cast<Node>(application_caller_ptr),
-                     dynamic_pointer_cast<NodeEvaluation>(application_caller_ptr));
+                     dynamic_pointer_cast<NodeEvaluation>(application_caller_ptr),
+                     evaluation_config);
   } else {
     throw std::runtime_error((string("Attempt to apply neither LAMBDA nor XRP (") + boost::lexical_cast<string>(evaluated_operator->GetType()) + string(")")).c_str());
   }
 }
 
 shared_ptr<VentureValue>
-NodeApplicationCaller::Evaluate(shared_ptr<NodeEnvironment> environment) {
+NodeApplicationCaller::Evaluate(shared_ptr<NodeEnvironment> environment, EvaluationConfig& evaluation_config) {
+  shared_ptr<NodeDirectiveObserve> saved_forced_OBSERVE_reference = evaluation_config.should_be_forced_for_OBSERVE;
+  evaluation_config.should_be_forced_for_OBSERVE = shared_ptr<NodeDirectiveObserve>(); // Will return below.
+
   shared_ptr<VentureValue> evaluated_operator = Evaluator(application_operator,
                                                           environment,
                                                           dynamic_pointer_cast<Node>(this->shared_from_this()),
-                                                          dynamic_pointer_cast<NodeEvaluation>(this->shared_from_this()));
+                                                          dynamic_pointer_cast<NodeEvaluation>(this->shared_from_this()),
+                                                          evaluation_config);
   this->saved_evaluated_operator = evaluated_operator;
   
   shared_ptr<NodeEnvironment> previous_environment;
@@ -645,19 +654,23 @@ NodeApplicationCaller::Evaluate(shared_ptr<NodeEnvironment> environment) {
       Evaluator(application_operands[index],
                 environment,
                 shared_ptr<Node>(),
-                dynamic_pointer_cast<NodeEvaluation>(this->shared_from_this()));
+                dynamic_pointer_cast<NodeEvaluation>(this->shared_from_this()),
+                evaluation_config);
     shared_ptr<NodeVariable> new_variable_node =
       shared_ptr<NodeVariable>(new NodeVariable(local_environment, binding_value));
     local_environment->local_variables.push_back(new_variable_node);
     application_operands[index]->output_references.insert(new_variable_node);
   }
 
+  evaluation_config.should_be_forced_for_OBSERVE = saved_forced_OBSERVE_reference; // Because we previously zeroised temporaly above.
+
   return
     EvaluateApplication(evaluated_operator,
                         local_environment,
                         application_operands.size(),
                         application_node,
-                        dynamic_pointer_cast<NodeApplicationCaller>(this->shared_from_this()));
+                        dynamic_pointer_cast<NodeApplicationCaller>(this->shared_from_this()),
+                        evaluation_config);
 }
 
 vector< shared_ptr<VentureValue> >
@@ -675,18 +688,14 @@ GetArgumentsFromEnvironment(shared_ptr<NodeEnvironment> environment,
 }
 
 shared_ptr<VentureValue>
-NodeXRPApplication::Evaluate(shared_ptr<NodeEnvironment> environment) {
-  if (this->xrp->xrp->IsRandomChoice() == true) {
-    random_choices.insert(dynamic_pointer_cast<NodeXRPApplication>(this->shared_from_this()));
-    TMP_number_of_created_XRPSamplers++;
-  }
-
+NodeXRPApplication::Evaluate(shared_ptr<NodeEnvironment> environment, EvaluationConfig& evaluation_config) {
   //cout << "SIZE: " << GetArgumentsFromEnvironment(environment,
   //                                dynamic_pointer_cast<NodeEvaluation>(this->shared_from_this())).size() << endl;
   vector< shared_ptr<VentureValue> > got_arguments = GetArgumentsFromEnvironment(environment, // Not efficient?
                                   dynamic_pointer_cast<NodeEvaluation>(this->shared_from_this()));
   return this->xrp->xrp->Sample(got_arguments,
-                                dynamic_pointer_cast<NodeXRPApplication>(this->shared_from_this()));
+                                dynamic_pointer_cast<NodeXRPApplication>(this->shared_from_this()),
+                                evaluation_config);
 }
 
 shared_ptr<ReevaluationResult> // FIXME: Why we pass ReevaluationResult as shared_ptr?
@@ -707,11 +716,17 @@ NodeXRPApplication::Reevaluate(shared_ptr<VentureValue> passing_value,
       reevaluation_parameters);
   if (result->new_value == shared_ptr<VentureValue>()) { // Rescored.
     //cout << "Adding: " << result->new_loglikelihood << " - " << result->old_loglikelihood << endl;
-    reevaluation_parameters.loglikelihood_changes += result->new_loglikelihood;
-    reevaluation_parameters.loglikelihood_changes -= result->old_loglikelihood;
+    reevaluation_parameters.loglikelihood_p_new += result->new_loglikelihood;
+    reevaluation_parameters.loglikelihood_p_old += result->old_loglikelihood;
     return shared_ptr<ReevaluationResult>(
       new ReevaluationResult(shared_ptr<VentureValue>(), false));
   } else { // Resampled.
+    reevaluation_parameters.loglikelihood_p_new += result->new_loglikelihood;
+    reevaluation_parameters.loglikelihood_p_old += result->old_loglikelihood;
+    reevaluation_parameters.loglikelihood_changes_from_new_to_old += result->old_loglikelihood;
+    reevaluation_parameters.loglikelihood_changes_from_old_to_new += result->new_loglikelihood;
+    assert(result->new_loglikelihood == log(1.0) || this->xrp->xrp->IsRandomChoice() == true); // For now all XRPs, which are being resampled and which are not forced to be resampled, should return it.
+    assert(result->old_loglikelihood == log(1.0) || this->xrp->xrp->IsRandomChoice() == true); // For now all XRPs, which are being resampled and which are not forced to be resampled, should return it.
     this->new_sampled_value = result->new_value;
     return shared_ptr<ReevaluationResult>(
       new ReevaluationResult(result->new_value, true));
@@ -781,20 +796,26 @@ NodeApplicationCaller::Reevaluate(shared_ptr<VentureValue> passing_value,
       application_operands[index]->output_references.insert(new_variable_node);
     }
 
-    TMP_number_of_created_XRPSamplers = 0;
-
+    shared_ptr<NodeDirectiveObserve> was_forced_for__if_any;
+    FreezeBranch(application_node, reevaluation_parameters, was_forced_for__if_any);
+    EvaluationConfig local_evaluation_config(true);
+    local_evaluation_config.should_be_forced_for_OBSERVE = was_forced_for__if_any;
+    
     shared_ptr<VentureValue> new_value =
       EvaluateApplication(passing_value,
                           local_environment,
                           application_operands.size(),
                           new_application_node,
-                          dynamic_pointer_cast<NodeApplicationCaller>(this->shared_from_this()));
-    
-    reevaluation_parameters.random_choices_delta += TMP_number_of_created_XRPSamplers; // CalculateNumberOfRandomChoices(new_application_node);
-    // Two below should be "connected" (the first should be part of the second).
-    reevaluation_parameters.random_choices_delta -= CalculateNumberOfRandomChoices(application_node);
-    FreezeBranch(application_node, reevaluation_parameters);
-    
+                          dynamic_pointer_cast<NodeApplicationCaller>(this->shared_from_this()),
+                          local_evaluation_config);
+    reevaluation_parameters.random_choices_delta += local_evaluation_config.number_of_created_random_choices;
+    reevaluation_parameters.loglikelihood_p_new += local_evaluation_config.loglikelihood_p_constraint_score + local_evaluation_config.loglikelihood_p_unconstraint_score;
+    reevaluation_parameters.loglikelihood_changes_from_old_to_new += local_evaluation_config.loglikelihood_p_unconstraint_score;
+
+    if (local_evaluation_config.should_be_forced_for_OBSERVE != shared_ptr<NodeDirectiveObserve>()) {
+      throw std::runtime_error("Evaluator has not found proper XRP sampler application to force its value (2).");
+    }
+
     return shared_ptr<ReevaluationResult>(
       new ReevaluationResult(new_value, true));
   } else {
@@ -822,16 +843,12 @@ NodeDirectivePredict::Reevaluate(shared_ptr<VentureValue> passing_value,
     new ReevaluationResult(passing_value, true));
 }
 
-/*
 shared_ptr<ReevaluationResult>
 NodeDirectiveObserve::Reevaluate(shared_ptr<VentureValue> passing_value,
                                  shared_ptr<Node> sender,
                                  ReevaluationParameters& reevaluation_parameters) {
-  // Just passing up:
-  return shared_ptr<ReevaluationResult>(
-    new ReevaluationResult(passing_value, true));
+  throw std::runtime_error("The OBSERVE directive's node should not be reevaluated.");
 }
-*/
 
 void ApplyToMeAndAllMyChildren(shared_ptr<Node> first_node,
                                void (*f)(shared_ptr<Node>)) {
@@ -918,18 +935,3 @@ void DrawGraphDuringMH(shared_ptr<Node> first_node, stack< shared_ptr<Node> >& t
   cout << "The graph has been written" << endl;
 #endif
 }
-
-size_t CalculateNumberOfRandomChoices(shared_ptr<Node> first_node) {
-  size_t number_of_random_choices = 0;
-  queue< shared_ptr<Node> > processing_queue;
-  processing_queue.push(first_node);
-  while (!processing_queue.empty()) {
-    processing_queue.front()->GetChildren(processing_queue);
-    if (processing_queue.front()->GetNodeType() == XRP_APPLICATION &&
-          dynamic_pointer_cast<NodeXRPApplication>(processing_queue.front())->xrp->xrp->IsRandomChoice()) {
-      number_of_random_choices++;
-    }
-    processing_queue.pop();
-  }
-  return number_of_random_choices;
-};

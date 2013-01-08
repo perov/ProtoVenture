@@ -2,7 +2,7 @@
 #include "XRPs.h"
 
 // CRPmaker
-shared_ptr<VentureValue> XRP__CRPmaker::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller) {
+shared_ptr<VentureValue> XRP__CRPmaker::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
   if (arguments.size() != 1) {
     throw std::runtime_error("Wrong number of arguments.");
   }
@@ -32,7 +32,7 @@ bool XRP__CRPmaker::CouldBeRescored() { return false; }
 string XRP__CRPmaker::GetName() { return "XRP__CRPmaker"; }
 
 // CRPsampler
-shared_ptr<VentureValue> XRP__CRPsampler::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller) {
+shared_ptr<VentureValue> XRP__CRPsampler::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
   // FIXME: rewrite with SampleCategorical(...).
   if (arguments.size() != 0) {
     throw std::runtime_error("Wrong number of arguments.");
@@ -109,7 +109,7 @@ string XRP__CRPsampler::GetName() { return "XRP__CRPsampler"; }
 // Arguments:
 // 1) alpha; smoothed count
 // 2) dimensionality; count? (should be at least >= 2)
-shared_ptr<VentureValue> XRP__SymmetricDirichletMultinomial_maker::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller) {
+shared_ptr<VentureValue> XRP__SymmetricDirichletMultinomial_maker::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
   if (arguments.size() != 2) {
     throw std::runtime_error("Wrong number of arguments.");
   }
@@ -145,7 +145,7 @@ string XRP__SymmetricDirichletMultinomial_maker::GetName() { return "XRP__Symmet
 // DirichletMultinomial_maker
 // Arguments:
 // 1) list = (alpha1 ... alpha_k), k >= 2
-shared_ptr<VentureValue> XRP__DirichletMultinomial_maker::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller) {
+shared_ptr<VentureValue> XRP__DirichletMultinomial_maker::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
   if (arguments.size() != 1) {
     throw std::runtime_error("Wrong number of arguments.");
   }
@@ -186,7 +186,7 @@ real XRP__DirichletMultinomial_sampler::GetSumOfStatistics() {
   }
   return sum_of_statistics;
 }
-shared_ptr<VentureValue> XRP__DirichletMultinomial_sampler::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller) {
+shared_ptr<VentureValue> XRP__DirichletMultinomial_sampler::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
   if (arguments.size() != 0) {
     throw std::runtime_error("Wrong number of arguments.");
   }

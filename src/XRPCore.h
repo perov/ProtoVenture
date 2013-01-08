@@ -46,15 +46,19 @@ struct OmitPattern {
                                // and make the code more accurate.
 };
 
-struct ReevaluationParameters {
+struct ReevaluationParameters : public boost::enable_shared_from_this<ReevaluationParameters> {
   ReevaluationParameters();
-  double loglikelihood_changes;
+  double loglikelihood_changes_from_new_to_old;
+  double loglikelihood_changes_from_old_to_new;
+  double loglikelihood_p_new;
+  double loglikelihood_p_old;
   int random_choices_delta;
 };
 
+struct EvaluationConfig;
 class XRP : public boost::enable_shared_from_this<XRP> {
 public: // Should be private.
-  virtual shared_ptr<VentureValue> Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller);
+  virtual shared_ptr<VentureValue> Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config);
   virtual real GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >&,
                                        shared_ptr<VentureValue>);
   virtual void Incorporate(vector< shared_ptr<VentureValue> >&,
@@ -66,14 +70,15 @@ public:
   //XRP(shared_ptr<XRP> maker) : maker(maker) {}
   XRP();
   shared_ptr<VentureValue> Sample(vector< shared_ptr<VentureValue> >&, // FIXME: why not virtual?
-                                       shared_ptr<NodeXRPApplication>);
+                                  shared_ptr<NodeXRPApplication>,
+                                  EvaluationConfig& evaluation_config);
   virtual void Unsampler(vector< shared_ptr<VentureValue> >& old_arguments, shared_ptr<NodeXRPApplication> caller); // Unsampler or sampler?
   shared_ptr<RescorerResamplerResult>
   RescorerResampler(vector< shared_ptr<VentureValue> >& old_arguments,
-                         vector< shared_ptr<VentureValue> >& new_arguments,
-                         shared_ptr<NodeXRPApplication> caller,
-                         bool forced_resampling,
-                         ReevaluationParameters& reevaluation_parameters);
+                    vector< shared_ptr<VentureValue> >& new_arguments,
+                    shared_ptr<NodeXRPApplication> caller,
+                    bool forced_resampling,
+                    ReevaluationParameters& reevaluation_parameters);
   virtual bool IsRandomChoice();
   virtual bool CouldBeRescored();
   virtual string GetName();

@@ -1,7 +1,7 @@
 
 #include "XRPmem.h"
 
-shared_ptr<VentureValue> XRP__memoizer::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller) {
+shared_ptr<VentureValue> XRP__memoizer::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
   if (arguments.size() != 1) {
     throw std::runtime_error("Wrong number of arguments.");
   }
@@ -43,7 +43,7 @@ string XRP__memoized_procedure__MakeMapKeyFromArguments(vector< shared_ptr<Ventu
   return arguments_strings;
 }
 
-shared_ptr<VentureValue> XRP__memoized_procedure::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller) {
+shared_ptr<VentureValue> XRP__memoized_procedure::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
   string mem_table_key = XRP__memoized_procedure__MakeMapKeyFromArguments(arguments);
 
   if (this->mem_table.count(mem_table_key) == 0) {
@@ -64,7 +64,8 @@ shared_ptr<VentureValue> XRP__memoized_procedure::Sampler(vector< shared_ptr<Ven
       Evaluator(this->mem_table[mem_table_key].application_caller_node,
                 caller->environment, // FIXME: Is it okay?
                 caller, // FIXME: Is it okay?
-                caller);
+                caller,
+                evaluation_config);
     
     (*(this->mem_table.find(mem_table_key))).second.result
       = shared_ptr<NodeVariable>(new NodeVariable(shared_ptr<NodeEnvironment>(), result));
@@ -183,11 +184,36 @@ void XRP__memoized_procedure__Unfreeze
   caller->frozen = false;
 }
 
-void FreezeBranch(shared_ptr<Node> first_node, ReevaluationParameters& reevaluation_parameters) {
+void FreezeBranch(shared_ptr<Node> first_node, ReevaluationParameters& reevaluation_parameters, shared_ptr<NodeDirectiveObserve>& was_forced_for) {
   queue< shared_ptr<Node> > processing_queue;
   processing_queue.push(first_node);
   while (!processing_queue.empty()) {
     processing_queue.front()->GetChildren(processing_queue);
+    if (processing_queue.front()->GetNodeType() == XRP_APPLICATION &&
+          dynamic_pointer_cast<NodeXRPApplication>(processing_queue.front())->xrp->xrp->IsRandomChoice()) {
+      // FIXME: GetArgumentsFromEnvironment should be called without adding lookup references!
+      vector< shared_ptr<VentureValue> > got_arguments = GetArgumentsFromEnvironment(dynamic_pointer_cast<NodeXRPApplication>(processing_queue.front())->environment, // Not efficient?
+                                      dynamic_pointer_cast<NodeEvaluation>(processing_queue.front()), // Are we sure that we have not deleted yet lookup links?
+                                      true); // FIXME: we should be sure that we are receiving old arguments!
+      real old_loglikelihood =
+        dynamic_pointer_cast<NodeXRPApplication>(processing_queue.front())->xrp->xrp->
+          GetSampledLoglikelihood(got_arguments,
+                                  dynamic_pointer_cast<NodeXRPApplication>(processing_queue.front())->sampled_value); // FIXME: old sampled value, yes?
+
+      reevaluation_parameters.loglikelihood_p_old += old_loglikelihood;
+
+      // FIXME: Now we consider only loglikelihood from XRPs, whose IsRandomChoice() == True.
+      //        Is it okay?
+
+      if (dynamic_pointer_cast<NodeXRPApplication>(processing_queue.front())->was_forced_for == shared_ptr<NodeDirectiveObserve>()) {
+        // Unconstraint.
+        reevaluation_parameters.random_choices_delta--;
+        reevaluation_parameters.loglikelihood_changes_from_new_to_old += old_loglikelihood;
+      } else {
+        // Constraint.
+        was_forced_for = dynamic_pointer_cast<NodeXRPApplication>(processing_queue.front())->was_forced_for;
+      }
+    }
     if (processing_queue.front()->GetNodeType() == XRP_APPLICATION &&
           dynamic_pointer_cast<NodeXRPApplication>(processing_queue.front())->xrp->xrp->GetName() == "XRP__memoized_procedure") {
       // It is stupid that we check here by GetName().
@@ -211,7 +237,6 @@ void FreezeBranch(shared_ptr<Node> first_node, ReevaluationParameters& reevaluat
       if (mem_table_element.hidden_uses +
             mem_table_element.active_uses ==
             mem_table_element.frozen_elements) {
-        reevaluation_parameters.random_choices_delta -= CalculateNumberOfRandomChoices(mem_table_element.application_caller_node);
         processing_queue.push(mem_table_element.application_caller_node);
       }
     }

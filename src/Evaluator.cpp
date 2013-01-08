@@ -7,7 +7,8 @@
 shared_ptr<VentureValue> Evaluator(shared_ptr<NodeEvaluation> evaluation_node,
                                    shared_ptr<NodeEnvironment> environment,
                                    shared_ptr<Node> output_reference_target,
-                                   shared_ptr<NodeEvaluation> caller) {
+                                   shared_ptr<NodeEvaluation> caller,
+                                   EvaluationConfig& evaluation_config) {
   if (caller == shared_ptr<NodeEvaluation>()) { // It is directive.
     DIRECTIVE_COUNTER++;
     evaluation_node->myorder.push_back(DIRECTIVE_COUNTER);
@@ -24,17 +25,23 @@ shared_ptr<VentureValue> Evaluator(shared_ptr<NodeEvaluation> evaluation_node,
   }
 
   if (evaluation_node->earlier_evaluation_nodes != shared_ptr<NodeEvaluation>()) {
+    shared_ptr<NodeDirectiveObserve> saved_forced_OBSERVE_reference = evaluation_config.should_be_forced_for_OBSERVE;
+    evaluation_config.should_be_forced_for_OBSERVE = shared_ptr<NodeDirectiveObserve>(); // Will return below.
+
     // Potential recursion problem (i.e. stack overflow).
     // FIXME: in the future implement via the loop.
     Evaluator(evaluation_node->earlier_evaluation_nodes,
               environment,
               shared_ptr<Node>(),
-              dynamic_pointer_cast<NodeEvaluation>(evaluation_node->shared_from_this()));
+              dynamic_pointer_cast<NodeEvaluation>(evaluation_node->shared_from_this()),
+              evaluation_config);
+
+    evaluation_config.should_be_forced_for_OBSERVE = saved_forced_OBSERVE_reference; // Because we previously zeroised temporaly above.
   }
 
   assert(evaluation_node->evaluated == false);
   evaluation_node->evaluated = true; // Not too early?
-  return evaluation_node->Evaluate(environment);
+  return evaluation_node->Evaluate(environment, evaluation_config);
 }
 
 shared_ptr<Node> BindToEnvironment(shared_ptr<NodeEnvironment> target_environment,
