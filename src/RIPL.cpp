@@ -143,11 +143,12 @@ size_t ExecuteDirective(string& directive_as_string,
   if (directives.size() > 0) {
     last_directive_node = GetLastDirectiveNode();
   }
+  EvaluationConfig tmp_evaluation_config(false);
   Evaluator(directive_node,
             global_environment,
             shared_ptr<Node>(),
             shared_ptr<NodeEvaluation>(),
-            EvaluationConfig(false));
+            tmp_evaluation_config);
   directive_node->earlier_evaluation_nodes = last_directive_node;
 
   last_directive_id++;
