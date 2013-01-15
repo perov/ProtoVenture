@@ -10,7 +10,7 @@ template < class Type, class Container >
 const Container& GetQueueContainer
     (const std::queue<Type, Container>& queue);
 template < class Type, class Container >
-const Container& GetQueueContainer
+const Container& GetStackContainer
     (const std::stack<Type, Container>& stack);
 
 int UniformDiscrete(int a, int b);

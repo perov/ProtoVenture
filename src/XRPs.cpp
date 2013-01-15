@@ -2,7 +2,7 @@
 #include "XRPs.h"
 
 // CRPmaker
-shared_ptr<VentureValue> XRP__CRPmaker::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller) {
+shared_ptr<VentureValue> XRP__CRPmaker::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
   if (arguments.size() != 1) {
     throw std::runtime_error("Wrong number of arguments.");
   }
@@ -32,7 +32,7 @@ bool XRP__CRPmaker::CouldBeRescored() { return false; }
 string XRP__CRPmaker::GetName() { return "XRP__CRPmaker"; }
 
 // CRPsampler
-shared_ptr<VentureValue> XRP__CRPsampler::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller) {
+shared_ptr<VentureValue> XRP__CRPsampler::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
   // FIXME: rewrite with SampleCategorical(...).
   if (arguments.size() != 0) {
     throw std::runtime_error("Wrong number of arguments.");
@@ -57,7 +57,7 @@ shared_ptr<VentureValue> XRP__CRPsampler::Sampler(vector< shared_ptr<VentureValu
   return shared_ptr<VentureAtom>(new VentureAtom(next_free_index));
 
   next_gensym_atom++;
-  //cout << "Resampling XRP" << next_gensym_atom << endl;
+  // cout << "Resampling XRP" << next_gensym_atom << endl;
   return shared_ptr<VentureAtom>(new VentureAtom(next_gensym_atom));
 }
 
@@ -109,7 +109,7 @@ string XRP__CRPsampler::GetName() { return "XRP__CRPsampler"; }
 // Arguments:
 // 1) alpha; smoothed count
 // 2) dimensionality; count? (should be at least >= 2)
-shared_ptr<VentureValue> XRP__SymmetricDirichletMultinomial_maker::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller) {
+shared_ptr<VentureValue> XRP__SymmetricDirichletMultinomial_maker::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
   if (arguments.size() != 2) {
     throw std::runtime_error("Wrong number of arguments.");
   }
@@ -122,7 +122,8 @@ shared_ptr<VentureValue> XRP__SymmetricDirichletMultinomial_maker::Sampler(vecto
   shared_ptr<XRP> new_xrp = shared_ptr<XRP>(new XRP__DirichletMultinomial_sampler());
   // Should be done on the line above (through the XRP__DirichletMultinomial_sampler constructor!):
   dynamic_pointer_cast<XRP__DirichletMultinomial_sampler>(new_xrp)->statistics =
-    vector<real>(arguments[1]->GetInteger(), arguments[0].get()->GetReal());
+    vector<real>(arguments[1]->GetInteger(), arguments[0]->GetReal());
+
   return shared_ptr<VentureXRP>(new VentureXRP(new_xrp));
 }
 
@@ -145,7 +146,7 @@ string XRP__SymmetricDirichletMultinomial_maker::GetName() { return "XRP__Symmet
 // DirichletMultinomial_maker
 // Arguments:
 // 1) list = (alpha1 ... alpha_k), k >= 2
-shared_ptr<VentureValue> XRP__DirichletMultinomial_maker::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller) {
+shared_ptr<VentureValue> XRP__DirichletMultinomial_maker::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
   if (arguments.size() != 1) {
     throw std::runtime_error("Wrong number of arguments.");
   }
@@ -186,7 +187,7 @@ real XRP__DirichletMultinomial_sampler::GetSumOfStatistics() {
   }
   return sum_of_statistics;
 }
-shared_ptr<VentureValue> XRP__DirichletMultinomial_sampler::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller) {
+shared_ptr<VentureValue> XRP__DirichletMultinomial_sampler::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
   if (arguments.size() != 0) {
     throw std::runtime_error("Wrong number of arguments.");
   }

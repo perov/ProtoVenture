@@ -18,7 +18,7 @@ const Container& GetQueueContainer
     return HackedQueue::GetQueueContainer(queue);
 }
 template < class Type, class Container >
-const Container& GetQueueContainer // FIXME: Should be called GetStackContainer!
+const Container& GetStackContainer // FIXME: Should be called GetStackContainer!
     (const std::stack<Type, Container>& stack)
 {
     struct HackedStack : private std::stack<Type, Container>
@@ -43,7 +43,7 @@ void BlankFunction___ForGetQueueContainer() { // For some reason without this fu
 void BlankFunction___ForGetStackContainer() { // For some reason without this function
                                               // "GetQueueContainer" is not generated.
   stack< shared_ptr<Node> > touched_nodes;
-  GetQueueContainer(touched_nodes);
+  GetStackContainer(touched_nodes);
 }
 
 int UniformDiscrete(int a, int b) {

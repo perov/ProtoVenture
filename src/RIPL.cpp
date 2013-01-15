@@ -82,9 +82,6 @@ void DeleteRIPL() {
     DeleteBranch(iterator->second.directive_node);
   }
 
-  if (global_environment != shared_ptr<NodeEnvironment>()) { // It should not be in a good way?
-    global_environment->DeleteNode();
-  }
   global_environment = shared_ptr<NodeEnvironment>();
 
   last_directive_id = 0;
@@ -111,7 +108,7 @@ void InitRIPL() {
 
 shared_ptr<VentureValue> ReportValue(size_t directive_id) {
   if (directives.count(directive_id) == 0) {
-    throw std::runtime_error("Attempt to report value neither for non-existent directive.");
+    throw std::runtime_error("Attempt to report value for non-existent directive.");
   }
   if (directives[directive_id].directive_node->GetNodeType() == DIRECTIVE_ASSUME) {
     return dynamic_pointer_cast<NodeDirectiveAssume>(directives[directive_id].directive_node)->my_value;
@@ -123,6 +120,8 @@ shared_ptr<VentureValue> ReportValue(size_t directive_id) {
 }
 
 void ForgetDirective(size_t directive_id) {
+  throw std::runtime_error("Forget does not work.");
+
   if (directives.count(directive_id) == 0) {
     throw std::runtime_error("There is no such directive.");
   }
@@ -143,8 +142,19 @@ size_t ExecuteDirective(string& directive_as_string,
   if (directives.size() > 0) {
     last_directive_node = GetLastDirectiveNode();
   }
-  Evaluator(directive_node, global_environment, shared_ptr<Node>(), shared_ptr<NodeEvaluation>());
+  EvaluationConfig tmp_evaluation_config(false);
+  Evaluator(directive_node,
+            global_environment,
+            shared_ptr<Node>(),
+            shared_ptr<NodeEvaluation>(),
+            tmp_evaluation_config);
   directive_node->earlier_evaluation_nodes = last_directive_node;
+  
+  if (tmp_evaluation_config.unsatisfied_constraint == true) {
+      throw std::runtime_error("You are trying to execute the code, which has the joint score = 0.0 (at least in one of its state!).");
+      // FIXME: should be improved in the future.
+      //        (By resampling, if it happens.)
+  }
 
   last_directive_id++;
   directives.insert(pair<size_t, directive_entry>(last_directive_id, directive_entry(directive_as_string, directive_node)));

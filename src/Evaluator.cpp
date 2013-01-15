@@ -7,7 +7,8 @@
 shared_ptr<VentureValue> Evaluator(shared_ptr<NodeEvaluation> evaluation_node,
                                    shared_ptr<NodeEnvironment> environment,
                                    shared_ptr<Node> output_reference_target,
-                                   shared_ptr<NodeEvaluation> caller) {
+                                   shared_ptr<NodeEvaluation> caller,
+                                   EvaluationConfig& evaluation_config) {
   if (caller == shared_ptr<NodeEvaluation>()) { // It is directive.
     DIRECTIVE_COUNTER++;
     evaluation_node->myorder.push_back(DIRECTIVE_COUNTER);
@@ -29,22 +30,25 @@ shared_ptr<VentureValue> Evaluator(shared_ptr<NodeEvaluation> evaluation_node,
     Evaluator(evaluation_node->earlier_evaluation_nodes,
               environment,
               shared_ptr<Node>(),
-              dynamic_pointer_cast<NodeEvaluation>(evaluation_node->shared_from_this()));
+              dynamic_pointer_cast<NodeEvaluation>(evaluation_node->shared_from_this()),
+              evaluation_config);
   }
 
   assert(evaluation_node->evaluated == false);
   evaluation_node->evaluated = true; // Not too early?
-  return evaluation_node->Evaluate(environment);
+  return evaluation_node->Evaluate(environment, evaluation_config);
 }
 
 shared_ptr<Node> BindToEnvironment(shared_ptr<NodeEnvironment> target_environment,
-                                  shared_ptr<VentureSymbol> variable_name,
-                                  shared_ptr<VentureValue> binding_value) {
+                                   shared_ptr<VentureSymbol> variable_name,
+                                   shared_ptr<VentureValue> binding_value,
+                                   shared_ptr<NodeEvaluation> binding_node) {
   if (target_environment->variables.count(variable_name->GetString()) != 0) {
     throw std::runtime_error(("Binding variable, which has been already bound: " + variable_name->GetString()).c_str());
   }
   target_environment->variables[variable_name->GetString()] =
-    shared_ptr<NodeVariable>(new NodeVariable(target_environment, binding_value));
+    shared_ptr<NodeVariable>(new NodeVariable(target_environment, binding_value, binding_node));
+  target_environment->variables[variable_name->GetString()]->weak_ptr_to_me = dynamic_pointer_cast<Node>(target_environment->variables[variable_name->GetString()]->shared_from_this()); // Silly.
   return target_environment->variables[variable_name->GetString()];
 }
 
@@ -104,3 +108,125 @@ shared_ptr<VentureValue> LookupValue(shared_ptr<NodeEnvironment> environment,
     return environment->local_variables[index]->new_value;
   }
 }
+
+// If possible to force (return True) or not (return False)?
+bool ForceExpressionValue(shared_ptr<Node> node, shared_ptr<VentureValue> desired_value, ReevaluationParameters& reevaluation_parameters) {
+  while (true) {
+    assert(node != shared_ptr<Node>());
+    if (node->GetNodeType() == LOOKUP) {
+      node = dynamic_pointer_cast<NodeLookup>(node)->where_lookuped.lock();
+      continue;
+    } else if (node->GetNodeType() == VARIABLE) {
+      node = dynamic_pointer_cast<NodeVariable>(node)->binding_node.lock();
+      continue;
+    } else if (node->GetNodeType() == APPLICATION_CALLER) {
+      if (dynamic_pointer_cast<NodeApplicationCaller>(node)->new_application_node != shared_ptr<NodeEvaluation>()) {
+        node = dynamic_pointer_cast<NodeApplicationCaller>(node)->new_application_node;
+      } else {
+        node = dynamic_pointer_cast<NodeApplicationCaller>(node)->application_node;
+      }
+      continue;
+    } else if (node->GetNodeType() == SELF_EVALUATING) {
+      if (CompareValue(dynamic_pointer_cast<NodeSelfEvaluating>(node)->value, desired_value)) {
+        return true;
+      } else {
+        return false;
+      }
+    } else if (node->GetNodeType() == XRP_APPLICATION) {
+      shared_ptr<NodeXRPApplication> node2 = dynamic_pointer_cast<NodeXRPApplication>(node);
+      random_choices.erase(node2); // FIXME: it is not right, if we are in MH.
+      if (CompareValue(node2->my_sampled_value, desired_value)) {
+        node2->forced_by_observations = true;
+        return true;
+      } else {
+        if (node2->forced_by_observations == true) {
+          return false; // The already forced value is not the value we want. Rejecting.
+        } else {
+          node2->forced_by_observations = true;
+          vector< shared_ptr<VentureValue> > got_arguments = GetArgumentsFromEnvironment(node2->environment, // Not efficient?
+                                          dynamic_pointer_cast<NodeEvaluation>(node2),
+                                          false);
+          bool internal_forcing = node2->xrp->xrp->ForceValue(got_arguments, desired_value, reevaluation_parameters);
+          if (internal_forcing == false) { return false; }
+          node2->xrp->xrp->Remove(got_arguments, node2->my_sampled_value);
+          //real logscore_change = -1.0 * node2->xrp->xrp->GetSampledLoglikelihood(got_arguments, node2->my_sampled_value);
+          // Assuming that if it was rescored, it saved the necessary value, i.e. there would not be necessity in
+          // the forcing. Otherwise:
+          reevaluation_parameters.__log_q_from_old_to_new -= node2->xrp->xrp->GetSampledLoglikelihood(got_arguments, node2->my_sampled_value);
+          node2->my_sampled_value = desired_value;
+          //logscore_change +=node2->xrp->xrp->GetSampledLoglikelihood(got_arguments, node2->my_sampled_value);
+          node2->xrp->xrp->Incorporate(got_arguments, node2->my_sampled_value);
+          assert(dynamic_pointer_cast<NodeApplicationCaller>(node2->parent.lock())->MH_made_action != MH_ACTION__EMPTY_STATUS);
+          return true;
+        }
+      }
+    } else {
+      throw std::runtime_error("Cannot force the observation value. Unexpected node type.");
+    }
+  }
+}
+
+void UnforceExpressionValue(shared_ptr<Node> node) {
+  while (true) {
+    assert(node != shared_ptr<Node>());
+    if (node->GetNodeType() == LOOKUP) {
+      node = dynamic_pointer_cast<NodeLookup>(node)->where_lookuped.lock();
+      continue;
+    } else if (node->GetNodeType() == VARIABLE) {
+      node = dynamic_pointer_cast<NodeVariable>(node)->binding_node.lock();
+      continue;
+    } else if (node->GetNodeType() == APPLICATION_CALLER) {
+      if (dynamic_pointer_cast<NodeApplicationCaller>(node)->new_application_node != shared_ptr<NodeEvaluation>()) {
+        node = dynamic_pointer_cast<NodeApplicationCaller>(node)->new_application_node;
+      } else {
+        node = dynamic_pointer_cast<NodeApplicationCaller>(node)->application_node;
+      }
+      continue;
+    } else if (node->GetNodeType() == SELF_EVALUATING) {
+      return;
+    } else if (node->GetNodeType() == XRP_APPLICATION) {
+      shared_ptr<NodeXRPApplication> node2 = dynamic_pointer_cast<NodeXRPApplication>(node);
+      assert(node2->forced_by_observations == true);
+      node2->forced_by_observations = false;
+      if (node2->xrp->xrp->IsRandomChoice()) { // Silly?
+        random_choices.insert(node2);
+      }
+      vector< shared_ptr<VentureValue> > got_arguments = GetArgumentsFromEnvironment(node2->environment, // Not efficient?
+                                      dynamic_pointer_cast<NodeEvaluation>(node2),
+                                      false);
+      node2->xrp->xrp->UnforceValue(got_arguments);
+    } else {
+      throw std::runtime_error("Cannot unforce the observation value. Unexpected node type.");
+    }
+  }
+}
+
+shared_ptr<VentureValue> GetBranchValue(shared_ptr<Node> node) {
+  while (true) {
+    assert(node != shared_ptr<Node>());
+    if (node->GetNodeType() == LOOKUP) {
+      node = dynamic_pointer_cast<NodeLookup>(node)->where_lookuped.lock();
+      continue;
+    } else if (node->GetNodeType() == VARIABLE) {
+      return dynamic_pointer_cast<NodeVariable>(node)->GetCurrentValue();
+      continue;
+    } else if (node->GetNodeType() == APPLICATION_CALLER) {
+      if (dynamic_pointer_cast<NodeApplicationCaller>(node)->new_application_node != shared_ptr<NodeEvaluation>()) {
+        node = dynamic_pointer_cast<NodeApplicationCaller>(node)->new_application_node;
+      } else {
+        node = dynamic_pointer_cast<NodeApplicationCaller>(node)->application_node;
+      }
+      continue;
+    } else if (node->GetNodeType() == SELF_EVALUATING) {
+      return dynamic_pointer_cast<NodeSelfEvaluating>(node)->value;
+    } else if (node->GetNodeType() == XRP_APPLICATION) {
+      return dynamic_pointer_cast<NodeXRPApplication>(node)->my_sampled_value;
+    } else {
+      throw std::runtime_error("Cannot get the branch value. Unexpected node type.");
+    }
+  }
+}
+
+//void PropagateByDirective(shared_ptr<>) {
+
+//}
