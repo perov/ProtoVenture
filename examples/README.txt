@@ -4,15 +4,10 @@ USING VENTURE REMOTELY ON EC2 INSTANCE
 0. SECTION "USERS LIST"
   
       EMAIL                 DEFAULT PORT
-      maxhkw@gmail.com      5011
-      tejask@mit.edu        5012
-      jhuggins@mit.edu      5013
-      ardavans@mit.edu      5014
-      d.roy@eng.cam.ac.uk   5015
-      dlovell@gmail.com     5016
-      malmaud@mit.edu       5017
-      vkm@mit.edu           5018
-      atyurina@sipan.org    5019
+      ...                   ...
+      
+      (Sorry, this list is out-of-date. Please, see the last version of this list here:
+       http://www.yuraperov.com/MIT.PCP/static/25December2012/private/README.html)
       
       Your user name is the part of your email before @ symbol. 
      

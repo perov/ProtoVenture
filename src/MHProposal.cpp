@@ -105,8 +105,6 @@ void MakeMHProposal(int proposal_unique_id) {
   ProposalInfo this_proposal;
   this_proposal.proposal_unique_id = proposal_unique_id; // FIXME: through constructor
   this_proposal.request_to_terminate = false; // FIXME: through constructor
-  
-  ReevaluationParameters reevaluation_parameters;
 
   size_t number_of_random_choices = random_choices.size();
   if (number_of_random_choices == 0) {
@@ -131,6 +129,8 @@ void MakeMHProposal(int proposal_unique_id) {
 
   stack< shared_ptr<Node> > touched_nodes; // Should be LIFO for Unsampler(...)!
                                            // (To correctly receive old arguments.)
+  
+  ReevaluationParameters reevaluation_parameters;
 
   while (reevaluation_queue.size() != 0) {
     ReevaluationEntry current_reevaluation = *(reevaluation_queue.rbegin());
@@ -253,14 +253,10 @@ void MakeMHProposal(int proposal_unique_id) {
     log((1.0 / posterior_number_of_random_choices)
           / (1.0 / number_of_random_choices));
   //cout << number_of_random_choices << " " << posterior_number_of_random_choices << endl;
-  real to_compare = number_of_random_choices_formula_component;
-  real scores_part = reevaluation_parameters.loglikelihood_p_new + reevaluation_parameters.loglikelihood_changes_from_new_to_old;
-  scores_part -= (reevaluation_parameters.loglikelihood_p_old + reevaluation_parameters.loglikelihood_changes_from_old_to_new);
-  to_compare += scores_part;
+  real to_compare = number_of_random_choices_formula_component + reevaluation_parameters.loglikelihood_changes;
   real random_value = log(gsl_ran_flat(random_generator, 0, 1));
-  //cout << random_value << " vs " << scores_part << " " << number_of_random_choices <<
-  //        " " << posterior_number_of_random_choices << " " << random_choices.size() << endl;
-  //cout << dynamic_pointer_cast<NodeDirectivePredict>(GetLastDirectiveNode()->earlier_evaluation_nodes)->my_value->GetString() << endl;
+  //cout << random_value << " vs " << to_compare << " " << number_of_random_choices_formula_component <<
+  //  " " << reevaluation_parameters.loglikelihood_changes << endl;
   MHDecision mh_decision;
   if (random_value < to_compare) {
     mh_decision = MH_APPROVED;

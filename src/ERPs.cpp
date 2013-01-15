@@ -36,7 +36,7 @@ real ERP__Flip::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& argu
     throw std::runtime_error("Wrong value.");
   }
 }
-shared_ptr<VentureValue> ERP__Flip::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+shared_ptr<VentureValue> ERP__Flip::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller) {
   real weight;
   if (arguments.size() == 0) {
     weight = 0.5;
@@ -70,7 +70,7 @@ real ERP__Normal::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& ar
     throw std::runtime_error("Wrong number of arguments.");
   }
 }
-shared_ptr<VentureValue> ERP__Normal::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+shared_ptr<VentureValue> ERP__Normal::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller) {
   real average;
   real sigma;
   if (arguments.size() == 2) {
@@ -107,7 +107,7 @@ real ERP__Beta::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& argu
     throw std::runtime_error("Wrong number of arguments.");
   }
 }
-shared_ptr<VentureValue> ERP__Beta::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+shared_ptr<VentureValue> ERP__Beta::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller) {
   real alpha;
   real beta;
   if (arguments.size() == 2) {
@@ -146,7 +146,7 @@ real ERP__UniformDiscrete::GetSampledLoglikelihood(vector< shared_ptr<VentureVal
     throw std::runtime_error("Wrong number of arguments.");
   }
 }
-shared_ptr<VentureValue> ERP__UniformDiscrete::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+shared_ptr<VentureValue> ERP__UniformDiscrete::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller) {
   int left_bound;
   int right_bound;
   if (arguments.size() == 2) {
@@ -184,7 +184,7 @@ real ERP__UniformContinuous::GetSampledLoglikelihood(vector< shared_ptr<VentureV
     throw std::runtime_error("Wrong number of arguments.");
   }
 }
-shared_ptr<VentureValue> ERP__UniformContinuous::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+shared_ptr<VentureValue> ERP__UniformContinuous::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller) {
   real left_bound;
   real right_bound;
   if (arguments.size() == 2) {
@@ -225,7 +225,7 @@ real ERP__NoisyNegate::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> 
     throw std::runtime_error("Wrong value.");
   }
 }
-shared_ptr<VentureValue> ERP__NoisyNegate::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+shared_ptr<VentureValue> ERP__NoisyNegate::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller) {
   bool boolean_expression;
   real weight;
   if (arguments.size() == 2) {
@@ -264,13 +264,13 @@ real ERP__Categorical::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> 
       throw std::runtime_error("The sum of probabilities should be equal to 1.0.");
     }
   }
-  if (sampled_value->GetInteger() < 0 || sampled_value->GetInteger() >= GetSize(list)) {
+  if (GetSize(list) >= sampled_value->GetInteger()) {
     return log(0.0);
   } else {
     return log(GetNth(list, sampled_value->GetInteger() + 1)->GetReal());
   }
 }
-shared_ptr<VentureValue> ERP__Categorical::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+shared_ptr<VentureValue> ERP__Categorical::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller) {
   if (arguments.size() != 1) {
     throw std::runtime_error("Wrong number of arguments.");
   }
@@ -324,7 +324,7 @@ real ERP__ConditionERP::GetSampledLoglikelihood(vector< shared_ptr<VentureValue>
     return log(0.0);
   }
 }
-shared_ptr<VentureValue> ERP__ConditionERP::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+shared_ptr<VentureValue> ERP__ConditionERP::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller) {
   if (arguments.size() != 3) {
     throw std::runtime_error("Wrong number of arguments.");
   }

@@ -16,7 +16,7 @@ void VentureReal::CheckMyData(VentureValue* venture_value) {
 }
 void VentureProbability::CheckMyData(VentureValue* venture_value) {
   if (venture_value->GetReal() < 0.0 || venture_value->GetReal() > 1.0) { // Add acceptable epsilon error?
-    throw std::runtime_error("VentureProbability should be non-negative and not more than 1.0.");
+    throw std::runtime_error("VentureProbability should be non-negative.");
   }
 }
 void VentureAtom::CheckMyData(VentureValue* venture_value) {

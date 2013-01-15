@@ -138,6 +138,8 @@ MyRIPL = venture_engine
   # print MyRIPL.report_value(2)
   # MyRIPL.infer(100)
 
+# (last_directive, _) = MyRIPL.predict(lisp_parser.parse("((mem (if (flip) flip +)) 0.5)"))
+
 # MyRIPL.clear()
 # MyRIPL.assume("uncertainty-factor", lisp_parser.parse("(flip)"))
 # MyRIPL.assume("my-function", lisp_parser.parse("(if uncertainty-factor flip (lambda (x) x))"))
@@ -175,11 +177,13 @@ MyRIPL = venture_engine
 
 # import random
 
-# MyRIPL.assume("power-law", lisp_parser.parse("(lambda (prob x) (if (flip prob) x (power-law prob (+ x 1))))"))
-# MyRIPL.assume("a", lisp_parser.parse("(power-law 0.3 1)"))
-# MyRIPL.predict(lisp_parser.parse("a"))
-# (last_directive, _) = MyRIPL.predict(lisp_parser.parse("(< a 5)"))
-    
+# MyRIPL.assume("draw-type", lisp_parser.parse("(CRP/make 0.5)"))
+# MyRIPL.assume("class1", lisp_parser.parse("(draw-type)"))
+# MyRIPL.assume("class2", lisp_parser.parse("(draw-type)"))
+# MyRIPL.assume("class3", lisp_parser.parse("(draw-type)"))
+# MyRIPL.observe(lisp_parser.parse("(noisy-negate (= class1 class2) 0.000001)"), "true")
+# (last_directive, _) = MyRIPL.predict(lisp_parser.parse("(= class1 class3)"))
+
 # distribution_dictionary = {}
 # attempts = 0.0
 # while True:

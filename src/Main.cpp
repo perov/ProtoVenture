@@ -35,6 +35,10 @@ int next_gensym_atom = 0; // Should become better for the multithread version.
 
 bool need_to_return_inference;
 
+// It is not thread-safe.
+// It should be implemented as parameter (or member of parameter) for all Evaluators!
+size_t TMP_number_of_created_XRPSamplers;
+
 void InitGSL() {
   random_generator = gsl_rng_alloc(gsl_rng_mt19937);
   unsigned long seed = static_cast<unsigned long>(time(NULL)); // time(NULL)
@@ -45,16 +49,7 @@ void InitGSL() {
 PyMODINIT_FUNC initventure_engine(void) {
   InitGSL();
   InitRIPL();
-  PyRun_SimpleString("import os.path"); // FIXME: absolute path.
-  PyRun_SimpleString((string("if os.path.exists(\"/home/picloud/venture/__PythonModule.py\"):\n") +
-                             "  execfile(\"/home/picloud/venture/__PythonModule.py\")\n" +
-                             "elif os.path.exists(\"/home/ec2-user/venture/__PythonModule.py\"):\n" +
-                             "  execfile(\"/home/ec2-user/venture/__PythonModule.py\")\n" +
-                             "elif os.path.exists(\"/home/ec2-user/Venture/src/__PythonModule.py\"):\n" +
-                             "  execfile(\"/home/ec2-user/Venture/src/__PythonModule.py\")\n" +
-                             "else:\n" +
-                             "  print(\"Cannot find __PythonModule.py!\")\n" +
-                             "").c_str());
+  PyRun_SimpleString("execfile(\"/home/picloud/venture/__PythonModule.py\")"); // FIXME: absolute path.
   Py_InitModule("venture_engine", MethodsForPythons);
 }
 
@@ -69,6 +64,7 @@ int main(int argc, char *argv[])
   
   cout << "See why: Or just NULL? does not work!" << endl;
   cout << "Notice: There should not be the 'NIL' type! Only the 'LIST' type!" << endl;
+  cout << "Notice: get rid of TMP_number_of_created_XRPSamplers!" << endl;
   cout << "IMPORTANT! Delete touched_nodes_copy!" << endl;
   
   int port = 8082;

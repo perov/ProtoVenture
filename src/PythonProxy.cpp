@@ -206,7 +206,6 @@ ForPython__clear(PyObject *self, PyObject *args)
     return NULL; // ReturnInferenceIfNecessary(); ?
   }
   ClearRIPL();
-  assert(random_choices.size() == 0);
   //ReturnInferenceIfNecessary();
   Py_INCREF(Py_None);
   return Py_None;

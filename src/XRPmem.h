@@ -30,7 +30,7 @@ struct XRP__memoizer_map_element {
 };
 
 class XRP__memoizer : public XRP { // So called "mem-maker".
-  virtual shared_ptr<VentureValue> Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config);
+  virtual shared_ptr<VentureValue> Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller);
   virtual real GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >&,
                                        shared_ptr<VentureValue>);
   virtual void Incorporate(vector< shared_ptr<VentureValue> >&,
@@ -47,7 +47,7 @@ public:
 string XRP__memoized_procedure__MakeMapKeyFromArguments(vector< shared_ptr<VentureValue> >& arguments);
 
 class XRP__memoized_procedure : public XRP { // So called "mem-sampler".
-  virtual shared_ptr<VentureValue> Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config);
+  virtual shared_ptr<VentureValue> Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller);
   virtual real GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >&,
                                        shared_ptr<VentureValue>);
   virtual void Incorporate(vector< shared_ptr<VentureValue> >&,
@@ -74,7 +74,7 @@ void XRP__memoized_procedure__Unfreeze
   vector< shared_ptr<VentureValue> >& arguments,
   shared_ptr<NodeXRPApplication> caller);
 
-void FreezeBranch(shared_ptr<Node> first_node, ReevaluationParameters& reevaluation_parameters, shared_ptr<NodeDirectiveObserve>& was_forced_for);
+void FreezeBranch(shared_ptr<Node> first_node, ReevaluationParameters& reevaluation_parameters);
 void UnfreezeBranch(shared_ptr<Node> first_node);
 
 #endif
