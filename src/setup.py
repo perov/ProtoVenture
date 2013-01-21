@@ -2,6 +2,9 @@
 # From here:
 # http://docs.python.org/2/extending/building.html#building
 
+# Just build as a Python library: python setup.py build
+# Build and install to the system: sudo python setup.py build install
+
 from distutils.core import setup, Extension
 
 module1 = Extension('venture_engine',

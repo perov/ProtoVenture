@@ -26,7 +26,10 @@ void* ContinuousInference(void* arguments) {
     //cout << " <I> ";
     if (continuous_inference_status == 1) {
       try {
-        MakeMHProposal(0);
+        MakeMHProposal(shared_ptr<NodeXRPApplication>(),
+                       shared_ptr<VentureValue>(),
+                       shared_ptr< map<string, shared_ptr<VentureValue> > >(),
+                       false);
       } catch (std::runtime_error& e) {
         continuous_inference_status = 0;
         cout << "Exception has been raised during continuous inference: " << e.what() << endl;
@@ -79,7 +82,7 @@ void ReturnInferenceIfNecessary() {
 void DeleteRIPL() {
   // Reconsider this function.
   for (map<size_t, directive_entry>::iterator iterator = directives.begin(); iterator != directives.end(); iterator++) {
-    DeleteBranch(iterator->second.directive_node);
+    DeleteBranch(iterator->second.directive_node, false);
   }
 
   global_environment = shared_ptr<NodeEnvironment>();
@@ -120,7 +123,7 @@ shared_ptr<VentureValue> ReportValue(size_t directive_id) {
 }
 
 void ForgetDirective(size_t directive_id) {
-  throw std::runtime_error("Forget does not work.");
+  // throw std::runtime_error("Forget does not work.");
 
   if (directives.count(directive_id) == 0) {
     throw std::runtime_error("There is no such directive.");
@@ -131,7 +134,7 @@ void ForgetDirective(size_t directive_id) {
     ClearRIPL();
   } else {
     // Check for ASSUME.
-    DeleteBranch(directives[directive_id].directive_node);
+    // DeleteBranch(directives[directive_id].directive_node, false);
     directives.erase(directive_id);
   }
 }
@@ -142,12 +145,13 @@ size_t ExecuteDirective(string& directive_as_string,
   if (directives.size() > 0) {
     last_directive_node = GetLastDirectiveNode();
   }
-  EvaluationConfig tmp_evaluation_config(false);
+  EvaluationConfig tmp_evaluation_config(false, shared_ptr<ReevaluationParameters>());
   Evaluator(directive_node,
             global_environment,
             shared_ptr<Node>(),
             shared_ptr<NodeEvaluation>(),
-            tmp_evaluation_config);
+            tmp_evaluation_config,
+            "");
   directive_node->earlier_evaluation_nodes = last_directive_node;
   
   if (tmp_evaluation_config.unsatisfied_constraint == true) {
@@ -251,4 +255,73 @@ void BindStandardElementsToGlobalEnvironment() {
   BindToEnvironment(global_environment,
                     shared_ptr<VentureSymbol>(new VentureSymbol("=")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__RealEqual()))));
+  BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol("inc")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__Inc()))));
+  BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol("dec")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__Dec()))));
+  BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol("equal")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__Equal()))));
+
+  // For reals (repeating)
+
+  BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol("real+")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__RealPlus()))));
+  BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol("real*")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__RealMultiply()))));
+  BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol("real-")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__RealMinus()))));
+  BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol("real/")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__RealDivide()))));
+
+  BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol("real>=")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__RealEqualOrGreater()))));
+  BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol("real<=")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__RealEqualOrLesser()))));
+  BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol("real>")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__RealEqualOrGreater()))));
+  BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol("real<")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__RealLesser()))));
+  BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol("real=")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__RealEqual()))));
+
+  // For integers
+
+  BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol("int+")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__IntegerPlus()))));
+  BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol("int*")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__IntegerMultiply()))));
+  BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol("int-")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__IntegerMinus()))));
+
+  BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol("int>=")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__IntegerEqualOrGreater()))));
+  BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol("int<=")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__IntegerEqualOrLesser()))));
+  BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol("int>")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__IntegerEqualOrGreater()))));
+  BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol("int<")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__IntegerLesser()))));
+  BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol("int=")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__IntegerEqual()))));
+
 }

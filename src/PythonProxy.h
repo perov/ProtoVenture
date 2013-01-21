@@ -59,6 +59,9 @@ ForPython__predict(PyObject *self, PyObject *args);
 PyObject*
 ForPython__observe(PyObject *self, PyObject *args);
 
+PyObject*
+ForPython__draw_graph_to_file(PyObject *self, PyObject *args);
+
 extern PyMethodDef MethodsForPythons[];
 
 #endif

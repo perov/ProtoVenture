@@ -50,16 +50,17 @@ class XRP__memoized_procedure : public XRP { // So called "mem-sampler".
                                 shared_ptr<VentureValue>);
   virtual void Remove(vector< shared_ptr<VentureValue> >&,
                            shared_ptr<VentureValue>);
-  bool ForceValue(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<VentureValue> desired_value, ReevaluationParameters& reevaluation_parameters);
+  bool ForceValue(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<VentureValue> desired_value, shared_ptr<ReevaluationParameters> reevaluation_parameters);
   void UnforceValue(vector< shared_ptr<VentureValue> >& arguments);
 
 
 public:
-  virtual void Unsampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller); // Unsampler or sampler?
+  virtual void Unsampler(vector< shared_ptr<VentureValue> >& old_arguments, weak_ptr<NodeXRPApplication> caller); // Unsampler or sampler?
   virtual bool IsRandomChoice();
   virtual bool CouldBeRescored();
   virtual string GetName();
   
+  weak_ptr<NodeXRPApplication> maker;
   shared_ptr<VentureValue> operator_value; // FIXME: VentureValue is not too ambiguous?
   map<string, XRP__memoizer_map_element> mem_table;
 };

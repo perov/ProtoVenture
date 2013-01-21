@@ -10,7 +10,8 @@ shared_ptr<VentureValue> Evaluator(shared_ptr<NodeEvaluation> evaluation_node,
                                    shared_ptr<NodeEnvironment> environment,
                                    shared_ptr<Node> output_reference_target,
                                    shared_ptr<NodeEvaluation> caller,
-                                   EvaluationConfig& evaluation_config);
+                                   EvaluationConfig& evaluation_config,
+                                   string request_postfix);
 
 shared_ptr<Node> BindToEnvironment(shared_ptr<NodeEnvironment> target_environment,
                                    shared_ptr<VentureSymbol> variable_name,
@@ -31,7 +32,7 @@ shared_ptr<VentureValue> LookupValue(shared_ptr<NodeEnvironment> environment,
                                      shared_ptr<NodeEvaluation> lookuper,
                                      bool old_values);
 
-bool ForceExpressionValue(shared_ptr<Node> node, shared_ptr<VentureValue> desired_value, ReevaluationParameters& reevaluation_parameters);
+bool ForceExpressionValue(shared_ptr<Node> node, shared_ptr<VentureValue> desired_value, shared_ptr<ReevaluationParameters> reevaluation_parameters);
 
 void UnforceExpressionValue(shared_ptr<Node> node);
 

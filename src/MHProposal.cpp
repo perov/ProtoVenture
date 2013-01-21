@@ -22,7 +22,7 @@ bool VerifyOrderPattern(vector<size_t>& omit_pattern,
   return true;
 }
 
-void DeleteNode(shared_ptr<Node> node) {
+void DeleteNode(shared_ptr<Node> node, bool old_values) {
   if (node->GetNodeType() == LOOKUP) {
     // See the notice "BAD-POINTER" in Analyzer.cpp
     if (dynamic_pointer_cast<NodeLookup>(node)->where_lookuped.lock() != shared_ptr<NodeVariable>()) {
@@ -34,6 +34,7 @@ void DeleteNode(shared_ptr<Node> node) {
     if (dynamic_pointer_cast<NodeXRPApplication>(node)->xrp != shared_ptr<VentureXRP>() &&
           dynamic_pointer_cast<NodeXRPApplication>(node)->xrp->xrp != shared_ptr<XRP>()) {
 
+      /*
       // FIXME: GetArgumentsFromEnvironment should be called without adding lookup references!
       vector< shared_ptr<VentureValue> > old_arguments = GetArgumentsFromEnvironment(dynamic_pointer_cast<NodeXRPApplication>(node)->environment, // Not efficient?
                                       dynamic_pointer_cast<NodeEvaluation>(node), // Are we sure that we have not deleted yet lookup links?
@@ -47,12 +48,13 @@ void DeleteNode(shared_ptr<Node> node) {
       if (dynamic_pointer_cast<NodeXRPApplication>(node)->xrp->xrp->IsRandomChoice() == true) {
         random_choices.erase(dynamic_pointer_cast<NodeXRPApplication>(node->shared_from_this()));
       }
+      */
     }
   }
 }
 
-void DeleteBranch(shared_ptr<Node> first_node) {
-  ApplyToMeAndAllMyChildren(first_node, DeleteNode);
+void DeleteBranch(shared_ptr<Node> first_node, bool old_values) {
+  ApplyToMeAndAllMyChildren(first_node, old_values, DeleteNode);
 }
 
 VentureException__ForcedMHDecline::VentureException__ForcedMHDecline()
@@ -82,8 +84,10 @@ void TouchNode(shared_ptr<Node> node, stack< shared_ptr<Node> >& touched_nodes, 
   touched_nodes2.push_back(node);
 }
 
-void MakeMHProposal(int proposal_unique_id) {
-  cout << "New MH" << endl;
+MHProposalResults MakeMHProposal(shared_ptr<NodeXRPApplication> principal_node, shared_ptr<VentureValue> proposing_value, shared_ptr< map<string, shared_ptr<VentureValue> > > random_database, bool forcing_not_collecting) {
+  int proposal_unique_id = 0; // FIXME: deprecated?
+
+  //Debug// cout << "New MH" << endl;
 
   ProposalInfo this_proposal;
   this_proposal.proposal_unique_id = proposal_unique_id; // FIXME: through constructor
@@ -91,17 +95,32 @@ void MakeMHProposal(int proposal_unique_id) {
   
   size_t number_of_random_choices = random_choices.size();
   if (number_of_random_choices == 0) {
-    return; // There is no random choices in the trace.
+    return MHProposalResults(0.0); // There is no random choices in the trace.
   }
 
-  set< shared_ptr<NodeXRPApplication> >::iterator iterator = random_choices.begin();
-  int random_choice_id = UniformDiscrete(0, number_of_random_choices - 1);
-  std::advance(iterator, random_choice_id);
+  shared_ptr<NodeXRPApplication> random_choice;
 
-  shared_ptr<NodeXRPApplication> // FIXME: Should be NodeEvaluation?
-    random_choice = *iterator;
+  if (principal_node == shared_ptr<NodeXRPApplication>()) {
+    set< weak_ptr<NodeXRPApplication> >::iterator iterator = random_choices.begin();
+    int random_choice_id = UniformDiscrete(0, number_of_random_choices - 1);
+    std::advance(iterator, random_choice_id);
+    random_choice = (*iterator).lock(); // FIXME: Should be NodeEvaluation?
 
-  ReevaluationParameters reevaluation_parameters(random_choice);
+    //if (random_choice->xrp->xrp->CouldBeEnumerated()) {
+    //  Enumerate(random_choice);
+    //  return MHProposalResults(0.0);
+    //}
+  } else {
+    random_choice = principal_node;
+  }
+
+  shared_ptr<ReevaluationParameters> reevaluation_parameters =
+    shared_ptr<ReevaluationParameters>(new ReevaluationParameters(random_choice));
+  
+  reevaluation_parameters->we_are_in_enumeration = proposing_value != shared_ptr<VentureValue>();
+  reevaluation_parameters->proposing_value_for_this_proposal = proposing_value;
+  reevaluation_parameters->random_database = random_database;
+  reevaluation_parameters->forcing_not_collecting = forcing_not_collecting;
 
   set<ReevaluationEntry,
       ReevaluationOrderComparer> reevaluation_queue;
@@ -126,7 +145,9 @@ void MakeMHProposal(int proposal_unique_id) {
     }
     if (!omit_patterns.empty()) {
       if (VerifyOrderPattern(omit_patterns.top().omit_pattern, current_reevaluation.reevaluation_node->myorder)) {
-        omit_patterns.pop();
+        if (omit_patterns.top().stop_pattern == current_reevaluation.reevaluation_node->myorder) {
+          omit_patterns.pop(); // FIXME: do not copy this condition the second time below?
+        }
         continue;
       }
       if (omit_patterns.top().stop_pattern == current_reevaluation.reevaluation_node->myorder) {
@@ -188,7 +209,7 @@ void MakeMHProposal(int proposal_unique_id) {
             == GetStackContainer(touched_nodes).end());
 #endif
           TouchNode(iterator->lock(), touched_nodes, touched_nodes2, this_proposal);
-          assert(reevaluation_result->passing_value != shared_ptr<VentureValue>());
+          // assert(reevaluation_result->passing_value != shared_ptr<VentureValue>());
           dynamic_pointer_cast<NodeVariable>(iterator->lock())->Reevaluate(reevaluation_result->passing_value,
                                                                            current_reevaluation.reevaluation_node,
                                                                            reevaluation_parameters);
@@ -197,11 +218,17 @@ void MakeMHProposal(int proposal_unique_id) {
                variable_iterator != dynamic_pointer_cast<NodeVariable>(iterator->lock())->output_references.end();
                variable_iterator++)
           {
-            assert(iterator->expired() == false);
+            assert(variable_iterator->expired() == false);
             assert(variable_iterator->lock()->GetNodeType() != VARIABLE);
+            shared_ptr<VentureValue> tmp_passing_value;
+            if (dynamic_pointer_cast<NodeEvaluation>(variable_iterator->lock())->GetNodeType() == LOOKUP) {
+              tmp_passing_value = reevaluation_result->passing_value;
+            } else {
+              tmp_passing_value = shared_ptr<VentureValue>();
+            }
             reevaluation_queue.insert(ReevaluationEntry(dynamic_pointer_cast<NodeEvaluation>(variable_iterator->lock()),
                                                         current_reevaluation.caller, // Or just NULL?
-                                                        reevaluation_result->passing_value, // Or also just NULL?
+                                                        tmp_passing_value, // Or also just NULL?
                                                         REEVALUATION_PRIORITY__STANDARD - 1));
           }
         } else {
@@ -232,17 +259,21 @@ void MakeMHProposal(int proposal_unique_id) {
   if (omit_patterns.size() > 0) {
     throw std::runtime_error("omit_patterns.size() > 0");
   }
+
+  //Debug// cout << "Finished propagation part" << endl;
   
-  if (reevaluation_parameters.__unsatisfied_constraint == true) {
+  if (reevaluation_parameters->__unsatisfied_constraint == true) {
     throw std::runtime_error("Unsatisfied constraint. Sorry, rejection sampling still is not implemented."); // FIXME: implement!
   }
 
-  real Q_OldToNew = reevaluation_parameters.__log_q_from_old_to_new;
+  real Q_OldToNew = reevaluation_parameters->__log_q_from_old_to_new;
   real Q_NewToOld = 0.0; // Calculated below.
   real P_new = 0.0; // Calculated below.
   set< shared_ptr<NodeXRPApplication> > creating_random_choices;
   real P_old = 0.0; // Calculated below.
   set< shared_ptr<NodeXRPApplication> > deleting_random_choices;
+  
+  //Debug// cout << "Random choice: " << random_choice << endl;
 
   for (size_t index = 0; index < touched_nodes2.size(); index++) {
     shared_ptr<Node> current_node = touched_nodes2[index];
@@ -252,6 +283,7 @@ void MakeMHProposal(int proposal_unique_id) {
       if (current_node2->MH_made_action != MH_ACTION__LAMBDA_PROPAGATED) {
         assert(current_node2->application_node != shared_ptr<NodeEvaluation>());
         assert(current_node2->new_application_node != shared_ptr<NodeEvaluation>());
+        //Debug// cout << "IT__QNewToOld (remove): " << current_node2->application_node << endl;
         Q_NewToOld += GatherBranch__QNewToOld(current_node2->application_node, current_node2->MH_made_action);
         if (current_node2->MH_made_action == MH_ACTION__EMPTY_STATUS) {
           throw std::runtime_error("The application caller node has empty MH action history.");
@@ -260,15 +292,13 @@ void MakeMHProposal(int proposal_unique_id) {
     }
   }
   
-  cout << "Random choice: " << random_choice << endl;
-
   for (size_t index = 0; index < touched_nodes2.size(); index++) {
     shared_ptr<Node> current_node = touched_nodes2[index];
     if (current_node->GetNodeType() == APPLICATION_CALLER) {
       shared_ptr<NodeApplicationCaller> current_node2 = dynamic_pointer_cast<NodeApplicationCaller>(current_node);
       
       if (current_node2->MH_made_action != MH_ACTION__LAMBDA_PROPAGATED) {
-        cout << "IT: " << current_node2->new_application_node << endl;
+        //Debug// cout << "IT__PNew (remove): " << current_node2->new_application_node << endl;
         P_new += GatherBranch__PNew(current_node2->new_application_node, current_node2->MH_made_action, creating_random_choices);
       }
     }
@@ -280,6 +310,7 @@ void MakeMHProposal(int proposal_unique_id) {
       shared_ptr<NodeApplicationCaller> current_node2 = dynamic_pointer_cast<NodeApplicationCaller>(current_node);
       
       if (current_node2->MH_made_action != MH_ACTION__LAMBDA_PROPAGATED) {
+        //Debug// cout << "IT__POld (add): " << current_node2->new_application_node << endl;
         P_old += GatherBranch__POld(current_node2->application_node, current_node2->MH_made_action, deleting_random_choices, true);
       }
     }
@@ -301,13 +332,25 @@ void MakeMHProposal(int proposal_unique_id) {
 
   to_compare += scores_part;
   MHDecision mh_decision;
-  real random_value = log(gsl_ran_flat(random_generator, 0, 1));
-  if (random_value < to_compare) {
-    mh_decision = MH_APPROVED;
-    cout << "Approved" << endl;
+
+  if (principal_node != shared_ptr<NodeXRPApplication>()) {
+    if (forcing_not_collecting == false) {
+      mh_decision = MH_DECLINED;
+    } else {
+      mh_decision = MH_APPROVED;
+    }
   } else {
-    mh_decision = MH_DECLINED;
-    cout << "Decline" << endl;
+    real random_value = log(gsl_ran_flat(random_generator, 0, 1));
+    if (random_value < to_compare) {
+      mh_decision = MH_APPROVED;
+    } else {
+      mh_decision = MH_DECLINED;
+    }
+  }
+  if (mh_decision == MH_APPROVED) {
+    //Debug// cout << "Approved" << endl;
+  } else {
+    //Debug// cout << "Decline" << endl;
   }
   // cout << "***" << endl;
 
@@ -335,7 +378,12 @@ void MakeMHProposal(int proposal_unique_id) {
     if (current_node->GetNodeType() == VARIABLE) {
       assert(dynamic_pointer_cast<NodeVariable>(current_node)->new_value != shared_ptr<VentureValue>());
       if (mh_decision == MH_APPROVED) {
-        dynamic_pointer_cast<NodeVariable>(current_node)->value = dynamic_pointer_cast<NodeVariable>(current_node)->new_value;
+        if (dynamic_pointer_cast<NodeVariable>(current_node)->output_references.size() == 1 &&
+              dynamic_pointer_cast<NodeVariable>(current_node)->output_references.begin()->lock()->GetNodeType() == XRP_APPLICATION) {
+          // Do nothing, because arguments of the NodeXRPApplication has been changed.
+        } else {
+          dynamic_pointer_cast<NodeVariable>(current_node)->value = dynamic_pointer_cast<NodeVariable>(current_node)->new_value;
+        }
       }
       dynamic_pointer_cast<NodeVariable>(current_node)->new_value = shared_ptr<VentureValue>();
     } else if (current_node->GetNodeType() == XRP_APPLICATION) {
@@ -347,20 +395,29 @@ void MakeMHProposal(int proposal_unique_id) {
         {
           // Adding back.
           set< shared_ptr<NodeXRPApplication> > useless_set;
+          //Debug// cout << "IT__AddBack: " << dynamic_pointer_cast<NodeApplicationCaller>(current_node)->new_application_node << endl;
           GatherBranch__POld(dynamic_pointer_cast<NodeApplicationCaller>(current_node)->new_application_node, MH_ACTION__EMPTY_STATUS, useless_set, false); // Adding.
         }
 
         if (mh_decision == MH_APPROVED) {
-          DeleteBranch(dynamic_pointer_cast<NodeApplicationCaller>(current_node)->application_node);
+          ////Debug// cout << "IT__DeleteOld: " << dynamic_pointer_cast<NodeApplicationCaller>(current_node)->application_node << endl;
+          //Q_NewToOld += GatherBranch__QNewToOld(dynamic_pointer_cast<NodeApplicationCaller>(current_node)->application_node, MH_ACTION__EMPTY_STATUS);
+          //DeleteBranch(dynamic_pointer_cast<NodeApplicationCaller>(current_node)->application_node, true);
         } else {
-          DeleteBranch(dynamic_pointer_cast<NodeApplicationCaller>(current_node)->new_application_node);
+          ////Debug// cout << "IT__DeleteNew: " << dynamic_pointer_cast<NodeApplicationCaller>(current_node)->new_application_node << endl;
+          //set< shared_ptr<NodeXRPApplication> > useless_set;
+          //P_new += GatherBranch__PNew(dynamic_pointer_cast<NodeApplicationCaller>(current_node)->new_application_node, MH_ACTION__EMPTY_STATUS, useless_set);
+          //DeleteBranch(dynamic_pointer_cast<NodeApplicationCaller>(current_node)->new_application_node, false);
         }
       
         if (mh_decision == MH_APPROVED) {
           dynamic_pointer_cast<NodeApplicationCaller>(current_node)->application_node =
             dynamic_pointer_cast<NodeApplicationCaller>(current_node)->new_application_node;
-          dynamic_pointer_cast<NodeApplicationCaller>(current_node)->saved_evaluated_operator =
-            dynamic_pointer_cast<NodeApplicationCaller>(current_node)->proposing_evaluated_operator;
+          if (dynamic_pointer_cast<NodeApplicationCaller>(current_node)->proposing_evaluated_operator != shared_ptr<VentureValue>()) {
+            // If operator has changed.
+            dynamic_pointer_cast<NodeApplicationCaller>(current_node)->saved_evaluated_operator =
+              dynamic_pointer_cast<NodeApplicationCaller>(current_node)->proposing_evaluated_operator;
+          }
         }
         dynamic_pointer_cast<NodeApplicationCaller>(current_node)->new_application_node = shared_ptr<NodeEvaluation>();
         dynamic_pointer_cast<NodeApplicationCaller>(current_node)->proposing_evaluated_operator = shared_ptr<VentureValue>();
@@ -390,6 +447,8 @@ void MakeMHProposal(int proposal_unique_id) {
       throw std::runtime_error("Unexpected node type.");
     }
   }
+
+  return MHProposalResults(P_new);
 }
 
 real GatherBranch__QNewToOld(shared_ptr<Node> first_node, size_t node_action) {
@@ -500,4 +559,62 @@ real GatherBranch__POld(shared_ptr<Node> first_node, size_t node_action, set< sh
     }
   }
   return changed_probability;
+}
+
+void Enumerate(shared_ptr<NodeXRPApplication> principal_node) {
+  set< shared_ptr<VentureValue> > returning_set = principal_node->xrp->xrp->EnumeratingSupport();
+  map<shared_ptr<VentureValue>, real> logprobabilities;
+  map<shared_ptr<VentureValue>, shared_ptr< map<string, shared_ptr<VentureValue> > > > random_databases;
+
+  assert(returning_set.empty() != true);
+
+  while (returning_set.empty() == false) {
+    shared_ptr<VentureValue> proposing_value = *(returning_set.begin());
+    returning_set.erase(proposing_value);
+    random_databases[proposing_value] = shared_ptr< map<string, shared_ptr<VentureValue> > >(new map<string, shared_ptr<VentureValue> >());
+    MHProposalResults mh_proposal_results = MakeMHProposal(principal_node, proposing_value, random_databases[proposing_value], false);
+    logprobabilities[proposing_value] = mh_proposal_results.logscore_PNew;
+  }
+
+  /*
+  real max_exp = logprobabilities.begin()->second, sum = 0.0;
+  for (map<shared_ptr<VentureValue>, real>::const_iterator iterator = logprobabilities.begin();
+       iterator != logprobabilities.end();
+       iterator++)
+  {
+    if (iterator->second > max_exp)
+      max_exp = iterator->second;
+  }
+  for (map<shared_ptr<VentureValue>, real>::const_iterator iterator = logprobabilities.begin();
+       iterator != logprobabilities.end();
+       iterator++)
+  {
+    sum += exp(iterator->second - max_exp);
+  }
+  sum = log(sum) + max_exp;
+  real log_random_value = log(gsl_ran_flat(random_generator, 0, 1));
+  real log_accumulated = log(1.0);
+  for (map<shared_ptr<VentureValue>, real>::iterator iterator = logprobabilities.begin();
+       iterator != logprobabilities.end();
+       iterator++)
+  {
+    iterator->second -= sum;
+    log_accumulated += ;
+  }*/
+  real random_value = gsl_ran_flat(random_generator, 0, 1);
+  real accumulated = 0.0;
+  map<shared_ptr<VentureValue>, real>::iterator iterator_to_the_new_value;
+  for (map<shared_ptr<VentureValue>, real>::iterator iterator = logprobabilities.begin();
+       iterator != logprobabilities.end();
+       iterator++)
+  {
+    accumulated += exp(iterator->second);
+    iterator_to_the_new_value = iterator;
+    if (accumulated > random_value) { break; }
+  }
+ 
+  {
+    shared_ptr<VentureValue> proposing_value = iterator_to_the_new_value->first;
+    MakeMHProposal(principal_node, proposing_value, random_databases[proposing_value], true);
+  }
 }

@@ -9,6 +9,7 @@ shared_ptr<VentureValue> XRP__memoizer::Sampler(vector< shared_ptr<VentureValue>
 
   shared_ptr<XRP> new_xrp = shared_ptr<XRP>(new XRP__memoized_procedure());
   dynamic_pointer_cast<XRP__memoized_procedure>(new_xrp)->operator_value = arguments[0]; // Should be done on the line above through its constructor.
+  dynamic_pointer_cast<XRP__memoized_procedure>(new_xrp)->maker = caller;
   return shared_ptr<VentureXRP>(new VentureXRP(new_xrp));
 }
 
@@ -62,10 +63,11 @@ shared_ptr<VentureValue> XRP__memoized_procedure::Sampler(vector< shared_ptr<Ven
 
     shared_ptr<VentureValue> result =
       Evaluator(this->mem_table[mem_table_key].application_caller_node,
-                caller->environment, // FIXME: Is it okay?
-                caller, // FIXME: Is it okay?
+                this->maker.lock()->environment, // FIXME: Is it okay?
                 caller,
-                evaluation_config);
+                this->maker.lock(), // FIXME: Is it okay?
+                evaluation_config,
+                mem_table_key);
   } else {
     // cout << "*** Restoring the mem node " << mem_table_key << endl;
     // Adding the output reference link by hand.
@@ -80,7 +82,7 @@ shared_ptr<VentureValue> XRP__memoized_procedure::Sampler(vector< shared_ptr<Ven
   return GetBranchValue(mem_table_element.application_caller_node);
 }
 
-void XRP__memoized_procedure::Unsampler(vector< shared_ptr<VentureValue> >& old_arguments, shared_ptr<NodeXRPApplication> caller) {
+void XRP__memoized_procedure::Unsampler(vector< shared_ptr<VentureValue> >& old_arguments, weak_ptr<NodeXRPApplication> caller) {
   string mem_table_key =
     XRP__memoized_procedure__MakeMapKeyFromArguments(old_arguments);
   if (this->mem_table.count(mem_table_key) == 0) {
@@ -105,6 +107,9 @@ real XRP__memoized_procedure::GetSampledLoglikelihood(vector< shared_ptr<Venture
 
 void XRP__memoized_procedure::Incorporate(vector< shared_ptr<VentureValue> >& arguments,
                               shared_ptr<VentureValue> sampled_value) {
+  //Debug// assert(arguments.size() == 1);
+  //Debug// cout << "Incorporating" << arguments[0]->GetString() << endl;
+
   string mem_table_key = XRP__memoized_procedure__MakeMapKeyFromArguments(arguments);
   if (this->mem_table.count(mem_table_key) == 0) {
     throw std::runtime_error("Cannot find the necessary key in the mem table.");
@@ -118,8 +123,13 @@ void XRP__memoized_procedure::Incorporate(vector< shared_ptr<VentureValue> >& ar
   mem_table_element.active_uses++;
 }
 
+#include "RIPL.h" // For DrawGraphDuringMH. Delete after.
+
 void XRP__memoized_procedure::Remove(vector< shared_ptr<VentureValue> >& arguments,
                           shared_ptr<VentureValue> sampled_value) {
+  //Debug// assert(arguments.size() == 1);
+  //Debug// cout << "Removing" << arguments[0]->GetString() << endl;
+
   string mem_table_key = XRP__memoized_procedure__MakeMapKeyFromArguments(arguments);
   if (this->mem_table.count(mem_table_key) == 0) {
     throw std::runtime_error("Cannot find the necessary key in the mem table.");
@@ -127,6 +137,8 @@ void XRP__memoized_procedure::Remove(vector< shared_ptr<VentureValue> >& argumen
   XRP__memoizer_map_element& mem_table_element =
     (*(this->mem_table.find(mem_table_key))).second;
   if (mem_table_element.active_uses == 0) {
+    stack< shared_ptr<Node> > tmp;
+    DrawGraphDuringMH(GetLastDirectiveNode(), tmp);
     throw std::runtime_error("Cannot do 'mem_table_element.active_uses--'.");
   }
   mem_table_element.hidden_uses++;
@@ -136,7 +148,7 @@ bool XRP__memoized_procedure::IsRandomChoice() { return false; }
 bool XRP__memoized_procedure::CouldBeRescored() { return false; }
 string XRP__memoized_procedure::GetName() { return "XRP__memoized_procedure"; }
 
-bool XRP__memoized_procedure::ForceValue(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<VentureValue> desired_value, ReevaluationParameters& reevaluation_parameters) {
+bool XRP__memoized_procedure::ForceValue(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<VentureValue> desired_value, shared_ptr<ReevaluationParameters> reevaluation_parameters) {
   string mem_table_key = XRP__memoized_procedure__MakeMapKeyFromArguments(arguments);
   if (this->mem_table.count(mem_table_key) == 0) {
     throw std::runtime_error("Cannot find the necessary key in the mem table.");

@@ -27,6 +27,8 @@ PyMethodDef MethodsForPythons[] = {
      "... Write description ..."},
     {"observe", ForPython__observe, METH_VARARGS,
      "... Write description ..."},
+    {"draw_graph_to_file", ForPython__draw_graph_to_file, METH_VARARGS,
+     "... Write description ..."},
     {NULL, NULL, 0, NULL}
 };
 
@@ -206,7 +208,8 @@ ForPython__clear(PyObject *self, PyObject *args)
     return NULL; // ReturnInferenceIfNecessary(); ?
   }
   ClearRIPL();
-  assert(random_choices.size() == 0);
+  //assert(random_choices.size() == 0);
+  random_choices.clear();
   //ReturnInferenceIfNecessary();
   Py_INCREF(Py_None);
   return Py_None;
@@ -230,7 +233,7 @@ ForPython__forget(PyObject *self, PyObject *args)
 
 PyObject*
 ForPython__infer(PyObject *self, PyObject *args)
-{ //try {
+{ try {
   PauseInference();
   int number_of_required_inferences;
   if(!PyArg_ParseTuple(args, "i:infer", &number_of_required_inferences)) {
@@ -242,7 +245,10 @@ ForPython__infer(PyObject *self, PyObject *args)
     return NULL; // ReturnInferenceIfNecessary(); ?
   }
   for (size_t iteration = 0; iteration < static_cast<size_t>(number_of_required_inferences); iteration++) {
-    MakeMHProposal(0);
+    MakeMHProposal(shared_ptr<NodeXRPApplication>(),
+                   shared_ptr<VentureValue>(),
+                   shared_ptr< map<string, shared_ptr<VentureValue> > >(),
+                   false);
   }
 
   //stack< shared_ptr<Node> > tmp;
@@ -251,7 +257,7 @@ ForPython__infer(PyObject *self, PyObject *args)
   ReturnInferenceIfNecessary();
   Py_INCREF(Py_None);
   return Py_None;
-} //catch(handling_python_error&) { return NULL; } catch(std::runtime_error& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }
+} catch(handling_python_error&) { return NULL; } catch(std::runtime_error& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }
 
 PyObject*
 ForPython__start_continuous_inference(PyObject *self, PyObject *args)
@@ -322,6 +328,7 @@ ForPython__assume(PyObject *self, PyObject *args)
   size_t directive_id =
     ExecuteDirective(directive_string_representation,
                       shared_ptr<NodeEvaluation>(new NodeDirectiveAssume(variable_name, AnalyzeExpression(expression))));
+  GetLastDirectiveNode()->comment = directive_string_representation;
   shared_ptr<VentureValue> directive_value = ReportValue(directive_id);
   PyObject* returning_python_object = Py_BuildValue("(iO)", static_cast<int>(directive_id), directive_value->GetAsPythonObject());
   ReturnInferenceIfNecessary();
@@ -343,6 +350,7 @@ ForPython__predict(PyObject *self, PyObject *args)
   size_t directive_id =
     ExecuteDirective(directive_string_representation,
                       shared_ptr<NodeEvaluation>(new NodeDirectivePredict(AnalyzeExpression(expression))));
+  GetLastDirectiveNode()->comment = directive_string_representation;
   shared_ptr<VentureValue> directive_value = ReportValue(directive_id);
   PyObject* returning_python_object = Py_BuildValue("(iO)", static_cast<int>(directive_id), directive_value->GetAsPythonObject());
   ReturnInferenceIfNecessary();
@@ -370,6 +378,7 @@ ForPython__observe(PyObject *self, PyObject *args)
   size_t directive_id =
     ExecuteDirective(directive_string_representation,
                       shared_ptr<NodeEvaluation>(new NodeDirectiveObserve(AnalyzeExpression(expression), literal_value)));
+  GetLastDirectiveNode()->comment = directive_string_representation;
   PyObject* returning_python_object = Py_BuildValue("i", static_cast<int>(directive_id));
   ReturnInferenceIfNecessary();
 
@@ -378,4 +387,21 @@ ForPython__observe(PyObject *self, PyObject *args)
 
   cout << "Finishing to deal with OBSERVE" << endl;
   return returning_python_object;
+} catch(handling_python_error&) { return NULL; } catch(std::runtime_error& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }
+  
+PyObject*
+ForPython__draw_graph_to_file(PyObject *self, PyObject *args) // FIXME: deprecated?
+{ try {
+  PauseInference();
+  if(!PyArg_ParseTuple(args, ":draw_graph_to_file"))
+  {
+    PyErr_SetString(PyExc_TypeError, "draw_graph_to_file: wrong arguments.");
+    return NULL; // ReturnInferenceIfNecessary(); ?
+  }
+  stack< shared_ptr<Node> > tmp;
+  DrawGraphDuringMH(GetLastDirectiveNode(), tmp);
+  ReturnInferenceIfNecessary();
+
+  cout << "Finishing to deal with OBSERVE" << endl;
+  return Py_BuildValue("i", static_cast<int>(0)); // FIXME: something wiser.
 } catch(handling_python_error&) { return NULL; } catch(std::runtime_error& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }

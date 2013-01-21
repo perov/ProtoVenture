@@ -181,5 +181,150 @@ shared_ptr<VentureValue> Primitive__List::Sampler(vector< shared_ptr<VentureValu
   }
   return new_list;
 }
-
 string Primitive__List::GetName() { return "Primitive__List"; }
+
+shared_ptr<VentureValue> Primitive__Inc::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+  if (arguments.size() != 1) {
+    throw std::runtime_error("Wrong number of arguments.");
+  }
+
+  return shared_ptr<VentureCount>(new VentureCount(arguments[0]->GetInteger() + 1));
+}
+string Primitive__Inc::GetName() { return "Primitive__Inc"; }
+
+shared_ptr<VentureValue> Primitive__Dec::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+  if (arguments.size() != 1) {
+    throw std::runtime_error("Wrong number of arguments.");
+  }
+
+  return shared_ptr<VentureCount>(new VentureCount(arguments[0]->GetInteger() - 1));
+}
+string Primitive__Dec::GetName() { return "Primitive__Dec"; }
+
+shared_ptr<VentureValue> Primitive__Equal::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+  if (arguments.size() != 2) {
+    throw std::runtime_error("Wrong number of arguments.");
+  }
+
+  return shared_ptr<VentureBoolean>(new VentureBoolean(CompareValue(arguments[0], arguments[1])));
+}
+string Primitive__Equal::GetName() { return "Primitive__Equal"; }
+
+
+
+
+
+
+
+
+
+
+shared_ptr<VentureValue> Primitive__IntegerPlus::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+  shared_ptr<VentureCount> result = shared_ptr<VentureCount>(new VentureCount(0));
+  for (size_t index = 0; index < arguments.size(); index++) {
+    result->data += arguments[index]->GetInteger();
+  }
+  return result;
+}
+string Primitive__IntegerPlus::GetName() { return "Primitive__IntegerPlus"; }
+
+shared_ptr<VentureValue> Primitive__IntegerMultiply::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+  shared_ptr<VentureCount> result = shared_ptr<VentureCount>(new VentureCount(1));
+  for (size_t index = 0; index < arguments.size(); index++) {
+    result->data *= arguments[index]->GetInteger();
+  }
+  return result;
+}
+string Primitive__IntegerMultiply::GetName() { return "Primitive__IntegerMultiply"; }
+
+shared_ptr<VentureValue> Primitive__IntegerMinus::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+  if (arguments.size() != 2) {
+    throw std::runtime_error("Wrong number of arguments.");
+  }
+  shared_ptr<VentureCount> result = shared_ptr<VentureCount>(new VentureCount(0));
+  result->data
+    = arguments[0]->GetInteger() -
+        arguments[1]->GetInteger();
+  return result;
+}
+string Primitive__IntegerMinus::GetName() { return "Primitive__IntegerMinus"; }
+
+
+
+
+
+
+shared_ptr<VentureValue> Primitive__IntegerEqualOrGreater::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+  if (arguments.size() != 2) {
+    throw std::runtime_error("Wrong number of arguments.");
+  }
+
+  bool result;
+  if (arguments[0]->GetInteger() >= arguments[1]->GetInteger()) {
+    result = true;
+  } else {
+    result = false;
+  }
+  return shared_ptr<VentureBoolean>(new VentureBoolean(result));
+}
+string Primitive__IntegerEqualOrGreater::GetName() { return "Primitive__IntegerEqualOrGreater"; }
+
+shared_ptr<VentureValue> Primitive__IntegerEqualOrLesser::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+  if (arguments.size() != 2) {
+    throw std::runtime_error("Wrong number of arguments.");
+  }
+
+  bool result;
+  if (arguments[0]->GetInteger() <= arguments[1]->GetInteger()) {
+    result = true;
+  } else {
+    result = false;
+  }
+  return shared_ptr<VentureBoolean>(new VentureBoolean(result));
+}
+string Primitive__IntegerEqualOrLesser::GetName() { return "Primitive__IntegerEqualOrLesser"; }
+
+shared_ptr<VentureValue> Primitive__IntegerGreater::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+  if (arguments.size() != 2) {
+    throw std::runtime_error("Wrong number of arguments.");
+  }
+
+  bool result;
+  if (arguments[0]->GetInteger() > arguments[1]->GetInteger()) {
+    result = true;
+  } else {
+    result = false;
+  }
+  return shared_ptr<VentureBoolean>(new VentureBoolean(result));
+}
+string Primitive__IntegerGreater::GetName() { return "Primitive__IntegerGreater"; }
+
+shared_ptr<VentureValue> Primitive__IntegerLesser::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+  if (arguments.size() != 2) {
+    throw std::runtime_error("Wrong number of arguments.");
+  }
+
+  bool result;
+  if (arguments[0]->GetInteger() < arguments[1]->GetInteger()) {
+    result = true;
+  } else {
+    result = false;
+  }
+  return shared_ptr<VentureBoolean>(new VentureBoolean(result));
+}
+string Primitive__IntegerLesser::GetName() { return "Primitive__IntegerLesser"; }
+
+shared_ptr<VentureValue> Primitive__IntegerEqual::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+  if (arguments.size() != 2) {
+    throw std::runtime_error("Wrong number of arguments.");
+  }
+
+  bool result;
+  if (arguments[0]->GetInteger() == arguments[1]->GetInteger()) {
+    result = true;
+  } else {
+    result = false;
+  }
+  return shared_ptr<VentureBoolean>(new VentureBoolean(result));
+}
+string Primitive__IntegerEqual::GetName() { return "Primitive__IntegerEqual"; }

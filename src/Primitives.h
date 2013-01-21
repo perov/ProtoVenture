@@ -96,4 +96,80 @@ public:
   virtual string GetName();
 };
 
+class Primitive__Inc : public Primitive {
+  virtual shared_ptr<VentureValue> Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config);
+public:
+  virtual string GetName();
+};
+
+class Primitive__Dec : public Primitive {
+  virtual shared_ptr<VentureValue> Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config);
+public:
+  virtual string GetName();
+};
+
+class Primitive__Equal : public Primitive {
+  virtual shared_ptr<VentureValue> Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config);
+public:
+  virtual string GetName();
+};
+
+
+
+
+
+class Primitive__IntegerPlus : public Primitive {
+  virtual shared_ptr<VentureValue> Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config);
+public:
+  virtual string GetName();
+};
+
+class Primitive__IntegerMultiply : public Primitive {
+  virtual shared_ptr<VentureValue> Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config);
+public:
+  virtual string GetName();
+};
+
+class Primitive__IntegerMinus : public Primitive {
+  virtual shared_ptr<VentureValue> Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config);
+public:
+  virtual string GetName();
+};
+
+
+
+class Primitive__IntegerEqualOrGreater : public Primitive {
+  virtual shared_ptr<VentureValue> Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config);
+public:
+  virtual string GetName();
+};
+
+class Primitive__IntegerEqualOrLesser : public Primitive {
+  virtual shared_ptr<VentureValue> Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config);
+public:
+  virtual string GetName();
+};
+
+class Primitive__IntegerGreater : public Primitive { // Useless for Integer?
+  virtual shared_ptr<VentureValue> Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config);
+public:
+  virtual string GetName();
+};
+
+class Primitive__IntegerLesser : public Primitive { // Useless for Integer?
+  virtual shared_ptr<VentureValue> Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config);
+public:
+  virtual string GetName();
+};
+
+class Primitive__IntegerEqual : public Primitive { // With epsilon.
+  virtual shared_ptr<VentureValue> Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config);
+public:
+  virtual string GetName();
+};
+
+
+
+
+
 #endif

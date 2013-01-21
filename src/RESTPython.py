@@ -134,6 +134,19 @@ MyRIPL = venture_engine
 
 # MyRIPL.assume("bb", lisp_parser.parse("(dirichlet-multinomial/make (list 0.5 0.5 0.5))"))
 # (last_directive, _) = MyRIPL.predict(lisp_parser.parse("(= (bb) (bb))"))
+# MyRIPL.infer(50)
+# MyRIPL.draw_graph_to_file()
+
+# MyRIPL.clear()
+# MyRIPL.assume("draw-type", lisp_parser.parse("(CRP/make 1.0)"))
+# MyRIPL.assume("obs", lisp_parser.parse("(mem (lambda (type) (symmetric-dirichlet-multinomial/make 0.01 3)))"))
+# (last_directive, _) = MyRIPL.predict(lisp_parser.parse("(= ((obs (draw-type))) ((obs (draw-type))))"))
+# while True:
+  # print MyRIPL.report_value(3)
+  # MyRIPL.infer(1)
+
+# MyRIPL.assume("bb", lisp_parser.parse("(dirichlet-multinomial/make (list 0.5 0.5 0.5))"))
+# (last_directive, _) = MyRIPL.predict(lisp_parser.parse("(= (bb) (bb))"))
 # while True:
   # print MyRIPL.report_value(2)
   # MyRIPL.infer(100)

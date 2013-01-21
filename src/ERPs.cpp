@@ -131,6 +131,7 @@ real ERP__UniformDiscrete::GetSampledLoglikelihood(vector< shared_ptr<VentureVal
   int left_bound;
   int right_bound;
   if (arguments.size() == 2) {
+    assert(arguments[1]->GetInteger() >= arguments[0]->GetInteger());
     VentureCount::CheckMyData(arguments[0].get()); // Should be on! Just for the curve fitting!
     left_bound = arguments[0]->GetInteger(); // Should be GetInteger! Just for the curve fitting!
     VentureCount::CheckMyData(arguments[1].get()); // Should be on! Just for the curve fitting!
@@ -150,6 +151,7 @@ shared_ptr<VentureValue> ERP__UniformDiscrete::Sampler(vector< shared_ptr<Ventur
   int left_bound;
   int right_bound;
   if (arguments.size() == 2) {
+    assert(arguments[1]->GetInteger() >= arguments[0]->GetInteger());
     VentureCount::CheckMyData(arguments[0].get()); // Should be on! Just for the curve fitting!
     left_bound = arguments[0]->GetInteger(); // Should be GetInteger! Just for the curve fitting!
     VentureCount::CheckMyData(arguments[1].get()); // Should be on! Just for the curve fitting!
@@ -169,6 +171,7 @@ real ERP__UniformContinuous::GetSampledLoglikelihood(vector< shared_ptr<VentureV
   real left_bound;
   real right_bound;
   if (arguments.size() == 2) {
+    assert(arguments[1]->GetReal() >= arguments[0]->GetReal());
     VentureReal::CheckMyData(arguments[0].get());
     left_bound = arguments[0]->GetReal();
     VentureReal::CheckMyData(arguments[1].get());
@@ -188,6 +191,7 @@ shared_ptr<VentureValue> ERP__UniformContinuous::Sampler(vector< shared_ptr<Vent
   real left_bound;
   real right_bound;
   if (arguments.size() == 2) {
+    assert(arguments[1]->GetReal() >= arguments[0]->GetReal());
     VentureReal::CheckMyData(arguments[0].get());
     left_bound = arguments[0]->GetReal();
     VentureReal::CheckMyData(arguments[1].get());

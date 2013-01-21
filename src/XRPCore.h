@@ -7,7 +7,7 @@
 #include "VentureParser.h"
 
 struct NodeXRPApplication;
-extern set< shared_ptr<NodeXRPApplication> > random_choices;
+extern set< weak_ptr<NodeXRPApplication> > random_choices;
 extern int next_gensym_atom;
 
 struct RescorerResamplerResult {
@@ -49,6 +49,12 @@ struct ReevaluationParameters : public boost::enable_shared_from_this<Reevaluati
   real __log_q_from_old_to_new;
   bool __unsatisfied_constraint;
   shared_ptr<NodeXRPApplication> principal_node;
+  
+  // For Enumeration:
+  bool we_are_in_enumeration;
+  shared_ptr<VentureValue> proposing_value_for_this_proposal;
+  shared_ptr< map<string, shared_ptr<VentureValue> > > random_database;
+  bool forcing_not_collecting;
 };
 
 struct EvaluationConfig;
@@ -61,7 +67,7 @@ public: // Should be private.
                                 shared_ptr<VentureValue>);
   virtual void Remove(vector< shared_ptr<VentureValue> >&,
                            shared_ptr<VentureValue>);
-  virtual bool ForceValue(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<VentureValue> desired_value, ReevaluationParameters& reevaluation_parameters);
+  virtual bool ForceValue(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<VentureValue> desired_value, shared_ptr<ReevaluationParameters> reevaluation_parameters);
   virtual void UnforceValue(vector< shared_ptr<VentureValue> >& arguments);
 
 public:
@@ -70,18 +76,20 @@ public:
   shared_ptr<VentureValue> Sample(vector< shared_ptr<VentureValue> >&, // FIXME: why not virtual?
                                   shared_ptr<NodeXRPApplication>,
                                   EvaluationConfig& evaluation_config);
-  virtual void Unsampler(vector< shared_ptr<VentureValue> >& old_arguments, shared_ptr<NodeXRPApplication> caller); // Unsampler or sampler?
+  virtual void Unsampler(vector< shared_ptr<VentureValue> >& old_arguments, weak_ptr<NodeXRPApplication> caller); // Unsampler or sampler?
   shared_ptr<RescorerResamplerResult>
   RescorerResampler(vector< shared_ptr<VentureValue> >& old_arguments,
                     vector< shared_ptr<VentureValue> >& new_arguments,
                     shared_ptr<NodeXRPApplication> caller,
                     bool forced_resampling,
-                    ReevaluationParameters& reevaluation_parameters,
+                    shared_ptr<ReevaluationParameters> reevaluation_parameters,
                     EvaluationConfig& evaluation_config,
                     bool sampled_value_has_changed);
   virtual bool IsRandomChoice();
   virtual bool CouldBeRescored();
   virtual string GetName();
+  virtual bool CouldBeEnumerated();
+  virtual set< shared_ptr<VentureValue> > EnumeratingSupport();
 
 public: // Should be private?
 };

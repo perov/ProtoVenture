@@ -227,3 +227,15 @@ void XRP__DirichletMultinomial_sampler::Remove(vector< shared_ptr<VentureValue> 
 bool XRP__DirichletMultinomial_sampler::IsRandomChoice() { return true; }
 bool XRP__DirichletMultinomial_sampler::CouldBeRescored() { return true; }
 string XRP__DirichletMultinomial_sampler::GetName() { return "XRP__DirichletMultinomial_sampler"; }
+
+bool XRP__DirichletMultinomial_sampler::CouldBeEnumerated() {
+  return true;
+}
+
+set< shared_ptr<VentureValue> > XRP__DirichletMultinomial_sampler::EnumeratingSupport() { // FIXME: pass the *result* by reference, not by value.
+  set< shared_ptr<VentureValue> > returning_set;
+  for (size_t index = 0; index < this->statistics.size(); index++) {
+    returning_set.insert(shared_ptr<VentureAtom>(new VentureAtom(index)));
+  }
+  return returning_set;
+}

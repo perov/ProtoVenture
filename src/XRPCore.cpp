@@ -55,6 +55,7 @@ XRP::Sample(vector< shared_ptr<VentureValue> >& arguments,
     random_choices.insert(dynamic_pointer_cast<NodeXRPApplication>(caller->shared_from_this()));
   }
   
+  //Debug// cout << "Incorporate from " << caller << endl;
   Incorporate(arguments, new_sample);
   return new_sample;
 }
@@ -64,7 +65,7 @@ XRP::RescorerResampler(vector< shared_ptr<VentureValue> >& old_arguments,
                        vector< shared_ptr<VentureValue> >& new_arguments,
                        shared_ptr<NodeXRPApplication> caller,
                        bool forced_resampling,
-                       ReevaluationParameters& reevaluation_parameters,
+                       shared_ptr<ReevaluationParameters> reevaluation_parameters,
                        EvaluationConfig& evaluation_config,
                        bool sampled_value_has_changed) {
   // This check slows the inference, though only by constant time.
@@ -95,9 +96,27 @@ XRP::RescorerResampler(vector< shared_ptr<VentureValue> >& old_arguments,
                                   // Added Jan/5/2013: Especially when we now do not cancel by default?
   }
   
-  if (forced_resampling || !CouldBeRescored()) { // Resampling.
-    shared_ptr<VentureValue> new_sample = Sampler(new_arguments, caller, evaluation_config);
+  if (forced_resampling || !CouldBeRescored()
+        || GetSampledLoglikelihood(new_arguments, caller->my_sampled_value) == log(0.0)
+        ) { // Resampling.
+
+    shared_ptr<VentureValue> new_sample;
+    if (this->IsRandomChoice() &&
+          evaluation_config.reevaluation_config_ptr != shared_ptr<ReevaluationParameters>() &&
+          evaluation_config.reevaluation_config_ptr->proposing_value_for_this_proposal != shared_ptr<VentureValue>()) {
+      if (evaluation_config.reevaluation_config_ptr->forcing_not_collecting == false) {
+        new_sample = Sampler(new_arguments, caller, evaluation_config);
+        assert(evaluation_config.reevaluation_config_ptr->random_database->count(caller->node_key) == 0);
+        (*(evaluation_config.reevaluation_config_ptr->random_database))[caller->node_key] = new_sample;
+      } else {
+        assert(evaluation_config.reevaluation_config_ptr->random_database->count(caller->node_key) == 1);
+        new_sample = (*(evaluation_config.reevaluation_config_ptr->random_database))[caller->node_key];
+      }
+    } else {
+      new_sample = Sampler(new_arguments, caller, evaluation_config);
+    }
     real new_loglikelihood = GetSampledLoglikelihood(new_arguments, new_sample);
+    //Debug// cout << "Incorporate from " << caller << endl;
     Incorporate(new_arguments, new_sample);
 
     evaluation_config.__log_unconstrained_score += new_loglikelihood;
@@ -106,6 +125,7 @@ XRP::RescorerResampler(vector< shared_ptr<VentureValue> >& old_arguments,
                                                                            new_loglikelihood)); // FIXME: This thing does nothing now, but it should work when mem would be implemented in the right way!
   } else { // Rescoring.
     // real new_loglikelihood = GetSampledLoglikelihood(new_arguments, caller->sampled_value);
+    //Debug// cout << "Incorporate from " << caller << endl;
     Incorporate(new_arguments, caller->my_sampled_value);
     
     return shared_ptr<RescorerResamplerResult>(
@@ -118,7 +138,7 @@ XRP::XRP() {}
 shared_ptr<VentureValue> XRP::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
   throw std::runtime_error("It should not happen.");
 } // Should be just ";"?
-void XRP::Unsampler(vector< shared_ptr<VentureValue> >& old_arguments, shared_ptr<NodeXRPApplication> caller) {
+void XRP::Unsampler(vector< shared_ptr<VentureValue> >& old_arguments, weak_ptr<NodeXRPApplication> caller) {
   // By default it is blank function.
 }
 real XRP::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
@@ -140,10 +160,18 @@ string XRP::GetName() { return "XRPClass"; }
 
 // Pair: OldLogScoreAddition, NewLogScoreAddition
 bool
-XRP::ForceValue(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<VentureValue> desired_value, ReevaluationParameters& reevaluation_parameters) {
+XRP::ForceValue(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<VentureValue> desired_value, shared_ptr<ReevaluationParameters> reevaluation_parameters) {
   return true; // FIXME: it is not right generally.
 }
 
 void XRP::UnforceValue(vector< shared_ptr<VentureValue> >& arguments) {
 
+}
+
+bool XRP::CouldBeEnumerated() {
+  return false;
+}
+
+set< shared_ptr<VentureValue> > XRP::EnumeratingSupport() {
+  throw std::runtime_error("Should not be called, because this XRP could not be enumerated.");
 }

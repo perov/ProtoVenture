@@ -21,7 +21,7 @@
 
 shared_ptr<VentureList> const NIL_INSTANCE = shared_ptr<VentureList>(new VentureNil());
 gsl_rng* random_generator = 0;
-set< shared_ptr<NodeXRPApplication> > random_choices;
+set< weak_ptr<NodeXRPApplication> > random_choices;
 size_t DIRECTIVE_COUNTER = 0;
 
 shared_ptr<NodeEnvironment> global_environment;
@@ -37,8 +37,12 @@ bool need_to_return_inference;
 
 void InitGSL() {
   random_generator = gsl_rng_alloc(gsl_rng_mt19937);
-  unsigned long seed = 0; //static_cast<unsigned long>(time(NULL)); // time(NULL)
-  //cout << "WARNING: RANDOM SEED is not random!" << endl;
+  unsigned long seed = static_cast<unsigned long>(time(NULL)); // time(NULL)
+  if (true) {
+    seed = 1358633290;
+    cout << "WARNING: RANDOM SEED is not random!" << endl;
+  }
+  cout << "Current seed: " << seed << endl;
   gsl_rng_set(random_generator, seed);
 }
   

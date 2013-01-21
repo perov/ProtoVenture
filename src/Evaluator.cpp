@@ -8,11 +8,36 @@ shared_ptr<VentureValue> Evaluator(shared_ptr<NodeEvaluation> evaluation_node,
                                    shared_ptr<NodeEnvironment> environment,
                                    shared_ptr<Node> output_reference_target,
                                    shared_ptr<NodeEvaluation> caller,
-                                   EvaluationConfig& evaluation_config) {
+                                   EvaluationConfig& evaluation_config,
+                                   string request_postfix) {
   if (caller == shared_ptr<NodeEvaluation>()) { // It is directive.
     DIRECTIVE_COUNTER++;
+    evaluation_node->node_key = boost::lexical_cast<string>(DIRECTIVE_COUNTER);
     evaluation_node->myorder.push_back(DIRECTIVE_COUNTER);
   } else {
+    if (caller->GetNodeType() == DIRECTIVE_ASSUME ||
+          caller->GetNodeType() == DIRECTIVE_PREDICT ||
+          caller->GetNodeType() == DIRECTIVE_OBSERVE) {
+      evaluation_node->node_key = caller->node_key + "|from_dir";
+    } else if (caller->GetNodeType() == APPLICATION_CALLER) {
+      shared_ptr<NodeApplicationCaller> parent_node = dynamic_pointer_cast<NodeApplicationCaller>(caller);
+      if (parent_node->application_operator == evaluation_node) {
+        evaluation_node->node_key = caller->node_key + "|op";
+      } else if (request_postfix.substr(0, 5) == "args_") {
+        evaluation_node->node_key = caller->node_key + "|" + request_postfix;
+      } else if (parent_node->application_node == evaluation_node || parent_node->new_application_node == evaluation_node) {
+        evaluation_node->node_key = caller->node_key + "|ap";
+      } else {
+        throw std::runtime_error("Unexpected situation for the 'node_key' (1).");
+      }
+    } else if (caller->GetNodeType() == XRP_APPLICATION &&
+                 dynamic_pointer_cast<NodeXRPApplication>(caller)->xrp->xrp->GetName() == "XRP__memoizer") {
+      assert(request_postfix != "");
+      evaluation_node->node_key = caller->node_key + "|m:" + request_postfix;
+    } else {
+      throw std::runtime_error("Unexpected situation for the 'node_key' (2).");
+    }
+
     evaluation_node->myorder = caller->myorder;
     caller->last_child_order++;
     evaluation_node->myorder.push_back(caller->last_child_order);
@@ -31,7 +56,8 @@ shared_ptr<VentureValue> Evaluator(shared_ptr<NodeEvaluation> evaluation_node,
               environment,
               shared_ptr<Node>(),
               dynamic_pointer_cast<NodeEvaluation>(evaluation_node->shared_from_this()),
-              evaluation_config);
+              evaluation_config,
+              "..."); // FIXME: not supported!
   }
 
   assert(evaluation_node->evaluated == false);
@@ -70,15 +96,19 @@ shared_ptr<VentureValue> LookupValue(shared_ptr<NodeEnvironment> environment,
   shared_ptr<NodeEnvironment> inspecting_environment = environment;
   while (inspecting_environment != shared_ptr<NodeEnvironment>()) {
     if (inspecting_environment->variables.count(variable_name->GetString()) == 1) {
-      if (lookuper->GetNodeType() == LOOKUP) {
-        dynamic_pointer_cast<NodeLookup>(lookuper)->where_lookuped =
-          inspecting_environment->variables[variable_name->GetString()];
+      if (lookuper != shared_ptr<NodeEvaluation>()) {
+        if (lookuper->GetNodeType() == LOOKUP) {
+          dynamic_pointer_cast<NodeLookup>(lookuper)->where_lookuped =
+            inspecting_environment->variables[variable_name->GetString()];
+        }
+        inspecting_environment->variables[variable_name->GetString()]->output_references.insert(lookuper);
       }
-      inspecting_environment->variables[variable_name->GetString()]->output_references.insert(lookuper);
       if (inspecting_environment->variables[variable_name->GetString()]->new_value == shared_ptr<VentureValue>() ||
           old_values == true) {
+        // cout << ">>> Returning the old value " << inspecting_environment->variables[variable_name->GetString()]->value->GetString() << endl;
         return inspecting_environment->variables[variable_name->GetString()]->value;
       } else {
+        // cout << ">>> Returning the new value " << inspecting_environment->variables[variable_name->GetString()]->new_value->GetString() << endl;
         return inspecting_environment->variables[variable_name->GetString()]->new_value;
       }
     } else {
@@ -96,21 +126,25 @@ shared_ptr<VentureValue> LookupValue(shared_ptr<NodeEnvironment> environment,
   if (index >= environment->local_variables.size()) {
     throw std::runtime_error("LookupValue: out of bound.");
   }
-  if (lookuper->GetNodeType() == LOOKUP) {
-    dynamic_pointer_cast<NodeLookup>(lookuper)->where_lookuped =
-      environment->local_variables[index];
+  if (lookuper != shared_ptr<NodeEvaluation>()) {
+    if (lookuper->GetNodeType() == LOOKUP) {
+      dynamic_pointer_cast<NodeLookup>(lookuper)->where_lookuped =
+        environment->local_variables[index];
+    }
+    environment->local_variables[index]->output_references.insert(lookuper);
   }
-  environment->local_variables[index]->output_references.insert(lookuper);
   if (environment->local_variables[index]->new_value == shared_ptr<VentureValue>() ||
       old_values == true) {
+    // cout << ">>> Returning the old value " << environment->local_variables[index]->value << endl;
     return environment->local_variables[index]->value;
   } else {
+    // cout << ">>> Returning the new value " << environment->local_variables[index]->new_value << endl;
     return environment->local_variables[index]->new_value;
   }
 }
 
 // If possible to force (return True) or not (return False)?
-bool ForceExpressionValue(shared_ptr<Node> node, shared_ptr<VentureValue> desired_value, ReevaluationParameters& reevaluation_parameters) {
+bool ForceExpressionValue(shared_ptr<Node> node, shared_ptr<VentureValue> desired_value, shared_ptr<ReevaluationParameters> reevaluation_parameters) {
   while (true) {
     assert(node != shared_ptr<Node>());
     if (node->GetNodeType() == LOOKUP) {
@@ -136,6 +170,9 @@ bool ForceExpressionValue(shared_ptr<Node> node, shared_ptr<VentureValue> desire
       shared_ptr<NodeXRPApplication> node2 = dynamic_pointer_cast<NodeXRPApplication>(node);
       random_choices.erase(node2); // FIXME: it is not right, if we are in MH.
       if (CompareValue(node2->my_sampled_value, desired_value)) {
+        if (node2->forced_by_observations == true) {
+          throw std::runtime_error("Sorry, still does not support forcing the same value from several observations.");
+        }
         node2->forced_by_observations = true;
         return true;
       } else {
@@ -152,11 +189,10 @@ bool ForceExpressionValue(shared_ptr<Node> node, shared_ptr<VentureValue> desire
           //real logscore_change = -1.0 * node2->xrp->xrp->GetSampledLoglikelihood(got_arguments, node2->my_sampled_value);
           // Assuming that if it was rescored, it saved the necessary value, i.e. there would not be necessity in
           // the forcing. Otherwise:
-          reevaluation_parameters.__log_q_from_old_to_new -= node2->xrp->xrp->GetSampledLoglikelihood(got_arguments, node2->my_sampled_value);
+          reevaluation_parameters->__log_q_from_old_to_new -= node2->xrp->xrp->GetSampledLoglikelihood(got_arguments, node2->my_sampled_value);
           node2->my_sampled_value = desired_value;
           //logscore_change +=node2->xrp->xrp->GetSampledLoglikelihood(got_arguments, node2->my_sampled_value);
           node2->xrp->xrp->Incorporate(got_arguments, node2->my_sampled_value);
-          assert(dynamic_pointer_cast<NodeApplicationCaller>(node2->parent.lock())->MH_made_action != MH_ACTION__EMPTY_STATUS);
           return true;
         }
       }

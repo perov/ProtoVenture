@@ -35,7 +35,7 @@ public:
   virtual bool IsRandomChoice();
   virtual bool CouldBeRescored();
   virtual string GetName();
-
+  
   map<int, size_t> atoms; // next_gensym_atom
   size_t current_number_of_clients;
   real alpha; // Some XRPs do not save arguments.
@@ -89,6 +89,8 @@ public:
   virtual bool IsRandomChoice();
   virtual bool CouldBeRescored();
   virtual string GetName();
+  virtual bool CouldBeEnumerated();
+  virtual set< shared_ptr<VentureValue> > EnumeratingSupport();
 
   vector<real> statistics;
 };
