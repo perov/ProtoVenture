@@ -97,7 +97,7 @@ XRP::RescorerResampler(vector< shared_ptr<VentureValue> >& old_arguments,
   }
   
   if (forced_resampling || !CouldBeRescored()
-        || (GetSampledLoglikelihood(new_arguments, caller->my_sampled_value) == log(0.0) && this->GetName() == "ERP__Normal")
+        || (GetSampledLoglikelihood(new_arguments, caller->my_sampled_value) == log(0.0) && this->GetName() != "ERP__Normal")
         ) { // Resampling.
 
     shared_ptr<VentureValue> new_sample;
