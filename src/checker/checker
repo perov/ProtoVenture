@@ -1,3 +1,6 @@
+
+Warning! This script is out-of-date! Use Python scripts from this directory instead!
+
 #!/bin/bash
 PORT=8080
 ADDRESSEE=probcomp-sys@lists.csail.mit.edu
