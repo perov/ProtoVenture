@@ -172,4 +172,10 @@ public:
 
 
 
+class Primitive__IntegerModulo : public Primitive { // With epsilon.
+  virtual shared_ptr<VentureValue> Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config);
+public:
+  virtual string GetName();
+};
+
 #endif
