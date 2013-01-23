@@ -1,0 +1,15 @@
+
+# Follow instructions in the "InstallToNewEC2Instance.txt"
+
+# Special way to install Boost and GSL:
+
+brew install boost
+brew install gsl
+
+# Or using Macports:
+
+sudo port install boost
+
+# In this case it could be necessary to add g++ argument
+# -L/opt/local/lib
+# and change "-lboost_thread" to "-lboost_thread-mt"

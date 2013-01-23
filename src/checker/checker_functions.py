@@ -4,6 +4,7 @@
 HOST = "127.0.0.1"
 PORT = 8080
 ADDRESSEE = "probcomp-sys@lists.csail.mit.edu"
+ADDRESSEE_RESERVE = "yura.perov@gmail.com"
 MAX_TIMEOUT_IN_SECONDS = 1
 FILE_TO_SAVE_LAST_RESTART_TIMESTAMP = "/home/ec2-user/for_IME/last_restart.txt"
 
@@ -47,6 +48,14 @@ def RestartVentureServer(comment):
                    reason + '\n\n' +
                    'As a result it has been automatically restarted.\n' +
                    '" | /usr/sbin/sendmail -f ' + ADDRESSEE + ' ' + ADDRESSEE, shell=True).wait()
+  if ADDRESSEE_RESERVE != '':
+    subprocess.Popen('echo -e "' +
+                     'To: ' + ADDRESSEE_RESERVE + '\n' +
+                     'From: ' + ADDRESSEE_RESERVE + '\n' +
+                     'Subject: [venture-maintain] WARNING: Restarting the main Venture server due to non-response (uptime = ' + UPTIME + ')\n' +
+                     reason + '\n\n' +
+                     'As a result it has been automatically restarted.\n' +
+                     '" | /usr/sbin/sendmail -f ' + ADDRESSEE_RESERVE + ' ' + ADDRESSEE_RESERVE, shell=True).wait()
 
 def CheckVentureServer():
   p = subprocess.Popen("curl --head -m " + str(MAX_TIMEOUT_IN_SECONDS) + " http://" + HOST + ":" + str(PORT) + "/ 2>&1",
