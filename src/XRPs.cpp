@@ -115,7 +115,7 @@ shared_ptr<VentureValue> XRP__SymmetricDirichletMultinomial_maker::Sampler(vecto
   }
   VentureSmoothedCount::CheckMyData(arguments[0].get());
   VentureCount::CheckMyData(arguments[1].get());
-  if (arguments[1]->GetInteger() < 2) {
+  if (arguments[1]->GetInteger() < 1) {
     throw std::runtime_error("The second argument (the dimensionality) should be >= 2.");
   }
 
@@ -210,7 +210,7 @@ shared_ptr<VentureValue> XRP__DirichletMultinomial_sampler::Sampler(vector< shar
 real XRP__DirichletMultinomial_sampler::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
                                       shared_ptr<VentureValue> sampled_value) {
   assert(sampled_value->GetInteger() < this->statistics.size());
-  return this->statistics[sampled_value->GetInteger()] / this->GetSumOfStatistics();
+  return log(this->statistics[sampled_value->GetInteger()]) - log(this->GetSumOfStatistics());
 }
 
 void XRP__DirichletMultinomial_sampler::Incorporate(vector< shared_ptr<VentureValue> >& arguments,
@@ -223,6 +223,7 @@ void XRP__DirichletMultinomial_sampler::Remove(vector< shared_ptr<VentureValue> 
                           shared_ptr<VentureValue> sampled_value) {
   assert(sampled_value->GetInteger() < this->statistics.size());
   this->statistics[sampled_value->GetInteger()]--;
+  assert(this->statistics[sampled_value->GetInteger()] > 0.0);
 }
 bool XRP__DirichletMultinomial_sampler::IsRandomChoice() { return true; }
 bool XRP__DirichletMultinomial_sampler::CouldBeRescored() { return true; }

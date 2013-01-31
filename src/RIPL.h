@@ -44,4 +44,15 @@ size_t ExecuteDirective(string& directive_as_string,
                         shared_ptr<NodeEvaluation> directive_node);
 void BindStandardElementsToGlobalEnvironment();
 
+
+
+
+
+
+real GetLogscoreOfDirective(shared_ptr<Node> first_node);
+
+void RestoreDirective(shared_ptr<Node> first_node);
+
+real GetLogscoreOfAllDirectives();
+
 #endif

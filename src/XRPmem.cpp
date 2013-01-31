@@ -34,6 +34,10 @@ string XRP__memoizer::GetName() { return "XRP__memoizer"; }
 
 
 
+XRP__memoized_procedure::XRP__memoized_procedure()
+  : my_last_evaluation_id(0)
+{}
+
 string XRP__memoized_procedure__MakeMapKeyFromArguments(vector< shared_ptr<VentureValue> >& arguments) {
   string arguments_strings = "(";
   for (size_t index = 0; index < arguments.size(); index++) {

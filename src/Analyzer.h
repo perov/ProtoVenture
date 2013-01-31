@@ -108,6 +108,7 @@ struct NodeEvaluation : public Node {
   bool evaluated;
   set< weak_ptr<Node> > output_references;
   vector<size_t> myorder;
+  string __GetLocationAsString();
   size_t last_child_order;
 
   string node_key;
@@ -197,6 +198,7 @@ struct NodeLambdaCreator : public NodeEvaluation {
   
   shared_ptr<VentureList> arguments;
   shared_ptr<NodeEvaluation> expressions;
+  shared_ptr<VentureValue> returned_value;
 
   virtual void DeleteNode();
 };

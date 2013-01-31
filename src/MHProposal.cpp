@@ -263,7 +263,7 @@ MHProposalResults MakeMHProposal(shared_ptr<NodeXRPApplication> principal_node, 
   //Debug// cout << "Finished propagation part" << endl;
   
   if (reevaluation_parameters->__unsatisfied_constraint == true) {
-    throw std::runtime_error("Unsatisfied constraint. Sorry, rejection sampling still is not implemented."); // FIXME: implement!
+    // throw std::runtime_error("Unsatisfied constraint. Sorry, rejection sampling still is not implemented."); // FIXME: implement!
   }
 
   real Q_OldToNew = reevaluation_parameters->__log_q_from_old_to_new;
@@ -341,7 +341,7 @@ MHProposalResults MakeMHProposal(shared_ptr<NodeXRPApplication> principal_node, 
     }
   } else {
     real random_value = log(gsl_ran_flat(random_generator, 0, 1));
-    if (random_value < to_compare) {
+    if (random_value < to_compare && reevaluation_parameters->__unsatisfied_constraint != true) {
       mh_decision = MH_APPROVED;
     } else {
       mh_decision = MH_DECLINED;
@@ -353,6 +353,13 @@ MHProposalResults MakeMHProposal(shared_ptr<NodeXRPApplication> principal_node, 
     //Debug// cout << "Decline" << endl;
   }
   // cout << "***" << endl;
+
+  /*
+  cout << "New MH decision: " << mh_decision << " " << random_choice->xrp->xrp->GetName() << " " << random_choice->my_sampled_value->GetString()
+       << " " << dynamic_pointer_cast<NodeXRPApplication>(dynamic_pointer_cast<NodeApplicationCaller>(random_choice->parent.lock())->new_application_node)->my_sampled_value->GetString()
+       << " " << number_of_random_choices << " " << creating_random_choices.size() << " " << deleting_random_choices.size()
+       << " " << P_new << " " << P_old << " " << Q_NewToOld << " " << Q_OldToNew << endl << endl;
+  */
 
   if (mh_decision == MH_APPROVED) {
     for (set< shared_ptr<NodeXRPApplication> >::const_iterator iterator = deleting_random_choices.begin();
@@ -505,6 +512,9 @@ real GatherBranch__PNew(shared_ptr<Node> first_node, size_t node_action, set< sh
       current_node2->xrp->xrp->Remove(got_arguments, current_node2->my_sampled_value);
       
       changed_probability += current_node2->xrp->xrp->GetSampledLoglikelihood(got_arguments, current_node2->my_sampled_value);
+      //cout << "Current: "
+      //     << current_node2->xrp->xrp->GetName() << " "
+      //     << current_node2->xrp->xrp->GetSampledLoglikelihood(got_arguments, current_node2->my_sampled_value) << endl;
       if (current_node2->xrp->xrp->IsRandomChoice() && current_node2->forced_by_observations == false) {
         changing_random_choices.insert(current_node2);
       }

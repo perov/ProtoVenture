@@ -55,6 +55,7 @@ class XRP__memoized_procedure : public XRP { // So called "mem-sampler".
 
 
 public:
+  XRP__memoized_procedure();
   virtual void Unsampler(vector< shared_ptr<VentureValue> >& old_arguments, weak_ptr<NodeXRPApplication> caller); // Unsampler or sampler?
   virtual bool IsRandomChoice();
   virtual bool CouldBeRescored();
@@ -63,6 +64,7 @@ public:
   weak_ptr<NodeXRPApplication> maker;
   shared_ptr<VentureValue> operator_value; // FIXME: VentureValue is not too ambiguous?
   map<string, XRP__memoizer_map_element> mem_table;
+  size_t my_last_evaluation_id; // FIXME: describe.
 };
 
 #endif

@@ -152,7 +152,7 @@ size_t ExecuteDirective(string& directive_as_string,
             shared_ptr<NodeEvaluation>(),
             tmp_evaluation_config,
             "");
-  directive_node->earlier_evaluation_nodes = last_directive_node;
+  // directive_node->earlier_evaluation_nodes = last_directive_node;
   
   if (tmp_evaluation_config.unsatisfied_constraint == true) {
       throw std::runtime_error("You are trying to execute the code, which has the joint score = 0.0 (at least in one of its state!).");
@@ -206,6 +206,9 @@ void BindStandardElementsToGlobalEnvironment() {
   BindToEnvironment(global_environment,
                     shared_ptr<VentureSymbol>(new VentureSymbol("beta")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new ERP__Beta()))));
+  BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol("gamma")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new ERP__Gamma()))));
   BindToEnvironment(global_environment,
                     shared_ptr<VentureSymbol>(new VentureSymbol("uniform-discrete")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new ERP__UniformDiscrete()))));
@@ -328,4 +331,89 @@ void BindStandardElementsToGlobalEnvironment() {
   BindToEnvironment(global_environment,
                     shared_ptr<VentureSymbol>(new VentureSymbol("mod")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__IntegerModulo()))));
+}
+
+
+
+
+
+real GetLogscoreOfDirective(shared_ptr<Node> first_node) {
+  real changed_probability = log(1.0);
+  queue< shared_ptr<Node> > processing_queue;
+  processing_queue.push(first_node);
+  while (!processing_queue.empty()) {
+    processing_queue.front()->GetChildren(processing_queue);
+    shared_ptr<Node> current_node = processing_queue.front();
+    processing_queue.pop();
+
+    if (current_node->GetNodeType() == XRP_APPLICATION) {
+      shared_ptr<NodeXRPApplication> current_node2 = dynamic_pointer_cast<NodeXRPApplication>(current_node);
+
+      vector< shared_ptr<VentureValue> > got_arguments = GetArgumentsFromEnvironment(current_node2->environment, // Not efficient?
+                                      dynamic_pointer_cast<NodeEvaluation>(current_node2), true);
+      
+      if (current_node2->evaluated == false) {
+        throw std::runtime_error("Removing from unevaluated!");
+      }
+
+      current_node2->xrp->xrp->Remove(got_arguments, current_node2->my_sampled_value);
+      changed_probability += current_node2->xrp->xrp->GetSampledLoglikelihood(got_arguments, current_node2->my_sampled_value);
+
+      if (current_node->GetNodeType() == XRP_APPLICATION &&
+            dynamic_pointer_cast<NodeXRPApplication>(current_node)->xrp->xrp->GetName() == "XRP__memoized_procedure")
+      {
+        string mem_table_key = XRP__memoized_procedure__MakeMapKeyFromArguments(got_arguments);
+        XRP__memoizer_map_element& mem_table_element =
+          (*(dynamic_pointer_cast<XRP__memoized_procedure>(dynamic_pointer_cast<NodeXRPApplication>(current_node)->xrp->xrp)->mem_table.find(mem_table_key))).second;
+        if (mem_table_element.active_uses == 0) {
+          processing_queue.push(mem_table_element.application_caller_node);
+        }
+      }
+    }
+  }
+  return changed_probability;
+}
+
+void RestoreDirective(shared_ptr<Node> first_node) {
+  queue< shared_ptr<Node> > processing_queue;
+  processing_queue.push(first_node);
+  while (!processing_queue.empty()) {
+    processing_queue.front()->GetChildren(processing_queue);
+    shared_ptr<Node> current_node = processing_queue.front();
+    processing_queue.pop();
+
+    if (current_node->GetNodeType() == XRP_APPLICATION) {
+      shared_ptr<NodeXRPApplication> current_node2 = dynamic_pointer_cast<NodeXRPApplication>(current_node);
+
+      vector< shared_ptr<VentureValue> > got_arguments = GetArgumentsFromEnvironment(current_node2->environment, // Not efficient?
+                                      dynamic_pointer_cast<NodeEvaluation>(current_node2), true);
+      
+      current_node2->xrp->xrp->Incorporate(got_arguments, current_node2->my_sampled_value);
+
+      if (current_node->GetNodeType() == XRP_APPLICATION &&
+            dynamic_pointer_cast<NodeXRPApplication>(current_node)->xrp->xrp->GetName() == "XRP__memoized_procedure")
+      {
+        string mem_table_key = XRP__memoized_procedure__MakeMapKeyFromArguments(got_arguments);
+        XRP__memoizer_map_element& mem_table_element =
+          (*(dynamic_pointer_cast<XRP__memoized_procedure>(dynamic_pointer_cast<NodeXRPApplication>(current_node)->xrp->xrp)->mem_table.find(mem_table_key))).second;
+        if (mem_table_element.active_uses == 1) {
+          processing_queue.push(mem_table_element.application_caller_node);
+        }
+      }
+    }
+  }
+  return;
+}
+
+real GetLogscoreOfAllDirectives() {
+  real changed_probability = log(1.0);
+  
+  for (map<size_t, directive_entry>::iterator iterator = directives.begin(); iterator != directives.end(); iterator++) {
+    changed_probability += GetLogscoreOfDirective(iterator->second.directive_node);
+  }
+  for (map<size_t, directive_entry>::iterator iterator = directives.begin(); iterator != directives.end(); iterator++) {
+    RestoreDirective(iterator->second.directive_node);
+  }
+
+  return changed_probability;
 }

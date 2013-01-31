@@ -49,3 +49,11 @@ void BlankFunction___ForGetStackContainer() { // For some reason without this fu
 int UniformDiscrete(int a, int b) {
   return static_cast<int>(gsl_ran_flat(random_generator, a, b + 1));
 }
+
+real NormalDistributionLoglikelihood(real sampled_value_real, real average, real sigma) {
+  double loglikelihood = 0.0;
+  loglikelihood -= log(sigma);
+  loglikelihood -= 0.5 * log(2 * 3.14159265358979323846264338327950);
+  loglikelihood -= pow(sampled_value_real - average, 2.0) / (2 * pow(sigma, 2.0));
+  return loglikelihood;
+}

@@ -7,6 +7,7 @@ ADDRESSEE = "probcomp-sys@lists.csail.mit.edu"
 ADDRESSEE_RESERVE = "yura.perov@gmail.com"
 MAX_TIMEOUT_IN_SECONDS = 1
 FILE_TO_SAVE_LAST_RESTART_TIMESTAMP = "/home/ec2-user/for_IME/last_restart.txt"
+PATH_TO_VENTURE_BINARY = "/usr/venture/for_demos/venture"
 
 import subprocess
 import time
@@ -18,7 +19,7 @@ import datetime
 # out, err = p.communicate()
 
 def StopVentureServer():
-  subprocess.Popen('pkill -f "/usr/venture/venture ' + str(PORT) + '"', shell=True).wait()
+  subprocess.Popen('pkill -9 -f "' + PATH_TO_VENTURE_BINARY + ' ' + str(PORT) + '"', shell=True).wait()
 
 def RestartVentureServer(comment):
   f = open(FILE_TO_SAVE_LAST_RESTART_TIMESTAMP, "r")
@@ -31,7 +32,7 @@ def RestartVentureServer(comment):
   UPTIME = str(datetime.timedelta(seconds=UPTIME))
   StopVentureServer()
     
-  subprocess.Popen("/usr/venture/venture " + str(PORT) + " >/dev/null 2>&1 &", shell=True)
+  subprocess.Popen(PATH_TO_VENTURE_BINARY + " " + str(PORT) + " >/dev/null 2>&1 &", shell=True)
   if comment == 'by_http_request':
     reason = 'The Venture server backing the IME was terminated manually.'
   elif "(28) connect() timed out" in comment:
@@ -46,7 +47,7 @@ def RestartVentureServer(comment):
                    'From: ' + ADDRESSEE + '\n' +
                    'Subject: [venture-maintain] WARNING: Restarting the main Venture server due to non-response (uptime = ' + UPTIME + ')\n' +
                    reason + '\n\n' +
-                   'As a result it has been automatically restarted.\n' +
+                   'As a result it has been automatically restarted.\n\nGenerated: ' + str(datetime.datetime.now()) + '\n' +
                    '" | /usr/sbin/sendmail -f ' + ADDRESSEE + ' ' + ADDRESSEE, shell=True).wait()
   if ADDRESSEE_RESERVE != '':
     subprocess.Popen('echo -e "' +
@@ -54,7 +55,7 @@ def RestartVentureServer(comment):
                      'From: ' + ADDRESSEE_RESERVE + '\n' +
                      'Subject: [venture-maintain] WARNING: Restarting the main Venture server due to non-response (uptime = ' + UPTIME + ')\n' +
                      reason + '\n\n' +
-                     'As a result it has been automatically restarted.\n' +
+                     'As a result it has been automatically restarted.\n\nGenerated: ' + str(datetime.datetime.now()) + '\n' +
                      '" | /usr/sbin/sendmail -f ' + ADDRESSEE_RESERVE + ' ' + ADDRESSEE_RESERVE, shell=True).wait()
 
 def CheckVentureServer():

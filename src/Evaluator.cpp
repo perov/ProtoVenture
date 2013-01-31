@@ -3,6 +3,7 @@
 #include "VentureValues.h"
 #include "Analyzer.h"
 #include "Evaluator.h"
+#include "XRPmem.h"
 
 shared_ptr<VentureValue> Evaluator(shared_ptr<NodeEvaluation> evaluation_node,
                                    shared_ptr<NodeEnvironment> environment,
@@ -39,8 +40,18 @@ shared_ptr<VentureValue> Evaluator(shared_ptr<NodeEvaluation> evaluation_node,
     }
 
     evaluation_node->myorder = caller->myorder;
-    caller->last_child_order++;
-    evaluation_node->myorder.push_back(caller->last_child_order);
+    if (caller->GetNodeType() == XRP_APPLICATION &&
+          dynamic_pointer_cast<NodeXRPApplication>(caller)->xrp->xrp->GetName() == "XRP__memoizer" && 1 == 2)
+    {
+      size_t& my_last_evaluation_id =
+        dynamic_pointer_cast<XRP__memoized_procedure>(dynamic_pointer_cast<VentureXRP>(
+          dynamic_pointer_cast<NodeXRPApplication>(caller)->my_sampled_value)->xrp)->my_last_evaluation_id;
+      // FIXME: lock things for multithread version?
+      evaluation_node->myorder.push_back(std::numeric_limits<size_t>::max());
+    } else {
+      caller->last_child_order++;
+      evaluation_node->myorder.push_back(caller->last_child_order);
+    }
     evaluation_node->parent = caller;
   }
 
@@ -257,6 +268,8 @@ shared_ptr<VentureValue> GetBranchValue(shared_ptr<Node> node) {
       return dynamic_pointer_cast<NodeSelfEvaluating>(node)->value;
     } else if (node->GetNodeType() == XRP_APPLICATION) {
       return dynamic_pointer_cast<NodeXRPApplication>(node)->my_sampled_value;
+    } else if (node->GetNodeType() == LAMBDA_CREATOR) {
+      return dynamic_pointer_cast<NodeLambdaCreator>(node)->returned_value;
     } else {
       throw std::runtime_error("Cannot get the branch value. Unexpected node type.");
     }

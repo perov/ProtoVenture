@@ -109,6 +109,22 @@ def process_sugars(venture_input):
 
 import venture_engine
 
+# distribution_dictionary = {}
+# attempts = 0.0
+# while True:
+  # venture_engine.clear()
+  # venture_engine.assume("draw-type", parse("(CRP/make 1.0)"))
+  # venture_engine.assume("obs", parse("(mem (lambda (type) (symmetric-dirichlet-multinomial/make 0.01 3)))"))
+  # (_, last_value) = venture_engine.predict(parse("(= ((obs (draw-type))) ((obs (draw-type))))"))
+  # print last_value
+  # distribution_dictionary[str(last_value)] = distribution_dictionary.get(str(last_value), 0) + 1
+  # attempts = attempts + 1.0
+  # distribution_as_100 = [(str(x) + " = " + str(distribution_dictionary[x] / attempts)) for x in distribution_dictionary]
+  # print str(attempts) + ': ' + str(distribution_as_100)
+  # print "*"
+  # if attempts == 10000:
+    # sys.exit()
+
 # venture_engine.assume("a", parse("(uniform-continuous r[0.0] r[1.0])"))
 # venture_engine.observe(parse("(normal a r[0.01])"), "r[0.7]")
 
@@ -131,6 +147,11 @@ class lisp_parser_Class:
 lisp_parser = lisp_parser_Class()
     
 MyRIPL = venture_engine
+
+# MyRIPL.clear()
+# MyRIPL.assume("fib", lisp_parser.parse("(mem (lambda (n) (if (int< n 2) n (int+ (if (flip) 1 0) (fib (int- n 1)) (fib (int- n 2))))))"))
+# print "Value" + str(MyRIPL.predict(lisp_parser.parse("(fib 5)")))
+# print MyRIPL.logscore()
 
 # MyRIPL.assume("bb", lisp_parser.parse("(dirichlet-multinomial/make (list 0.5 0.5 0.5))"))
 # (last_directive, _) = MyRIPL.predict(lisp_parser.parse("(= (bb) (bb))"))
@@ -305,7 +326,7 @@ app = flask.Flask(__name__)
 def assume():
   name_str = json.loads(request.form["name_str"])
   expr_lst = json.loads(request.form["expr_lst"])
-  print expr_lst
+  # print expr_lst
   (directive_id, value) = venture_engine.assume(name_str, expr_lst)
   return get_response(json.dumps({"d_id": directive_id,
                                   "val": value}))
@@ -334,15 +355,13 @@ def stop_cont_infer():
   return get_response(json.dumps({"stopped": True}))
   
 @app.route('/cont_infer_status', methods=['GET'])
-def cont_infer_status():
-  # print "Necessary to add additional information!"
+def cont_infer_status(): # print "Necessary to add additional information!"
   if venture_engine.continuous_inference_status():
     return get_response(json.dumps({"status": "on"}))
   else:
     return get_response(json.dumps({"status": "off"}))
   
-# Check for DELETE!
-@app.route('/', methods=['POST'])
+@app.route('/', methods=['POST']) # Check for DELETE!
 def clear():
   venture_engine.clear();
   return get_response(json.dumps({"cleared": True}))
@@ -352,14 +371,18 @@ def report_value(directive_id):
   current_value = venture_engine.report_value(directive_id);
   return get_response(json.dumps({"val": current_value}))
   
+@app.route('/logscore', methods=['GET'])
+def logscore():
+  current_value = venture_engine.logscore();
+  return get_response(json.dumps({"logscore": current_value}))
+  
 @app.route('/', methods=['GET'])
 def report_directives():
   directives = venture_engine.report_directives();
   return get_response(json.dumps(directives))
   
 @app.route('/<int:directive_id>', methods=['POST'])
-# Check for DELETE!
-def forget(directive_id):
+def forget(directive_id): # Check for DELETE!
   venture_engine.forget(directive_id)
   return get_response(json.dumps({"okay": True}))
 
@@ -373,7 +396,6 @@ def infer():
 def special_exception_handler(error):
   print "Error: " + str(error)
   return get_response("Your query has invoked an error:\n" + str(error)), 500
-  
   
 # try:
 app.config['DEBUG'] = False

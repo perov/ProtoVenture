@@ -595,7 +595,8 @@ NodeSelfEvaluating::Evaluate(shared_ptr<NodeEnvironment> environment, Evaluation
 
 shared_ptr<VentureValue>
 NodeLambdaCreator::Evaluate(shared_ptr<NodeEnvironment> environment, EvaluationConfig& evaluation_config) {
-  return shared_ptr<VentureValue>(new VentureLambda(this->arguments, this->expressions, environment));
+  this->returned_value = shared_ptr<VentureValue>(new VentureLambda(this->arguments, this->expressions, environment));
+  return this->returned_value;
 }
 
 shared_ptr<VentureValue>
@@ -839,7 +840,7 @@ NodeApplicationCaller::Reevaluate__TryToRescore(shared_ptr<VentureValue> passing
         CompareValue(passing_value, dynamic_pointer_cast<NodeXRPApplication>(this->application_node)->my_sampled_value)) {
     value_has_changed = false;
   }
- 
+
   shared_ptr<RescorerResamplerResult> result =
     xrp_reference->xrp->RescorerResampler(
       got_old_arguments,
@@ -954,7 +955,14 @@ shared_ptr<ReevaluationResult>
 NodeDirectiveObserve::Reevaluate(shared_ptr<VentureValue> passing_value,
                                  shared_ptr<Node> sender,
                                  shared_ptr<ReevaluationParameters> reevaluation_parameters) {
-  throw std::runtime_error("The OBSERVE directive's node should not be reevaluated.");
+  // throw std::runtime_error("The OBSERVE directive's node should not be reevaluated.");
+  
+  bool forcing_result = ForceExpressionValue(this->expression, this->observed_value, reevaluation_parameters);
+  if (forcing_result == false) {
+    reevaluation_parameters->__unsatisfied_constraint = true;
+  }
+  return shared_ptr<ReevaluationResult>(
+    new ReevaluationResult(shared_ptr<VentureValue>(), false));
 }
 
 void ApplyToMeAndAllMyChildren(shared_ptr<Node> first_node,
@@ -990,6 +998,17 @@ bool Node::WasEvaluated() {
 
 bool NodeEvaluation::WasEvaluated() {
   return this->evaluated;
+}
+
+string NodeEvaluation::__GetLocationAsString() {
+  string return_string;
+  for (size_t index = 0; index < this->myorder.size(); index++) {
+    if (index > 0) {
+      return_string += ":";
+    }
+    return_string += boost::lexical_cast<string>(myorder[index]);
+  }
+  return return_string;
 }
 
 void DrawGraphDuringMH(shared_ptr<Node> first_node, stack< shared_ptr<Node> >& touched_nodes) {

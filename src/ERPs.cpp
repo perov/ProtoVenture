@@ -61,11 +61,13 @@ real ERP__Normal::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& ar
     average = arguments[0]->GetReal();
     VentureSmoothedCount::CheckMyData(arguments[1].get());
     sigma = arguments[1]->GetReal();
-    double likelihood =
-           gsl_ran_gaussian_pdf(ToVentureType<VentureReal>(sampled_value)->GetReal() - // Should be ToVentureType<VentureReal>(sampled_value) in a good way.
-                                  average,
-                                sigma);
-    return log(likelihood);
+    //double likelihood =
+    //       gsl_ran_gaussian_pdf(ToVentureType<VentureReal>(sampled_value)->GetReal() - // Should be ToVentureType<VentureReal>(sampled_value) in a good way.
+    //                              average,
+    //                            sigma);
+    //return log(likelihood);
+    real sampled_value_real = ToVentureType<VentureReal>(sampled_value)->GetReal();
+    return NormalDistributionLoglikelihood(sampled_value_real, average, sigma);
   } else {
     throw std::runtime_error("Wrong number of arguments.");
   }
@@ -125,6 +127,43 @@ shared_ptr<VentureValue> ERP__Beta::Sampler(vector< shared_ptr<VentureValue> >& 
   }
 }
 string ERP__Beta::GetName() { return "ERP__Beta"; }
+
+real ERP__Gamma::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
+                                shared_ptr<VentureValue> sampled_value) {
+  real alpha;
+  real beta;
+  if (arguments.size() == 2) {
+    VentureSmoothedCount::CheckMyData(arguments[0].get());
+    alpha = arguments[0]->GetReal();
+    VentureSmoothedCount::CheckMyData(arguments[1].get());
+    beta = arguments[1]->GetReal();
+    double likelihood =
+           gsl_ran_gamma_pdf(ToVentureType<VentureReal>(sampled_value)->GetReal(),
+                             alpha,
+                             1.0 / beta);
+    return log(likelihood);
+  } else {
+    throw std::runtime_error("Wrong number of arguments.");
+  }
+}
+shared_ptr<VentureValue> ERP__Gamma::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+  real alpha;
+  real beta;
+  if (arguments.size() == 2) {
+    VentureSmoothedCount::CheckMyData(arguments[0].get());
+    alpha = arguments[0]->GetReal();
+    VentureSmoothedCount::CheckMyData(arguments[1].get());
+    beta = arguments[1]->GetReal();
+    double random_value =
+           gsl_ran_gamma(random_generator,
+                         alpha,
+                         1.0 / beta);
+    return shared_ptr<VentureReal>(new VentureReal(random_value));
+  } else {
+    throw std::runtime_error("Wrong number of arguments.");
+  }
+}
+string ERP__Gamma::GetName() { return "ERP__Gamma"; }
 
 real ERP__UniformDiscrete::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
                                  shared_ptr<VentureValue> sampled_value) {

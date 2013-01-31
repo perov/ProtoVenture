@@ -29,6 +29,8 @@ PyMethodDef MethodsForPythons[] = {
      "... Write description ..."},
     {"draw_graph_to_file", ForPython__draw_graph_to_file, METH_VARARGS,
      "... Write description ..."},
+    {"logscore", ForPython__logscore, METH_VARARGS,
+     "... Write description ..."},
     {NULL, NULL, 0, NULL}
 };
 
@@ -404,4 +406,20 @@ ForPython__draw_graph_to_file(PyObject *self, PyObject *args) // FIXME: deprecat
 
   cout << "Finishing to deal with OBSERVE" << endl;
   return Py_BuildValue("i", static_cast<int>(0)); // FIXME: something wiser.
+} catch(handling_python_error&) { return NULL; } catch(std::runtime_error& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }
+
+PyObject*
+ForPython__logscore(PyObject *self, PyObject *args) // FIXME: deprecated?
+{ try {
+  PauseInference();
+  if(!PyArg_ParseTuple(args, ":logscore"))
+  {
+    PyErr_SetString(PyExc_TypeError, "logscore: wrong arguments.");
+    return NULL; // ReturnInferenceIfNecessary(); ?
+  }
+  double logscore = GetLogscoreOfAllDirectives();
+  ReturnInferenceIfNecessary();
+
+  cout << "Finishing to deal with OBSERVE" << endl;
+  return Py_BuildValue("d", logscore); // FIXME: something wiser.
 } catch(handling_python_error&) { return NULL; } catch(std::runtime_error& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }
