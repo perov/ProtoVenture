@@ -31,6 +31,14 @@ PyMethodDef MethodsForPythons[] = {
      "... Write description ..."},
     {"logscore", ForPython__logscore, METH_VARARGS,
      "... Write description ..."},
+#ifdef _VENTURE_USE_GOOGLE_PROFILER
+    {"_start_profiler", ForPython___start_profiler, METH_VARARGS,
+     "... Write description ..."},
+    {"_stop_profiler", ForPython___stop_profiler, METH_VARARGS,
+     "... Write description ..."},
+#endif
+    {"_exit", ForPython___exit, METH_VARARGS,
+     "... Write description ..."},
     {NULL, NULL, 0, NULL}
 };
 
@@ -227,7 +235,7 @@ ForPython__forget(PyObject *self, PyObject *args)
     return NULL; // ReturnInferenceIfNecessary(); ?
   }
   ForgetDirective(directive_id);
-  cout << "Have forgotten" << endl << endl;
+  //cout << "Have forgotten" << endl << endl;
   ReturnInferenceIfNecessary();
   Py_INCREF(Py_None);
   return Py_None;
@@ -363,7 +371,7 @@ PyObject*
 ForPython__observe(PyObject *self, PyObject *args)
 { try {
   PauseInference();
-  cout << "Starting to deal with OBSERVE" << endl;
+  //cout << "Starting to deal with OBSERVE" << endl;
   shared_ptr<VentureValue> expression;
   shared_ptr<VentureValue> literal_value;
   if(!PyArg_ParseTuple(args, "O&O&:observe",
@@ -373,10 +381,10 @@ ForPython__observe(PyObject *self, PyObject *args)
     PyErr_SetString(PyExc_TypeError, "observe: wrong arguments.");
     return NULL; // ReturnInferenceIfNecessary(); ?
   }
-  cout << "OBSERVE IS HERE" << endl;
+  //cout << "OBSERVE IS HERE" << endl;
   string directive_string_representation = "OBSERVE " + expression->GetString() + " " + literal_value->GetString();
-  cout << literal_value->GetType() << endl;
-  cout << directive_string_representation << endl;
+  //cout << literal_value->GetType() << endl;
+  //cout << directive_string_representation << endl;
   size_t directive_id =
     ExecuteDirective(directive_string_representation,
                       shared_ptr<NodeEvaluation>(new NodeDirectiveObserve(AnalyzeExpression(expression), literal_value)));
@@ -387,7 +395,7 @@ ForPython__observe(PyObject *self, PyObject *args)
   //stack< shared_ptr<Node> > tmp;
   //DrawGraphDuringMH(GetLastDirectiveNode(), tmp);
 
-  cout << "Finishing to deal with OBSERVE" << endl;
+  //cout << "Finishing to deal with OBSERVE" << endl;
   return returning_python_object;
 } catch(handling_python_error&) { return NULL; } catch(std::runtime_error& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }
   
@@ -404,7 +412,7 @@ ForPython__draw_graph_to_file(PyObject *self, PyObject *args) // FIXME: deprecat
   DrawGraphDuringMH(GetLastDirectiveNode(), tmp);
   ReturnInferenceIfNecessary();
 
-  cout << "Finishing to deal with OBSERVE" << endl;
+  //cout << "Finishing to deal with OBSERVE" << endl;
   return Py_BuildValue("i", static_cast<int>(0)); // FIXME: something wiser.
 } catch(handling_python_error&) { return NULL; } catch(std::runtime_error& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }
 
@@ -420,6 +428,41 @@ ForPython__logscore(PyObject *self, PyObject *args) // FIXME: deprecated?
   double logscore = GetLogscoreOfAllDirectives();
   ReturnInferenceIfNecessary();
 
-  cout << "Finishing to deal with OBSERVE" << endl;
+  //cout << "Finishing to deal with OBSERVE" << endl;
   return Py_BuildValue("d", logscore); // FIXME: something wiser.
+} catch(handling_python_error&) { return NULL; } catch(std::runtime_error& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }
+
+#ifdef _VENTURE_USE_GOOGLE_PROFILER
+PyObject*
+ForPython___start_profiler(PyObject *self, PyObject *args)
+{ try {
+  if(!PyArg_ParseTuple(args, ":_start_profiler"))
+  {
+    PyErr_SetString(PyExc_TypeError, "_start_profiler: wrong arguments.");
+    return NULL; // ReturnInferenceIfNecessary(); ?
+  }
+  ProfilerStart("profiler_result.txt");
+} catch(handling_python_error&) { return NULL; } catch(std::runtime_error& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }
+PyObject*
+ForPython___stop_profiler(PyObject *self, PyObject *args)
+{ try {
+  if(!PyArg_ParseTuple(args, ":_stop_profiler"))
+  {
+    PyErr_SetString(PyExc_TypeError, "_stop_profiler: wrong arguments.");
+    return NULL; // ReturnInferenceIfNecessary(); ?
+  }
+  ProfilerStop();
+} catch(handling_python_error&) { return NULL; } catch(std::runtime_error& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }
+#endif
+
+PyObject*
+ForPython___exit(PyObject *self, PyObject *args)
+{ try {
+  if(!PyArg_ParseTuple(args, ":_exit"))
+  {
+    PyErr_SetString(PyExc_TypeError, "_exit: wrong arguments.");
+    return NULL; // ReturnInferenceIfNecessary(); ?
+  }
+
+  exit(0);
 } catch(handling_python_error&) { return NULL; } catch(std::runtime_error& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }

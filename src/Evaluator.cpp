@@ -179,7 +179,7 @@ bool ForceExpressionValue(shared_ptr<Node> node, shared_ptr<VentureValue> desire
       }
     } else if (node->GetNodeType() == XRP_APPLICATION) {
       shared_ptr<NodeXRPApplication> node2 = dynamic_pointer_cast<NodeXRPApplication>(node);
-      random_choices.erase(node2); // FIXME: it is not right, if we are in MH.
+      DeleteRandomChoices(node2); // FIXME: it is not right, if we are in MH.
       if (CompareValue(node2->my_sampled_value, desired_value)) {
         if (node2->forced_by_observations == true) {
           throw std::runtime_error("Sorry, still does not support forcing the same value from several observations.");
@@ -236,7 +236,7 @@ void UnforceExpressionValue(shared_ptr<Node> node) {
       assert(node2->forced_by_observations == true);
       node2->forced_by_observations = false;
       if (node2->xrp->xrp->IsRandomChoice()) { // Silly?
-        random_choices.insert(node2);
+        AddToRandomChoices(node2);
       }
       vector< shared_ptr<VentureValue> > got_arguments = GetArgumentsFromEnvironment(node2->environment, // Not efficient?
                                       dynamic_pointer_cast<NodeEvaluation>(node2),

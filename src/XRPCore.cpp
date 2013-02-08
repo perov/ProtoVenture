@@ -52,7 +52,7 @@ XRP::Sample(vector< shared_ptr<VentureValue> >& arguments,
   evaluation_config.__log_unconstrained_score += loglikelihood;
 
   if (this->IsRandomChoice() == true && evaluation_config.in_proposal == false) {
-    random_choices.insert(dynamic_pointer_cast<NodeXRPApplication>(caller->shared_from_this()));
+    AddToRandomChoices(dynamic_pointer_cast<NodeXRPApplication>(caller->shared_from_this()));
   }
   
   //Debug// cout << "Incorporate from " << caller << endl;

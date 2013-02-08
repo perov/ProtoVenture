@@ -7,12 +7,18 @@
 
 from distutils.core import setup, Extension
 
+venture_libraries = ['gsl', 'gslcblas', 'pthread', 'boost_system', 'boost_thread', 'profiler']
+venture_extra_compile_args = ['-O2']
+
+# venture_libraries += ['profiler']
+# venture_extra_compile_args += ['-D_VENTURE_USE_GOOGLE_PROFILER']
+
 module1 = Extension('venture_engine',
                     define_macros = [('MAJOR_VERSION', '1'),
                                      ('MINOR_VERSION', '0')],
                     include_dirs = ['/usr/include/python2.6', '/home/ec2-user/boost_1_52_0', '/root/boost_1_52_0'],
-                    libraries = ['gsl', 'gslcblas', 'pthread', 'boost_system', 'boost_thread'],
-                    extra_compile_args = ['-O2'],
+                    libraries = venture_libraries,
+                    extra_compile_args = venture_extra_compile_args,
                     #library_dirs = ['/usr/local/lib'],
                     sources = ['Utilities.cpp', 'VentureValues.cpp', 'VentureParser.cpp', 'Primitives.cpp', 'Evaluator.cpp', 'Main.cpp', 'XRPCore.cpp', 'XRPmem.cpp', 'XRPs.cpp', 'RIPL.cpp', 'Analyzer.cpp', 'ERPs.cpp', 'MHProposal.cpp', 'PythonProxy.cpp'])
 #-lpython2.6 -lgsl -lgslcblas

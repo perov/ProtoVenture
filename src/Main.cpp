@@ -22,6 +22,7 @@
 shared_ptr<VentureList> const NIL_INSTANCE = shared_ptr<VentureList>(new VentureNil());
 gsl_rng* random_generator = 0;
 set< weak_ptr<NodeXRPApplication> > random_choices;
+vector< set< weak_ptr<NodeXRPApplication> >::iterator > random_choices_vector;
 size_t DIRECTIVE_COUNTER = 0;
 
 shared_ptr<NodeEnvironment> global_environment;

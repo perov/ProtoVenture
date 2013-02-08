@@ -8,6 +8,7 @@
 
 struct NodeXRPApplication;
 extern set< weak_ptr<NodeXRPApplication> > random_choices;
+extern vector< set< weak_ptr<NodeXRPApplication> >::iterator > random_choices_vector;
 extern int next_gensym_atom;
 
 struct RescorerResamplerResult {

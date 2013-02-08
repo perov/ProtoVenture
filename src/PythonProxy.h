@@ -65,6 +65,16 @@ ForPython__draw_graph_to_file(PyObject *self, PyObject *args);
 PyObject*
 ForPython__logscore(PyObject *self, PyObject *args);
 
+#ifdef _VENTURE_USE_GOOGLE_PROFILER
+PyObject*
+ForPython___start_profiler(PyObject *self, PyObject *args);
+PyObject*
+ForPython___stop_profiler(PyObject *self, PyObject *args);
+#endif
+
+PyObject*
+ForPython___exit(PyObject *self, PyObject *args);
+
 extern PyMethodDef MethodsForPythons[];
 
 #endif

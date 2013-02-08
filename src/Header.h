@@ -67,6 +67,13 @@ extern gsl_rng* random_generator;
 
 #include <boost/thread.hpp>
 
+// #include "avl_array/avl_array.hpp"
+// using namespace mkr;
+
+#ifdef _VENTURE_USE_GOOGLE_PROFILER
+#include "google/profiler.h"
+#endif
+
 #include "Utilities.h"
 
 #endif

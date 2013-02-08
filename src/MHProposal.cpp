@@ -46,7 +46,7 @@ void DeleteNode(shared_ptr<Node> node, bool old_values) {
       dynamic_pointer_cast<NodeXRPApplication>(node)->xrp->xrp->Unsampler(old_arguments, dynamic_pointer_cast<NodeXRPApplication>(node));
 
       if (dynamic_pointer_cast<NodeXRPApplication>(node)->xrp->xrp->IsRandomChoice() == true) {
-        random_choices.erase(dynamic_pointer_cast<NodeXRPApplication>(node->shared_from_this()));
+        GetSizeOfRandomChoices(dynamic_pointer_cast<NodeXRPApplication>(node->shared_from_this()));
       }
       */
     }
@@ -93,7 +93,7 @@ MHProposalResults MakeMHProposal(shared_ptr<NodeXRPApplication> principal_node, 
   this_proposal.proposal_unique_id = proposal_unique_id; // FIXME: through constructor
   this_proposal.request_to_terminate = false; // FIXME: through constructor
   
-  size_t number_of_random_choices = random_choices.size();
+  size_t number_of_random_choices = GetSizeOfRandomChoices();
   if (number_of_random_choices == 0) {
     return MHProposalResults(0.0); // There is no random choices in the trace.
   }
@@ -101,10 +101,10 @@ MHProposalResults MakeMHProposal(shared_ptr<NodeXRPApplication> principal_node, 
   shared_ptr<NodeXRPApplication> random_choice;
 
   if (principal_node == shared_ptr<NodeXRPApplication>()) {
-    set< weak_ptr<NodeXRPApplication> >::iterator iterator = random_choices.begin();
-    int random_choice_id = UniformDiscrete(0, number_of_random_choices - 1);
-    std::advance(iterator, random_choice_id);
-    random_choice = (*iterator).lock(); // FIXME: Should be NodeEvaluation?
+    // set< weak_ptr<NodeXRPApplication> >::iterator iterator = random_choices.begin();
+    // int random_choice_id = UniformDiscrete(0, number_of_random_choices - 1);
+    // std::advance(iterator, random_choice_id);
+    random_choice = GetRandomRandomChoice(); // FIXME: Should be NodeEvaluation?
 
     //if (random_choice->xrp->xrp->CouldBeEnumerated()) {
     //  Enumerate(random_choice);
@@ -160,7 +160,7 @@ MHProposalResults MakeMHProposal(shared_ptr<NodeXRPApplication> principal_node, 
       std::find(GetStackContainer(touched_nodes).begin(), GetStackContainer(touched_nodes).end(), current_reevaluation.reevaluation_node);
     if (!(already_existent_element == GetStackContainer(touched_nodes).end())) {
       int distance = std::distance(GetStackContainer(touched_nodes).begin(), already_existent_element);
-      cout << "Pam: " << distance << endl;
+      //cout << "Pam: " << distance << endl;
       DrawGraphDuringMH(GetLastDirectiveNode(), touched_nodes);
     }
 #endif
@@ -366,13 +366,13 @@ MHProposalResults MakeMHProposal(shared_ptr<NodeXRPApplication> principal_node, 
          iterator != deleting_random_choices.end();
          iterator++) {
       //assert(creating_random_choices.count(*iterator) == 0);
-      random_choices.erase(*iterator);
+      DeleteRandomChoices(*iterator);
     }
     for (set< shared_ptr<NodeXRPApplication> >::const_iterator iterator = creating_random_choices.begin();
          iterator != creating_random_choices.end();
          iterator++) {
       //assert(deleting_random_choices.count(*iterator) == 0);
-      random_choices.insert(*iterator);
+      AddToRandomChoices(*iterator);
     }
   }
 

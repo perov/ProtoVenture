@@ -32,7 +32,7 @@ real ERP__Flip::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& argu
       return log(1.0 - weight);
     }
   } else {
-    cout << " " << sampled_value << endl;
+    //cout << " " << sampled_value << endl;
     throw std::runtime_error("Wrong value.");
   }
 }
@@ -264,7 +264,7 @@ real ERP__NoisyNegate::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> 
       return log(weight);
     }
   } else {
-    cout << " " << sampled_value << endl;
+    //cout << " " << sampled_value << endl;
     throw std::runtime_error("Wrong value.");
   }
 }

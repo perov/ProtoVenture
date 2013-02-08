@@ -83,7 +83,7 @@ class XRP__DirichletMultinomial_sampler : public XRP {
                                 shared_ptr<VentureValue>);
   virtual void Remove(vector< shared_ptr<VentureValue> >&,
                            shared_ptr<VentureValue>);
-  real GetSumOfStatistics();
+  // real GetSumOfStatistics();
 
 public:
   virtual bool IsRandomChoice();
@@ -93,6 +93,7 @@ public:
   virtual set< shared_ptr<VentureValue> > EnumeratingSupport();
 
   vector<real> statistics;
+  real sum_of_statistics;
 };
 
 #endif

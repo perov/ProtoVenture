@@ -268,6 +268,8 @@ struct NodeXRPApplication : public NodeEvaluation {
   
   shared_ptr<VentureValue> my_sampled_value; // FIXME: Should be called "sampled_value".
   bool forced_by_observations;
+
+  size_t location_in_random_choices;
   
   virtual void DeleteNode();
 };
@@ -297,5 +299,11 @@ void CopyLocalEnvironmentByContent
   (shared_ptr<NodeEnvironment> existing_environment,
    shared_ptr<NodeEnvironment> new_environment,
    vector< shared_ptr<NodeEvaluation> > binding_nodes);
+
+void AddToRandomChoices(weak_ptr<NodeXRPApplication> random_choice);
+void DeleteRandomChoices(weak_ptr<NodeXRPApplication> random_choice, size_t index = 0);
+size_t GetSizeOfRandomChoices();
+void ClearRandomChoices();
+shared_ptr<NodeXRPApplication> GetRandomRandomChoice();
 
 #endif

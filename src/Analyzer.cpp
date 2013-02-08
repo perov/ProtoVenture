@@ -406,7 +406,7 @@ void NodeApplicationCaller::GetChildren(queue< shared_ptr<Node> >& processing_qu
     if (application_node.get() == 0) {
       stack< shared_ptr<Node> > tmp;
       tmp.push(dynamic_pointer_cast<Node>(this->shared_from_this()));
-      cout << this->evaluated << endl;
+      //cout << this->evaluated << endl;
       assert(false);
       DrawGraphDuringMH(GetLastDirectiveNode(), tmp);
       assert(false);
@@ -453,7 +453,7 @@ void NodeXRPApplication::DeleteNode() {
   this->xrp->xrp->Unsampler(old_arguments, this->weak_ptr_to_me);
 
   if (this->xrp->xrp->IsRandomChoice() == true) {
-    random_choices.erase(this->weak_ptr_to_me);
+    DeleteRandomChoices(this->weak_ptr_to_me, this->location_in_random_choices);
   }
 }
 
@@ -564,7 +564,7 @@ NodeDirectivePredict::Evaluate(shared_ptr<NodeEnvironment> environment, Evaluati
                    dynamic_pointer_cast<NodeEvaluation>(this->shared_from_this()),
                    evaluation_config,
                    "");
-   cout << this->my_value->GetString() << "$" << endl;
+   //cout << this->my_value->GetString() << "$" << endl;
    return this->my_value;
 }
 
@@ -1083,4 +1083,44 @@ void DrawGraphDuringMH(shared_ptr<Node> first_node, stack< shared_ptr<Node> >& t
 
   cout << "The graph has been written" << endl;
 #endif
+}
+
+void AddToRandomChoices(weak_ptr<NodeXRPApplication> random_choice) {
+  pair< set< weak_ptr<NodeXRPApplication> >::iterator, bool > result = random_choices.insert(random_choice);
+  if (result.second == true) { // New element has been inserted.
+    random_choices_vector.push_back(result.first);
+    random_choice.lock()->location_in_random_choices = random_choices_vector.size() - 1; // FIXME: not multithread safe!
+  }
+}
+void DeleteRandomChoices(weak_ptr<NodeXRPApplication> random_choice, size_t index) {
+  size_t number_of_erased_elements = random_choices.erase(random_choice);
+  if (number_of_erased_elements == 1) {
+    // FIXME: not multithread safe!
+    if (random_choice.lock()) {
+      random_choices_vector.back()->lock()->location_in_random_choices = random_choice.lock()->location_in_random_choices;
+      random_choices_vector[random_choice.lock()->location_in_random_choices] = random_choices_vector.back();
+    } else {
+      // Assuming that index is provided.
+      if (index + 1 != random_choices_vector.size()) {
+        random_choices_vector.back()->lock()->location_in_random_choices = index;
+        random_choices_vector[index] = random_choices_vector.back();
+      }
+    }
+    random_choices_vector.pop_back();
+  }
+}
+size_t GetSizeOfRandomChoices() {
+  return random_choices.size();
+}
+void ClearRandomChoices() {
+  random_choices.clear();
+  random_choices_vector.clear();
+}
+shared_ptr<NodeXRPApplication> GetRandomRandomChoice() {
+//  set< weak_ptr<NodeXRPApplication> >::iterator iterator = random_choices.begin();
+//  int random_choice_id = UniformDiscrete(0, GetSizeOfRandomChoices() - 1);
+//  std::advance(iterator, random_choice_id);
+//  return (*iterator).lock();
+  int random_choice_id = UniformDiscrete(0, GetSizeOfRandomChoices() - 1);
+  return random_choices_vector[random_choice_id]->lock();
 }

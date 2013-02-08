@@ -123,6 +123,8 @@ shared_ptr<VentureValue> XRP__SymmetricDirichletMultinomial_maker::Sampler(vecto
   // Should be done on the line above (through the XRP__DirichletMultinomial_sampler constructor!):
   dynamic_pointer_cast<XRP__DirichletMultinomial_sampler>(new_xrp)->statistics =
     vector<real>(arguments[1]->GetInteger(), arguments[0]->GetReal());
+  dynamic_pointer_cast<XRP__DirichletMultinomial_sampler>(new_xrp)->sum_of_statistics =
+    arguments[0]->GetReal() * arguments[1]->GetInteger();
 
   return shared_ptr<VentureXRP>(new VentureXRP(new_xrp));
 }
@@ -155,9 +157,12 @@ shared_ptr<VentureValue> XRP__DirichletMultinomial_maker::Sampler(vector< shared
     throw std::runtime_error("The dimensionality should be >= 2.");
   }
   shared_ptr<XRP> new_xrp = shared_ptr<XRP>(new XRP__DirichletMultinomial_sampler());
+  dynamic_pointer_cast<XRP__DirichletMultinomial_sampler>(new_xrp)->sum_of_statistics = 0.0;
   // Should be done on the line above (through the XRP__DirichletMultinomial_sampler constructor!):
   while (list != NIL_INSTANCE) {
-    dynamic_pointer_cast<XRP__DirichletMultinomial_sampler>(new_xrp)->statistics.push_back(list->car->GetReal());
+    real new_element = list->car->GetReal();
+    dynamic_pointer_cast<XRP__DirichletMultinomial_sampler>(new_xrp)->statistics.push_back(new_element);
+    dynamic_pointer_cast<XRP__DirichletMultinomial_sampler>(new_xrp)->sum_of_statistics += new_element;
     list = GetNext(list);
   }
   return shared_ptr<VentureXRP>(new VentureXRP(new_xrp));
@@ -180,6 +185,7 @@ bool XRP__DirichletMultinomial_maker::CouldBeRescored() { return false; }
 string XRP__DirichletMultinomial_maker::GetName() { return "XRP__DirichletMultinomial_maker"; }
 
 // DirichletMultinomial_sampler
+/*
 real XRP__DirichletMultinomial_sampler::GetSumOfStatistics() {
   real sum_of_statistics = 0.0;
   for (size_t index = 0; index < this->statistics.size(); index++) {
@@ -187,12 +193,13 @@ real XRP__DirichletMultinomial_sampler::GetSumOfStatistics() {
   }
   return sum_of_statistics;
 }
+*/
 shared_ptr<VentureValue> XRP__DirichletMultinomial_sampler::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
   if (arguments.size() != 0) {
     throw std::runtime_error("Wrong number of arguments.");
   }
   double random_uniform_0_1 = gsl_ran_flat(random_generator, 0, 1);
-  real sum_of_statistics = this->GetSumOfStatistics();
+  //real sum_of_statistics = this->GetSumOfStatistics();
   double accumulated_probability = 0.0;
   for (size_t index = 0; index < this->statistics.size(); index++) {
     accumulated_probability += this->statistics[index] / sum_of_statistics;
@@ -210,18 +217,20 @@ shared_ptr<VentureValue> XRP__DirichletMultinomial_sampler::Sampler(vector< shar
 real XRP__DirichletMultinomial_sampler::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
                                       shared_ptr<VentureValue> sampled_value) {
   assert(sampled_value->GetInteger() < this->statistics.size());
-  return log(this->statistics[sampled_value->GetInteger()]) - log(this->GetSumOfStatistics());
+  return log(this->statistics[sampled_value->GetInteger()]) - log(this->sum_of_statistics);
 }
 
 void XRP__DirichletMultinomial_sampler::Incorporate(vector< shared_ptr<VentureValue> >& arguments,
                               shared_ptr<VentureValue> sampled_value) {
   assert(sampled_value->GetInteger() < this->statistics.size());
+  this->sum_of_statistics++;
   this->statistics[sampled_value->GetInteger()]++;
 }
 
 void XRP__DirichletMultinomial_sampler::Remove(vector< shared_ptr<VentureValue> >& arguments,
                           shared_ptr<VentureValue> sampled_value) {
   assert(sampled_value->GetInteger() < this->statistics.size());
+  this->sum_of_statistics--;
   this->statistics[sampled_value->GetInteger()]--;
   assert(this->statistics[sampled_value->GetInteger()] > 0.0);
 }
