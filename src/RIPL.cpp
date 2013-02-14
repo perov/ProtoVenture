@@ -135,19 +135,10 @@ void ForgetDirective(size_t directive_id) {
   } else {
     // Check for ASSUME.
     // DeleteBranch(directives[directive_id].directive_node, false);
-    weak_ptr<NodeEvaluation> for_observe;
     if (directives[directive_id].directive_node->GetNodeType() == DIRECTIVE_OBSERVE) {
-      UnforceExpressionValue(directives[directive_id].directive_node);
+      UnconstrainBranch(directives[directive_id].directive_node);
     }
     directives.erase(directive_id);
-    if (directives[directive_id].directive_node->GetNodeType() == DIRECTIVE_OBSERVE) {
-      if (for_observe.lock()) {
-        shared_ptr<NodeDirectiveObserve> fake_observe_node =
-          shared_ptr<NodeDirectiveObserve>(new NodeDirectiveObserve(shared_ptr<NodeEvaluation>(), shared_ptr<VentureValue>()));
-        bool unsatisfied_constraint = PropagateForObserve(fake_observe_node, dynamic_pointer_cast<NodeXRPApplication>(for_observe.lock()));
-        assert(unsatisfied_constraint == false);
-      }
-    }
   }
 }
 

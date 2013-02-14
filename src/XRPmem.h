@@ -50,9 +50,6 @@ class XRP__memoized_procedure : public XRP { // So called "mem-sampler".
                                 shared_ptr<VentureValue>);
   virtual void Remove(vector< shared_ptr<VentureValue> >&,
                            shared_ptr<VentureValue>);
-  pair<bool, shared_ptr<NodeEvaluation> > ForceValue(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<VentureValue> desired_value, shared_ptr<ReevaluationParameters> reevaluation_parameters, shared_ptr<NodeXRPApplication> caller);
-  weak_ptr<NodeEvaluation> UnforceValue(vector< shared_ptr<VentureValue> >& arguments, weak_ptr<NodeEvaluation> caller);
-
 
 public:
   XRP__memoized_procedure();

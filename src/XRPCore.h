@@ -45,9 +45,24 @@ struct OmitPattern {
                                // and make the code more accurate.
 };
 
+struct ReevaluationOrderComparer;
+struct Node;
+struct ProposalInfo;
+struct OmitPattern;
+
 struct ReevaluationParameters : public boost::enable_shared_from_this<ReevaluationParameters> {
-  ReevaluationParameters(shared_ptr<NodeXRPApplication> principal_node);
+  ReevaluationParameters::ReevaluationParameters
+  (shared_ptr<NodeXRPApplication> principal_node,
+   set<ReevaluationEntry,
+       ReevaluationOrderComparer>& reevaluation_queue,
+   stack< shared_ptr<Node> >& touched_nodes,
+   vector< shared_ptr<Node> >& touched_nodes2,
+   ProposalInfo& this_proposal,
+   stack<OmitPattern>& omit_patterns);
+  real __log_p_old;
+  real __log_p_new;
   real __log_q_from_old_to_new;
+  real __log_q_from_new_to_old;
   bool __unsatisfied_constraint;
   shared_ptr<NodeXRPApplication> principal_node;
   
@@ -56,6 +71,16 @@ struct ReevaluationParameters : public boost::enable_shared_from_this<Reevaluati
   shared_ptr<VentureValue> proposing_value_for_this_proposal;
   shared_ptr< map<string, shared_ptr<VentureValue> > > random_database;
   bool forcing_not_collecting;
+  
+  set<ReevaluationEntry,
+      ReevaluationOrderComparer>& reevaluation_queue;
+  stack< shared_ptr<Node> >& touched_nodes;
+  vector< shared_ptr<Node> >& touched_nodes2;
+  ProposalInfo& this_proposal;
+  stack<OmitPattern>& omit_patterns;
+  
+  set< shared_ptr<NodeXRPApplication> > creating_random_choices;
+  set< shared_ptr<NodeXRPApplication> > deleting_random_choices;
 };
 
 struct EvaluationConfig;
@@ -68,9 +93,7 @@ public: // Should be private.
                                 shared_ptr<VentureValue>);
   virtual void Remove(vector< shared_ptr<VentureValue> >&,
                            shared_ptr<VentureValue>);
-  virtual pair<bool, shared_ptr<NodeEvaluation> > ForceValue(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<VentureValue> desired_value, shared_ptr<ReevaluationParameters> reevaluation_parameters, shared_ptr<NodeXRPApplication> caller);
-  virtual weak_ptr<NodeEvaluation> UnforceValue(vector< shared_ptr<VentureValue> >& arguments, weak_ptr<NodeEvaluation> caller);
-
+                           
 public:
   //XRP(shared_ptr<XRP> maker) : maker(maker) {}
   XRP();

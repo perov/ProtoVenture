@@ -51,6 +51,8 @@ struct Node : public VentureValue {
 
   bool was_deleted;
 
+  size_t constraint_times;
+  
   string comment;
   
   // boost::mutex occupying_mutex;
@@ -112,8 +114,6 @@ struct NodeEvaluation : public Node {
   size_t last_child_order;
 
   string node_key;
-
-  size_t constraint_times; // Temporarily here. Should be in separate struct!
   
   virtual void DeleteNode();
 };

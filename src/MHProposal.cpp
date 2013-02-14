@@ -87,14 +87,8 @@ void TouchNode(shared_ptr<Node> node, stack< shared_ptr<Node> >& touched_nodes, 
 
 void AddToReevaluationQueue
 (ReevaluationEntry& current_reevaluation,
- set<ReevaluationEntry,
-   ReevaluationOrderComparer>& reevaluation_queue,
- stack< shared_ptr<Node> >& touched_nodes,
- vector< shared_ptr<Node> >& touched_nodes2,
- ProposalInfo& this_proposal,
- shared_ptr<ReevaluationResult>& reevaluation_result,
- shared_ptr<ReevaluationParameters>& reevaluation_parameters,
- stack<OmitPattern>& omit_patterns)
+ shared_ptr<ReevaluationResult> reevaluation_result,
+ shared_ptr<ReevaluationParameters> reevaluation_parameters)
 {
   if (current_reevaluation.reevaluation_node->GetNodeType() == DIRECTIVE_OBSERVE) {
     current_reevaluation.reevaluation_node = dynamic_pointer_cast<NodeEvaluation>(reevaluation_result->passing_value);
@@ -106,10 +100,11 @@ void AddToReevaluationQueue
   if (current_reevaluation.reevaluation_node->GetNodeType() == XRP_APPLICATION) {
     if (dynamic_pointer_cast<NodeXRPApplication>(current_reevaluation.reevaluation_node)->xrp->xrp->GetName() ==
           "XRP__memoized_procedure") {
-      reevaluation_queue.erase(ReevaluationEntry(dynamic_pointer_cast<NodeEvaluation>(current_reevaluation.reevaluation_node),
-                                                  shared_ptr<NodeEvaluation>(),
-                                                  shared_ptr<VentureValue>(),
-                                                  REEVALUATION_PRIORITY__STANDARD));
+      reevaluation_parameters->
+        reevaluation_queue.erase(ReevaluationEntry(dynamic_pointer_cast<NodeEvaluation>(current_reevaluation.reevaluation_node),
+                                                   shared_ptr<NodeEvaluation>(),
+                                                   shared_ptr<VentureValue>(),
+                                                   REEVALUATION_PRIORITY__STANDARD));
     }
   }
 
@@ -120,10 +115,10 @@ void AddToReevaluationQueue
     assert(iterator->expired() == false);
     if (iterator->lock()->GetNodeType() == VARIABLE) {
 #ifdef _MSC_VER // This IF should be removed. It is here only because the GetQueueContainer returns not the deque in Unix?
-      assert(std::find(GetStackContainer(touched_nodes).begin(), GetStackContainer(touched_nodes).end(), iterator->lock())
-        == GetStackContainer(touched_nodes).end());
+      assert(std::find(GetStackContainer(reevaluation_parameters->touched_nodes).begin(), GetStackContainer(reevaluation_parameters->touched_nodes).end(), iterator->lock())
+        == GetStackContainer(reevaluation_parameters->touched_nodes).end());
 #endif
-      TouchNode(iterator->lock(), touched_nodes, touched_nodes2, this_proposal);
+      TouchNode(iterator->lock(), reevaluation_parameters->touched_nodes, reevaluation_parameters->touched_nodes2, reevaluation_parameters->this_proposal);
       // assert(reevaluation_result->passing_value != shared_ptr<VentureValue>());
       dynamic_pointer_cast<NodeVariable>(iterator->lock())->Reevaluate(reevaluation_result->passing_value,
                                                                         current_reevaluation.reevaluation_node,
@@ -141,10 +136,10 @@ void AddToReevaluationQueue
         } else {
           tmp_passing_value = shared_ptr<VentureValue>();
         }
-        reevaluation_queue.insert(ReevaluationEntry(dynamic_pointer_cast<NodeEvaluation>(variable_iterator->lock()),
-                                                    current_reevaluation.caller, // Or just NULL?
-                                                    tmp_passing_value, // Or also just NULL?
-                                                    REEVALUATION_PRIORITY__STANDARD - 1));
+        reevaluation_parameters->reevaluation_queue.insert(ReevaluationEntry(dynamic_pointer_cast<NodeEvaluation>(variable_iterator->lock()),
+                                                                             current_reevaluation.caller, // Or just NULL?
+                                                                             tmp_passing_value, // Or also just NULL?
+                                                                             REEVALUATION_PRIORITY__STANDARD - 1));
       }
     } else {
       if (current_reevaluation.reevaluation_node->parent.lock() != shared_ptr<NodeEvaluation>()) {
@@ -156,13 +151,15 @@ void AddToReevaluationQueue
                               current_reevaluation.reevaluation_node->parent.lock())->saved_evaluated_operator)) {
             continue; // The operator is the same.
           }
-          omit_patterns.push(OmitPattern(dynamic_pointer_cast<NodeApplicationCaller>(
+          reevaluation_parameters->
+            omit_patterns.push(OmitPattern(dynamic_pointer_cast<NodeApplicationCaller>(
                                             current_reevaluation.reevaluation_node->parent.lock())->application_node->myorder,
                                           current_reevaluation.reevaluation_node->parent.lock()->myorder));
         }
       }
       assert(current_reevaluation.reevaluation_node != shared_ptr<NodeEvaluation>());
-      reevaluation_queue.insert(ReevaluationEntry(dynamic_pointer_cast<NodeEvaluation>(iterator->lock()),
+      reevaluation_parameters->
+        reevaluation_queue.insert(ReevaluationEntry(dynamic_pointer_cast<NodeEvaluation>(iterator->lock()),
                                                   current_reevaluation.reevaluation_node,
                                                   reevaluation_result->passing_value,
                                                   REEVALUATION_PRIORITY__STANDARD));
@@ -179,7 +176,7 @@ void PropagateNewValue
  ProposalInfo& this_proposal,
  shared_ptr<ReevaluationParameters>& reevaluation_parameters)
 {
-  stack<OmitPattern> omit_patterns;
+  stack<OmitPattern>& omit_patterns = reevaluation_parameters->omit_patterns;
 
   while (reevaluation_queue.size() != 0) {
     if (reevaluation_parameters->__unsatisfied_constraint == true) {
@@ -236,8 +233,7 @@ void PropagateNewValue
     }
 
     if (reevaluation_result->pass_further == true) {
-      AddToReevaluationQueue(current_reevaluation, reevaluation_queue, touched_nodes, touched_nodes2, this_proposal,
-        reevaluation_result, reevaluation_parameters, omit_patterns);
+      AddToReevaluationQueue(current_reevaluation, reevaluation_result, reevaluation_parameters);
     }
   }
   if (omit_patterns.size() > 0) {
@@ -246,29 +242,27 @@ void PropagateNewValue
 }
 
 void FinalizeProposal
-(stack< shared_ptr<Node> >& touched_nodes,
- MHDecision mh_decision,
- set< shared_ptr<NodeXRPApplication> >& deleting_random_choices,
- set< shared_ptr<NodeXRPApplication> >& creating_random_choices)
+(MHDecision mh_decision,
+ shared_ptr<ReevaluationParameters>& reevaluation_parameters)
 {
   if (mh_decision == MH_APPROVED) {
-    for (set< shared_ptr<NodeXRPApplication> >::const_iterator iterator = deleting_random_choices.begin();
-         iterator != deleting_random_choices.end();
+    for (set< shared_ptr<NodeXRPApplication> >::const_iterator iterator = reevaluation_parameters->deleting_random_choices.begin();
+         iterator != reevaluation_parameters->deleting_random_choices.end();
          iterator++) {
       //assert(creating_random_choices.count(*iterator) == 0);
       DeleteRandomChoices(*iterator);
     }
-    for (set< shared_ptr<NodeXRPApplication> >::const_iterator iterator = creating_random_choices.begin();
-         iterator != creating_random_choices.end();
+    for (set< shared_ptr<NodeXRPApplication> >::const_iterator iterator = reevaluation_parameters->creating_random_choices.begin();
+         iterator != reevaluation_parameters->creating_random_choices.end();
          iterator++) {
       //assert(deleting_random_choices.count(*iterator) == 0);
       AddToRandomChoices(*iterator);
     }
   }
 
-  while (!touched_nodes.empty()) {
-    shared_ptr<Node> current_node = touched_nodes.top();
-    touched_nodes.pop();
+  while (!reevaluation_parameters->touched_nodes.empty()) {
+    shared_ptr<Node> current_node = reevaluation_parameters->touched_nodes.top();
+    reevaluation_parameters->touched_nodes.pop();
     if (current_node->was_deleted == true) { continue; } // FIXME: Why do we need it?
     if (current_node->GetNodeType() == VARIABLE) {
       assert(dynamic_pointer_cast<NodeVariable>(current_node)->new_value != shared_ptr<VentureValue>());
@@ -291,7 +285,7 @@ void FinalizeProposal
           // Adding back.
           set< shared_ptr<NodeXRPApplication> > useless_set;
           //Debug// cout << "IT__AddBack: " << dynamic_pointer_cast<NodeApplicationCaller>(current_node)->new_application_node << endl;
-          GatherBranch__POld(dynamic_pointer_cast<NodeApplicationCaller>(current_node)->new_application_node, MH_ACTION__EMPTY_STATUS, useless_set, false); // Adding.
+          //Change//GatherBranch__POld(dynamic_pointer_cast<NodeApplicationCaller>(current_node)->new_application_node, MH_ACTION__EMPTY_STATUS, useless_set, false); // Adding.
         }
 
         if (mh_decision == MH_APPROVED) {
@@ -344,40 +338,6 @@ void FinalizeProposal
   }
 }
 
-real GetCreatingRandomChoices(vector< shared_ptr<Node> >& touched_nodes2, set< shared_ptr<NodeXRPApplication> >& creating_random_choices)
-{
-  real P_new = 0.0;
-  for (size_t index = 0; index < touched_nodes2.size(); index++) {
-    shared_ptr<Node> current_node = touched_nodes2[index];
-    if (current_node->GetNodeType() == APPLICATION_CALLER) {
-      shared_ptr<NodeApplicationCaller> current_node2 = dynamic_pointer_cast<NodeApplicationCaller>(current_node);
-      
-      if (current_node2->MH_made_action != MH_ACTION__LAMBDA_PROPAGATED) {
-        //Debug// cout << "IT__PNew (remove): " << current_node2->new_application_node << endl;
-        P_new += GatherBranch__PNew(current_node2->new_application_node, current_node2->MH_made_action, creating_random_choices);
-      }
-    }
-  }
-  return P_new;
-}
-
-real GetDeletingRandomChoices(vector< shared_ptr<Node> >& touched_nodes2, set< shared_ptr<NodeXRPApplication> >& deleting_random_choices)
-{
-  real P_old = 0.0;
-  for (size_t index = 0; index < touched_nodes2.size(); index++) {
-    shared_ptr<Node> current_node = touched_nodes2[index];
-    if (current_node->GetNodeType() == APPLICATION_CALLER) {
-      shared_ptr<NodeApplicationCaller> current_node2 = dynamic_pointer_cast<NodeApplicationCaller>(current_node);
-      
-      if (current_node2->MH_made_action != MH_ACTION__LAMBDA_PROPAGATED) {
-        //Debug// cout << "IT__POld (add): " << current_node2->new_application_node << endl;
-        P_old += GatherBranch__POld(current_node2->application_node, current_node2->MH_made_action, deleting_random_choices, true);
-      }
-    }
-  }
-  return P_old;
-}
-
 MHProposalResults MakeMHProposal
 (shared_ptr<NodeXRPApplication> principal_node,
  shared_ptr<VentureValue> proposing_value,
@@ -413,24 +373,33 @@ MHProposalResults MakeMHProposal
     random_choice = principal_node;
   }
 
+  set<ReevaluationEntry,
+      ReevaluationOrderComparer> reevaluation_queue;
+      
+  stack< shared_ptr<Node> > touched_nodes; // Should be LIFO for Unsampler(...)!
+                                           // (To correctly receive old arguments.)
+  vector< shared_ptr<Node> > touched_nodes2; // FIXME: get rid of the touched_nodes2?
+
+  stack<OmitPattern> omit_patterns;
+  
   shared_ptr<ReevaluationParameters> reevaluation_parameters =
-    shared_ptr<ReevaluationParameters>(new ReevaluationParameters(random_choice));
+    shared_ptr<ReevaluationParameters>(new ReevaluationParameters(
+      random_choice,
+      reevaluation_queue,
+      touched_nodes,
+      touched_nodes2,
+      this_proposal,
+      omit_patterns));
   
   reevaluation_parameters->we_are_in_enumeration = proposing_value != shared_ptr<VentureValue>();
   reevaluation_parameters->proposing_value_for_this_proposal = proposing_value;
   reevaluation_parameters->random_database = random_database;
   reevaluation_parameters->forcing_not_collecting = forcing_not_collecting;
 
-  set<ReevaluationEntry,
-      ReevaluationOrderComparer> reevaluation_queue;
   reevaluation_queue.insert(ReevaluationEntry(random_choice,
                                             shared_ptr<NodeEvaluation>(),
                                             shared_ptr<VentureValue>(),
                                             REEVALUATION_PRIORITY__STANDARD));
-
-  stack< shared_ptr<Node> > touched_nodes; // Should be LIFO for Unsampler(...)!
-                                           // (To correctly receive old arguments.)
-  vector< shared_ptr<Node> > touched_nodes2; // FIXME: get rid of the touched_nodes2?
 
   PropagateNewValue(reevaluation_queue, touched_nodes, touched_nodes2, this_proposal, reevaluation_parameters);
 
@@ -449,25 +418,9 @@ MHProposalResults MakeMHProposal
   
   //Debug// cout << "Random choice: " << random_choice << endl;
 
-  for (size_t index = 0; index < touched_nodes2.size(); index++) {
-    shared_ptr<Node> current_node = touched_nodes2[index];
-    if (current_node->GetNodeType() == APPLICATION_CALLER) {
-      shared_ptr<NodeApplicationCaller> current_node2 = dynamic_pointer_cast<NodeApplicationCaller>(current_node);
-      
-      if (current_node2->MH_made_action != MH_ACTION__LAMBDA_PROPAGATED) {
-        assert(current_node2->application_node != shared_ptr<NodeEvaluation>());
-        assert(current_node2->new_application_node != shared_ptr<NodeEvaluation>());
-        //Debug// cout << "IT__QNewToOld (remove): " << current_node2->application_node << endl;
-        Q_NewToOld += GatherBranch__QNewToOld(current_node2->application_node, current_node2->MH_made_action);
-        if (current_node2->MH_made_action == MH_ACTION__EMPTY_STATUS) {
-          throw std::runtime_error("The application caller node has empty MH action history.");
-        }
-      }
-    }
-  }
-  
-  P_new = GetCreatingRandomChoices(touched_nodes2, creating_random_choices);
-  P_old = GetDeletingRandomChoices(touched_nodes2, deleting_random_choices);
+  //Change//Q_NewToOld
+  //Change//P_new = GetCreatingRandomChoices(touched_nodes2, creating_random_choices);
+  //Change//P_old = GetDeletingRandomChoices(touched_nodes2, deleting_random_choices);
 
   size_t posterior_number_of_random_choices =
     number_of_random_choices + creating_random_choices.size() - deleting_random_choices.size();
@@ -514,7 +467,7 @@ MHProposalResults MakeMHProposal
        << " " << P_new << " " << P_old << " " << Q_NewToOld << " " << Q_OldToNew << endl << endl;
   */
 
-  FinalizeProposal(touched_nodes, mh_decision, deleting_random_choices, creating_random_choices);
+  FinalizeProposal(mh_decision, reevaluation_parameters);
 
   return MHProposalResults(P_new);
 }
