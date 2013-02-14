@@ -1,4 +1,5 @@
 
+#include "HeaderPre.h"
 #include "Header.h"
 #include "RIPL.h"
 
@@ -87,15 +88,14 @@ void DeleteRIPL() {
 
   global_environment = shared_ptr<NodeEnvironment>();
 
-  last_directive_id = 0;
   directives.clear();
 }
 
 void ClearRIPL()
 {
-  continuous_inference_status = 0;
-
   DeleteRIPL();
+  //assert(random_choices.size() == 0);
+  random_choices.clear();
   InitRIPL();
 }
 
@@ -135,16 +135,100 @@ void ForgetDirective(size_t directive_id) {
   } else {
     // Check for ASSUME.
     // DeleteBranch(directives[directive_id].directive_node, false);
+    weak_ptr<NodeEvaluation> for_observe;
+    if (directives[directive_id].directive_node->GetNodeType() == DIRECTIVE_OBSERVE) {
+      UnforceExpressionValue(directives[directive_id].directive_node);
+    }
     directives.erase(directive_id);
+    if (directives[directive_id].directive_node->GetNodeType() == DIRECTIVE_OBSERVE) {
+      if (for_observe.lock()) {
+        shared_ptr<NodeDirectiveObserve> fake_observe_node =
+          shared_ptr<NodeDirectiveObserve>(new NodeDirectiveObserve(shared_ptr<NodeEvaluation>(), shared_ptr<VentureValue>()));
+        bool unsatisfied_constraint = PropagateForObserve(fake_observe_node, dynamic_pointer_cast<NodeXRPApplication>(for_observe.lock()));
+        assert(unsatisfied_constraint == false);
+      }
+    }
   }
 }
 
-size_t ExecuteDirective(string& directive_as_string,
-                        shared_ptr<NodeEvaluation> directive_node) {
-  shared_ptr<NodeEvaluation> last_directive_node;
-  if (directives.size() > 0) {
-    last_directive_node = GetLastDirectiveNode();
+void RejectionSamplingForObserve() {
+  map<size_t, directive_entry> old_directives;
+
+  VENTURECONSTANT__MAX_ALLOWED_NUMBER_OF_SECONDS_FOR_REJECTION_SAMPLING;
+
+  time_t starting_time = time(NULL);
+
+  while (true) {
+    ClearRIPL();
+
+    if (time(NULL) - starting_time > VENTURECONSTANT__MAX_ALLOWED_NUMBER_OF_SECONDS_FOR_REJECTION_SAMPLING) {
+      throw std::runtime_error("Rejection sampling has not successfully found any suitable state within " + boost::lexical_cast<string>(VENTURECONSTANT__MAX_ALLOWED_NUMBER_OF_SECONDS_FOR_REJECTION_SAMPLING) + " second(s).");
+    }
+
+    for (map<size_t, directive_entry>::iterator old_directive = old_directives.begin();
+         old_directive != old_directives.end();
+         old_directive++)
+    {
+      bool unsatisfied_constraint;
+      if (old_directive->second.directive_node->GetNodeType() == DIRECTIVE_ASSUME) {
+        shared_ptr<NodeDirectiveAssume> current_directive =
+          dynamic_pointer_cast<NodeDirectiveAssume>(old_directive->second.directive_node);
+        unsatisfied_constraint =
+          ExecuteDirective(old_directive->second.directice_as_string,
+                           shared_ptr<NodeEvaluation>(new NodeDirectiveAssume(current_directive->name, AnalyzeExpression(current_directive->original_expression))),
+                           current_directive->original_expression);
+      } else if (old_directive->second.directive_node->GetNodeType() == DIRECTIVE_PREDICT) {
+        shared_ptr<NodeDirectivePredict> current_directive =
+          dynamic_pointer_cast<NodeDirectivePredict>(old_directive->second.directive_node);
+        unsatisfied_constraint =
+          ExecuteDirective(old_directive->second.directice_as_string,
+                           shared_ptr<NodeEvaluation>(new NodeDirectivePredict(AnalyzeExpression(current_directive->original_expression))),
+                           current_directive->original_expression);
+      } else if (old_directive->second.directive_node->GetNodeType() == DIRECTIVE_OBSERVE) {
+        shared_ptr<NodeDirectiveObserve> current_directive =
+          dynamic_pointer_cast<NodeDirectiveObserve>(old_directive->second.directive_node);
+        unsatisfied_constraint =
+          ExecuteDirective(old_directive->second.directice_as_string,
+                           shared_ptr<NodeEvaluation>(new NodeDirectiveObserve(AnalyzeExpression(current_directive->original_expression), current_directive->observed_value)),
+                           current_directive->original_expression);
+      } else {
+        throw std::runtime_error("Unknown directive (1).");
+      }
+
+      if (unsatisfied_constraint == true) {
+        continue;
+      }
+    }
   }
+}
+
+bool ExecuteDirective(string& directive_as_string,
+                        shared_ptr<NodeEvaluation> directive_node,
+                        shared_ptr<VentureValue> original_expression) {
+  //shared_ptr<NodeEvaluation> last_directive_node;
+  //if (directives.size() > 0) {
+  //  last_directive_node = GetLastDirectiveNode();
+  //}
+  
+  if (directive_node->GetNodeType() == DIRECTIVE_ASSUME) {
+    shared_ptr<NodeDirectiveAssume> current_directive =
+      dynamic_pointer_cast<NodeDirectiveAssume>(directive_node);
+    current_directive->original_expression = original_expression;
+  } else if (directive_node->GetNodeType() == DIRECTIVE_PREDICT) {
+    shared_ptr<NodeDirectivePredict> current_directive =
+      dynamic_pointer_cast<NodeDirectivePredict>(directive_node);
+    current_directive->original_expression = original_expression;
+  } else if (directive_node->GetNodeType() == DIRECTIVE_OBSERVE) {
+    shared_ptr<NodeDirectiveObserve> current_directive =
+      dynamic_pointer_cast<NodeDirectiveObserve>(directive_node);
+    current_directive->original_expression = original_expression;
+  } else {
+    throw std::runtime_error("Unknown directive (2).");
+  }
+
+  last_directive_id++;
+  directives.insert(pair<size_t, directive_entry>(last_directive_id, directive_entry(directive_as_string, directive_node)));
+
   EvaluationConfig tmp_evaluation_config(false, shared_ptr<ReevaluationParameters>());
   Evaluator(directive_node,
             global_environment,
@@ -154,15 +238,21 @@ size_t ExecuteDirective(string& directive_as_string,
             "");
   // directive_node->earlier_evaluation_nodes = last_directive_node;
   
-  if (tmp_evaluation_config.unsatisfied_constraint == true) {
-      throw std::runtime_error("You are trying to execute the code, which has the joint score = 0.0 (at least in one of its state!).");
-      // FIXME: should be improved in the future.
-      //        (By resampling, if it happens.)
+  return tmp_evaluation_config.unsatisfied_constraint;
+}
+
+size_t ExecuteDirectiveWithRejectionSampling
+(string& directive_as_string,
+ shared_ptr<NodeEvaluation> directive_node,
+ shared_ptr<VentureValue> original_expression) {
+  bool unsatisfied_constraint = ExecuteDirective(directive_as_string, directive_node, original_expression);
+
+  if (unsatisfied_constraint == true) {
+    RejectionSamplingForObserve();
+    // throw std::runtime_error("You are trying to execute the code, which has the joint score = 0.0 (at least in one of its state!).");
   }
 
-  last_directive_id++;
-  directives.insert(pair<size_t, directive_entry>(last_directive_id, directive_entry(directive_as_string, directive_node)));
-  return last_directive_id;
+  return directives.rbegin()->first;
 }
 
 void BindStandardElementsToGlobalEnvironment() {

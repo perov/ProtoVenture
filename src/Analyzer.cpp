@@ -1,4 +1,5 @@
 
+#include "HeaderPre.h"
 #include "Header.h"
 #include "VentureParser.h"
 #include "Analyzer.h"
@@ -6,6 +7,7 @@
 #include "XRPCore.h"
 #include "XRPmem.h"
 #include "RIPL.h"
+#include "MHProposal.h"
 
 string GetNodeTypeAsString(size_t node_type) {
   switch (node_type) {
@@ -134,7 +136,8 @@ NodeEvaluation::NodeEvaluation()
     earlier_evaluation_nodes(shared_ptr<NodeEvaluation>()),
     evaluated(false),
     last_child_order(0),
-    parent(shared_ptr<NodeEvaluation>())
+    parent(shared_ptr<NodeEvaluation>()),
+    constraint_times(0)
 {}
 NodeTypes NodeEvaluation::GetNodeType() { return UNDEFINED_EVALUATION_NODE; }
 shared_ptr<NodeEvaluation> NodeEvaluation::clone() const {
@@ -427,8 +430,7 @@ void NodeApplicationCaller::DeleteNode() {
 
 NodeTypes NodeXRPApplication::GetNodeType() { return XRP_APPLICATION; }
 NodeXRPApplication::NodeXRPApplication(shared_ptr<VentureXRP> xrp)
-  : xrp(xrp),
-    forced_by_observations(false)
+  : xrp(xrp)
 {}
 // It should not have clone() method?
 void NodeXRPApplication::GetChildren(queue< shared_ptr<Node> >& processing_queue) {
@@ -580,9 +582,16 @@ NodeDirectiveObserve::Evaluate(shared_ptr<NodeEnvironment> environment, Evaluati
   shared_ptr<ReevaluationParameters> tmp_reevaluation_parameters =
     shared_ptr<ReevaluationParameters>(new ReevaluationParameters(shared_ptr<NodeXRPApplication>()));
 
-  bool forcing_result = ForceExpressionValue(this->expression, this->observed_value, tmp_reevaluation_parameters);
-  if (forcing_result == false) {
+  pair<bool, shared_ptr<NodeEvaluation> > forcing_result = ForceExpressionValue(this->expression, this->observed_value, tmp_reevaluation_parameters);
+  if (forcing_result.first == false) {
     evaluation_config.unsatisfied_constraint = true;
+  } else {
+    if (forcing_result.second != shared_ptr<NodeEvaluation>()) {
+      bool unsatisfied_constraint = PropagateForObserve(dynamic_pointer_cast<NodeEvaluation>(shared_from_this()), dynamic_pointer_cast<NodeXRPApplication>(forcing_result.second));
+      if (unsatisfied_constraint == true) {
+        evaluation_config.unsatisfied_constraint = true;
+      }
+    }
   }
 
   return NIL_INSTANCE;
@@ -899,6 +908,24 @@ NodeApplicationCaller::Reevaluate(shared_ptr<VentureValue> passing_value,
       return this->Reevaluate__TryToRescore(shared_ptr<VentureValue>(), sender, reevaluation_parameters, dynamic_pointer_cast<VentureXRP>(evaluated_operator));
     } else {
       this->MH_made_action = MH_ACTION__RESAMPLED;
+      
+      pair<real, real> branch_loglikelihoods = AbsorbBranchProbability(this->application_node, reevaluation_parameters);
+      shared_ptr<NodeEvaluation> potentially_constraint_node = FindConstrainingNode(this->application_node);
+      shared_ptr<VentureValue> value_for_constraining =
+        UnconstrainNode(potentially_constraint_node);
+      if (potentially_constraint_node->constraint_times > 0) {
+        potentially_constraint_node->constraint_times--;
+        if (potentially_constraint_node->GetNodeType() == SELF_EVALUATING) {
+          value_for_constraining = dynamic_pointer_cast<NodeSelfEvaluating>(potentially_constraint_node)->value;
+        } else if (potentially_constraint_node->GetNodeType() == XRP_APPLICATION) {
+          value_for_constraining = dynamic_pointer_cast<NodeXRPApplication>(potentially_constraint_node)->my_sampled_value;
+        } else {
+          throw std::runtime_error("Strange 'potentially_constraint_node->GetNodeType()'.");
+        }
+      }
+      if (potentially_constraint_node->constraint_times == 0) {
+        ReturnToPool();
+      }
 
       shared_ptr<NodeEnvironment> previous_environment; // This part should be in the "EvaluateApplication(...)"
                                                         // in order to avoid duplication.
@@ -923,8 +950,21 @@ NodeApplicationCaller::Reevaluate(shared_ptr<VentureValue> passing_value,
                             local_evaluation_config);
       reevaluation_parameters->__log_q_from_old_to_new += local_evaluation_config.__log_unconstrained_score;
 
-      return shared_ptr<ReevaluationResult>(
-        new ReevaluationResult(new_value, true));
+      if (value_for_constraining != shared_ptr<VentureValue>()) {
+        shared_ptr<NodeEvaluation> constraining_node = FindConstrainingNode(this->new_application_node);
+        ConstrainExpressionValue(constraining_node);
+        if (CompareValue(value_for_constraining, new_value)) {
+          return shared_ptr<ReevaluationResult>(
+            new ReevaluationResult(new_value, true));
+        } else {
+          AddPropagationFromThisNode(constraining_node, value_for_constraining); // Or it is in ConstrainExpressionValue?
+          return shared_ptr<ReevaluationResult>(
+            new ReevaluationResult(shared_ptr<VentureValue>(), false));
+        }
+      } else {
+        return shared_ptr<ReevaluationResult>(
+          new ReevaluationResult(new_value, true));
+      }
     }
   } else {
     throw std::runtime_error("NodeApplicationCaller::Reevaluate: strange sender.");
@@ -957,12 +997,17 @@ NodeDirectiveObserve::Reevaluate(shared_ptr<VentureValue> passing_value,
                                  shared_ptr<ReevaluationParameters> reevaluation_parameters) {
   // throw std::runtime_error("The OBSERVE directive's node should not be reevaluated.");
   
-  bool forcing_result = ForceExpressionValue(this->expression, this->observed_value, reevaluation_parameters);
-  if (forcing_result == false) {
+  pair<bool, shared_ptr<NodeEvaluation> > forcing_result = ForceExpressionValue(this->expression, this->observed_value, reevaluation_parameters);
+  if (forcing_result.first == false) {
     reevaluation_parameters->__unsatisfied_constraint = true;
   }
-  return shared_ptr<ReevaluationResult>(
-    new ReevaluationResult(shared_ptr<VentureValue>(), false));
+  if (forcing_result.second == shared_ptr<NodeEvaluation>()) {
+    return shared_ptr<ReevaluationResult>(
+      new ReevaluationResult(shared_ptr<VentureValue>(), false));
+  } else {
+    return shared_ptr<ReevaluationResult>(
+      new ReevaluationResult(forcing_result.second, true));
+  }
 }
 
 void ApplyToMeAndAllMyChildren(shared_ptr<Node> first_node,
@@ -1093,8 +1138,8 @@ void AddToRandomChoices(weak_ptr<NodeXRPApplication> random_choice) {
   }
 }
 void DeleteRandomChoices(weak_ptr<NodeXRPApplication> random_choice, size_t index) {
-  size_t number_of_erased_elements = random_choices.erase(random_choice);
-  if (number_of_erased_elements == 1) {
+  set< weak_ptr<NodeXRPApplication> >::iterator random_choice_iterator = random_choices.find(random_choice);
+  if (random_choice_iterator != random_choices.end()) {
     // FIXME: not multithread safe!
     if (random_choice.lock()) {
       random_choices_vector.back()->lock()->location_in_random_choices = random_choice.lock()->location_in_random_choices;
@@ -1107,6 +1152,7 @@ void DeleteRandomChoices(weak_ptr<NodeXRPApplication> random_choice, size_t inde
       }
     }
     random_choices_vector.pop_back();
+    random_choices.erase(random_choice_iterator);
   }
 }
 size_t GetSizeOfRandomChoices() {
@@ -1123,4 +1169,9 @@ shared_ptr<NodeXRPApplication> GetRandomRandomChoice() {
 //  return (*iterator).lock();
   int random_choice_id = UniformDiscrete(0, GetSizeOfRandomChoices() - 1);
   return random_choices_vector[random_choice_id]->lock();
+}
+
+NodeConstainingTemplate::NodeConstainingTemplate()
+{
+  
 }

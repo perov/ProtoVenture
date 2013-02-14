@@ -1,4 +1,5 @@
 
+#include "HeaderPre.h"
 #include "Header.h"
 #include "VentureValues.h"
 #include "VentureParser.h"
@@ -159,13 +160,13 @@ bool XRP::CouldBeRescored() { return false; }
 string XRP::GetName() { return "XRPClass"; }
 
 // Pair: OldLogScoreAddition, NewLogScoreAddition
-bool
-XRP::ForceValue(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<VentureValue> desired_value, shared_ptr<ReevaluationParameters> reevaluation_parameters) {
-  return true; // FIXME: it is not right generally.
+pair<bool, shared_ptr<NodeEvaluation> >
+XRP::ForceValue(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<VentureValue> desired_value, shared_ptr<ReevaluationParameters> reevaluation_parameters, shared_ptr<NodeXRPApplication> caller) {
+  return pair<bool, shared_ptr<NodeEvaluation> >(true, caller); // FIXME: it is not right generally.
 }
 
-void XRP::UnforceValue(vector< shared_ptr<VentureValue> >& arguments) {
-
+weak_ptr<NodeEvaluation> XRP::UnforceValue(vector< shared_ptr<VentureValue> >& arguments, weak_ptr<NodeEvaluation> caller) {
+  return caller;
 }
 
 bool XRP::CouldBeEnumerated() {

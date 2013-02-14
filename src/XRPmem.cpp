@@ -1,4 +1,5 @@
 
+#include "HeaderPre.h"
 #include "XRPmem.h"
 
 shared_ptr<VentureValue> XRP__memoizer::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
@@ -152,7 +153,7 @@ bool XRP__memoized_procedure::IsRandomChoice() { return false; }
 bool XRP__memoized_procedure::CouldBeRescored() { return false; }
 string XRP__memoized_procedure::GetName() { return "XRP__memoized_procedure"; }
 
-bool XRP__memoized_procedure::ForceValue(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<VentureValue> desired_value, shared_ptr<ReevaluationParameters> reevaluation_parameters) {
+pair<bool, shared_ptr<NodeEvaluation> > XRP__memoized_procedure::ForceValue(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<VentureValue> desired_value, shared_ptr<ReevaluationParameters> reevaluation_parameters, shared_ptr<NodeXRPApplication> caller) {
   string mem_table_key = XRP__memoized_procedure__MakeMapKeyFromArguments(arguments);
   if (this->mem_table.count(mem_table_key) == 0) {
     throw std::runtime_error("Cannot find the necessary key in the mem table.");
@@ -162,12 +163,12 @@ bool XRP__memoized_procedure::ForceValue(vector< shared_ptr<VentureValue> >& arg
   return ForceExpressionValue(mem_table_element.application_caller_node, desired_value, reevaluation_parameters);
 }
 
-void XRP__memoized_procedure::UnforceValue(vector< shared_ptr<VentureValue> >& arguments) {
+weak_ptr<NodeEvaluation> XRP__memoized_procedure::UnforceValue(vector< shared_ptr<VentureValue> >& arguments, weak_ptr<NodeEvaluation> caller) {
   string mem_table_key = XRP__memoized_procedure__MakeMapKeyFromArguments(arguments);
   if (this->mem_table.count(mem_table_key) == 0) {
     throw std::runtime_error("Cannot find the necessary key in the mem table.");
   }
   XRP__memoizer_map_element& mem_table_element =
     (*(this->mem_table.find(mem_table_key))).second;
-  UnforceExpressionValue(mem_table_element.application_caller_node);
+  return UnforceExpressionValue(mem_table_element.application_caller_node);
 }

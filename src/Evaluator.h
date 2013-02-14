@@ -32,9 +32,11 @@ shared_ptr<VentureValue> LookupValue(shared_ptr<NodeEnvironment> environment,
                                      shared_ptr<NodeEvaluation> lookuper,
                                      bool old_values);
 
-bool ForceExpressionValue(shared_ptr<Node> node, shared_ptr<VentureValue> desired_value, shared_ptr<ReevaluationParameters> reevaluation_parameters);
+pair<bool, shared_ptr<NodeEvaluation> > ForceExpressionValue(shared_ptr<Node> node, shared_ptr<VentureValue> desired_value, shared_ptr<ReevaluationParameters> reevaluation_parameters);
 
-void UnforceExpressionValue(shared_ptr<Node> node);
+weak_ptr<NodeEvaluation> UnforceExpressionValue(shared_ptr<Node> node);
+
+bool PropagateForObserve(shared_ptr<NodeEvaluation> observe_directive_node, shared_ptr<NodeXRPApplication> xrp_node_to_go_from);
 
 shared_ptr<VentureValue> GetBranchValue(shared_ptr<Node> node);
 

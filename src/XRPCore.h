@@ -68,8 +68,8 @@ public: // Should be private.
                                 shared_ptr<VentureValue>);
   virtual void Remove(vector< shared_ptr<VentureValue> >&,
                            shared_ptr<VentureValue>);
-  virtual bool ForceValue(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<VentureValue> desired_value, shared_ptr<ReevaluationParameters> reevaluation_parameters);
-  virtual void UnforceValue(vector< shared_ptr<VentureValue> >& arguments);
+  virtual pair<bool, shared_ptr<NodeEvaluation> > ForceValue(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<VentureValue> desired_value, shared_ptr<ReevaluationParameters> reevaluation_parameters, shared_ptr<NodeXRPApplication> caller);
+  virtual weak_ptr<NodeEvaluation> UnforceValue(vector< shared_ptr<VentureValue> >& arguments, weak_ptr<NodeEvaluation> caller);
 
 public:
   //XRP(shared_ptr<XRP> maker) : maker(maker) {}

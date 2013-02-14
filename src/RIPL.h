@@ -40,8 +40,17 @@ void ClearRIPL();
 void InitRIPL();
 shared_ptr<VentureValue> ReportValue(size_t directive_id);
 void ForgetDirective(size_t directive_id);
-size_t ExecuteDirective(string& directive_as_string,
-                        shared_ptr<NodeEvaluation> directive_node);
+
+void RejectionSamplingForObserve();
+bool ExecuteDirective(string& directive_as_string,
+                        shared_ptr<NodeEvaluation> directive_node,
+                        shared_ptr<VentureValue> original_expression);
+
+size_t ExecuteDirectiveWithRejectionSampling
+(string& directive_as_string,
+ shared_ptr<NodeEvaluation> directive_node,
+ shared_ptr<VentureValue> original_expression);
+
 void BindStandardElementsToGlobalEnvironment();
 
 

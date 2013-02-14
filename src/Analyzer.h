@@ -112,6 +112,8 @@ struct NodeEvaluation : public Node {
   size_t last_child_order;
 
   string node_key;
+
+  size_t constraint_times; // Temporarily here. Should be in separate struct!
   
   virtual void DeleteNode();
 };
@@ -135,6 +137,8 @@ struct NodeDirectiveAssume : public NodeEvaluation {
   shared_ptr<NodeEvaluation> expression;
   shared_ptr<VentureValue> my_value; // It should not be implemented in this way?
   shared_ptr<VentureValue> my_new_value; // It should not be implemented in this way?
+  
+  shared_ptr<VentureValue> original_expression;
 
   virtual void DeleteNode();
 };
@@ -152,6 +156,8 @@ struct NodeDirectivePredict : public NodeEvaluation {
   shared_ptr<NodeEvaluation> expression;
   shared_ptr<VentureValue> my_value; // It should not be implemented in this way?
   shared_ptr<VentureValue> my_new_value; // It should not be implemented in this way?
+  
+  shared_ptr<VentureValue> original_expression;
 
   virtual void DeleteNode();
 };
@@ -168,11 +174,17 @@ struct NodeDirectiveObserve : public NodeEvaluation {
   
   shared_ptr<NodeEvaluation> expression;
   shared_ptr<VentureValue> observed_value;
+  
+  shared_ptr<VentureValue> original_expression;
 
   virtual void DeleteNode();
 };
 
-struct NodeSelfEvaluating : public NodeEvaluation {
+struct NodeConstainingTemplate {
+  NodeConstainingTemplate();
+};
+
+struct NodeSelfEvaluating : public NodeEvaluation, public NodeConstainingTemplate {
   NodeSelfEvaluating(shared_ptr<VentureValue> value);
   virtual NodeTypes GetNodeType();
   virtual shared_ptr<NodeEvaluation> clone() const;
@@ -251,7 +263,7 @@ struct NodeApplicationCaller : public NodeEvaluation {
   virtual void DeleteNode();
 };
 
-struct NodeXRPApplication : public NodeEvaluation {
+struct NodeXRPApplication : public NodeEvaluation, public NodeConstainingTemplate {
   NodeXRPApplication(shared_ptr<VentureXRP> xrp);
   virtual NodeTypes GetNodeType();
   // It should not have clone() method?
@@ -267,7 +279,6 @@ struct NodeXRPApplication : public NodeEvaluation {
   weak_ptr<NodeXRPApplication> weak_ptr_to_me; // FIXME: Should be weak_ptr<Node>.
   
   shared_ptr<VentureValue> my_sampled_value; // FIXME: Should be called "sampled_value".
-  bool forced_by_observations;
 
   size_t location_in_random_choices;
   

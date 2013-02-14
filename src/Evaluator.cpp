@@ -1,4 +1,5 @@
 
+#include "HeaderPre.h"
 #include "Header.h"
 #include "VentureValues.h"
 #include "Analyzer.h"
@@ -154,8 +155,49 @@ shared_ptr<VentureValue> LookupValue(shared_ptr<NodeEnvironment> environment,
   }
 }
 
+shared_ptr<NodeEvaluation> FindConstrainingNode(shared_ptr<Node> node) {
+  while (true) {
+    assert(node != shared_ptr<Node>());
+    if (node->GetNodeType() == LOOKUP) {
+      node = dynamic_pointer_cast<NodeLookup>(node)->where_lookuped.lock();
+      continue;
+    } else if (node->GetNodeType() == VARIABLE) {
+      node = dynamic_pointer_cast<NodeVariable>(node)->binding_node.lock();
+      continue;
+    } else if (node->GetNodeType() == APPLICATION_CALLER) {
+      if (dynamic_pointer_cast<NodeApplicationCaller>(node)->new_application_node != shared_ptr<NodeEvaluation>()) {
+        node = dynamic_pointer_cast<NodeApplicationCaller>(node)->new_application_node;
+      } else {
+        node = dynamic_pointer_cast<NodeApplicationCaller>(node)->application_node;
+      }
+      continue;
+    } else if (node->GetNodeType() == SELF_EVALUATING) {
+      return dynamic_pointer_cast<NodeEvaluation>(node);
+    } else if (node->GetNodeType() == XRP_APPLICATION) {
+      if (dynamic_pointer_cast<NodeXRPApplication>(node)->xrp->xrp->GetName() == "XRP__memoized_procedure") {
+        vector< shared_ptr<VentureValue> > got_arguments = GetArgumentsFromEnvironment(dynamic_pointer_cast<NodeXRPApplication>(node)->environment, // Not efficient?
+                                        dynamic_pointer_cast<NodeEvaluation>(node),
+                                        false);
+        string mem_table_key = XRP__memoized_procedure__MakeMapKeyFromArguments(got_arguments);
+        if (dynamic_pointer_cast<XRP__memoized_procedure>(dynamic_pointer_cast<NodeXRPApplication>(node)->xrp->xrp)->mem_table.count(mem_table_key) == 0) {
+          throw std::runtime_error("Cannot find the necessary key in the mem table.");
+        }
+        XRP__memoizer_map_element& mem_table_element =
+          (*(dynamic_pointer_cast<XRP__memoized_procedure>(dynamic_pointer_cast<NodeXRPApplication>(node)->xrp->xrp)->mem_table.find(mem_table_key))).second;
+        return FindConstrainingNode(mem_table_element.application_caller_node);
+      } else {
+        return dynamic_pointer_cast<NodeEvaluation>(node);
+      }
+    } else if (node->GetNodeType() == LAMBDA_CREATOR) {
+      return shared_ptr<NodeEvaluation>();
+    } else {
+      throw std::runtime_error("Cannot find the node for potential constraining. Unexpected node type.");
+    }
+  }
+}
+
 // If possible to force (return True) or not (return False)?
-bool ForceExpressionValue(shared_ptr<Node> node, shared_ptr<VentureValue> desired_value, shared_ptr<ReevaluationParameters> reevaluation_parameters) {
+pair<bool, shared_ptr<NodeEvaluation> > ConstrainExpressionValue(shared_ptr<Node> node, shared_ptr<VentureValue> desired_value, shared_ptr<ReevaluationParameters> reevaluation_parameters) {
   while (true) {
     assert(node != shared_ptr<Node>());
     if (node->GetNodeType() == LOOKUP) {
@@ -173,29 +215,29 @@ bool ForceExpressionValue(shared_ptr<Node> node, shared_ptr<VentureValue> desire
       continue;
     } else if (node->GetNodeType() == SELF_EVALUATING) {
       if (CompareValue(dynamic_pointer_cast<NodeSelfEvaluating>(node)->value, desired_value)) {
-        return true;
+        return pair<bool, shared_ptr<NodeEvaluation> >(true, shared_ptr<NodeEvaluation>());
       } else {
-        return false;
+        return pair<bool, shared_ptr<NodeEvaluation> >(false, shared_ptr<NodeEvaluation>());
       }
     } else if (node->GetNodeType() == XRP_APPLICATION) {
       shared_ptr<NodeXRPApplication> node2 = dynamic_pointer_cast<NodeXRPApplication>(node);
       DeleteRandomChoices(node2); // FIXME: it is not right, if we are in MH.
       if (CompareValue(node2->my_sampled_value, desired_value)) {
-        if (node2->forced_by_observations == true) {
-          throw std::runtime_error("Sorry, still does not support forcing the same value from several observations.");
-        }
+        //if (node2->forced_by_observations == true) {
+        //  throw std::runtime_error("Sorry, still does not support forcing the same value from several observations.");
+        //}
         node2->forced_by_observations = true;
-        return true;
+        return pair<bool, shared_ptr<NodeEvaluation> >(true, shared_ptr<NodeEvaluation>());
       } else {
         if (node2->forced_by_observations == true) {
-          return false; // The already forced value is not the value we want. Rejecting.
+          return pair<bool, shared_ptr<NodeEvaluation> >(false, shared_ptr<NodeEvaluation>()); // The already forced value is not the value we want. Rejecting.
         } else {
           node2->forced_by_observations = true;
           vector< shared_ptr<VentureValue> > got_arguments = GetArgumentsFromEnvironment(node2->environment, // Not efficient?
                                           dynamic_pointer_cast<NodeEvaluation>(node2),
                                           false);
-          bool internal_forcing = node2->xrp->xrp->ForceValue(got_arguments, desired_value, reevaluation_parameters);
-          if (internal_forcing == false) { return false; }
+          pair<bool, shared_ptr<NodeEvaluation> > internal_forcing = node2->xrp->xrp->ForceValue(got_arguments, desired_value, reevaluation_parameters, node2);
+          if (internal_forcing.first == false) { return pair<bool, shared_ptr<NodeEvaluation> >(false, shared_ptr<NodeEvaluation>()); }
           node2->xrp->xrp->Remove(got_arguments, node2->my_sampled_value);
           //real logscore_change = -1.0 * node2->xrp->xrp->GetSampledLoglikelihood(got_arguments, node2->my_sampled_value);
           // Assuming that if it was rescored, it saved the necessary value, i.e. there would not be necessity in
@@ -204,7 +246,7 @@ bool ForceExpressionValue(shared_ptr<Node> node, shared_ptr<VentureValue> desire
           node2->my_sampled_value = desired_value;
           //logscore_change +=node2->xrp->xrp->GetSampledLoglikelihood(got_arguments, node2->my_sampled_value);
           node2->xrp->xrp->Incorporate(got_arguments, node2->my_sampled_value);
-          return true;
+          return internal_forcing;
         }
       }
     } else {
@@ -213,7 +255,33 @@ bool ForceExpressionValue(shared_ptr<Node> node, shared_ptr<VentureValue> desire
   }
 }
 
-void UnforceExpressionValue(shared_ptr<Node> node) {
+shared_ptr<VentureValue> UnconstrainNode(shared_ptr<NodeEvaluation> node) {
+  shared_ptr<NodeEvaluation> potentially_constraint_node = FindConstrainingNode(this->application_node);
+  if (potentially_constraint_node == shared_ptr<NodeEvaluation>()) {
+    // The branch was not constraint.
+    return shared_ptr<VentureValue>();
+  }
+  if (potentially_constraint_node->constraint_times > 0) {
+    potentially_constraint_node->constraint_times--;
+    if (potentially_constraint_node->constraint_times == 0 &&
+          potentially_constraint_node->GetNodeType() == XRP_APPLICATION &&
+          dynamic_pointer_cast<NodeXRPApplication>(potentially_constraint_node)->xrp->xrp->IsRandomChoice()) {
+      AddToRandomChoices(dynamic_pointer_cast<NodeXRPApplication>(potentially_constraint_node));
+    }
+    if (potentially_constraint_node->GetNodeType() == SELF_EVALUATING) {
+      return dynamic_pointer_cast<NodeSelfEvaluating>(potentially_constraint_node)->value;
+    } else if (potentially_constraint_node->GetNodeType() == XRP_APPLICATION) {
+      return dynamic_pointer_cast<NodeXRPApplication>(potentially_constraint_node)->my_sampled_value;
+    } else {
+      throw std::runtime_error("Strange 'potentially_constraint_node->GetNodeType()'.");
+    }
+  } else {
+    // The branch was not constraint.
+    return shared_ptr<VentureValue>();
+  }
+}
+
+weak_ptr<NodeEvaluation> UnforceExpressionValue(shared_ptr<Node> node) {
   while (true) {
     assert(node != shared_ptr<Node>());
     if (node->GetNodeType() == LOOKUP) {
@@ -230,22 +298,44 @@ void UnforceExpressionValue(shared_ptr<Node> node) {
       }
       continue;
     } else if (node->GetNodeType() == SELF_EVALUATING) {
-      return;
+      return shared_ptr<NodeEvaluation>();
     } else if (node->GetNodeType() == XRP_APPLICATION) {
       shared_ptr<NodeXRPApplication> node2 = dynamic_pointer_cast<NodeXRPApplication>(node);
       assert(node2->forced_by_observations == true);
       node2->forced_by_observations = false;
-      if (node2->xrp->xrp->IsRandomChoice()) { // Silly?
-        AddToRandomChoices(node2);
-      }
+      AddToRandomChoices(node2);
       vector< shared_ptr<VentureValue> > got_arguments = GetArgumentsFromEnvironment(node2->environment, // Not efficient?
                                       dynamic_pointer_cast<NodeEvaluation>(node2),
                                       false);
-      node2->xrp->xrp->UnforceValue(got_arguments);
+      return node2->xrp->xrp->UnforceValue(got_arguments, node2);
     } else {
       throw std::runtime_error("Cannot unforce the observation value. Unexpected node type.");
     }
   }
+}
+
+bool PropagateForObserve(shared_ptr<NodeEvaluation> observe_directive_node, shared_ptr<NodeXRPApplication> xrp_node_to_go_from) {
+  ReevaluationEntry current_reevaluation(observe_directive_node, shared_ptr<NodeEvaluation>(), shared_ptr<VentureValue>(), REEVALUATION_PRIORITY__STANDARD);
+  set<ReevaluationEntry,
+      ReevaluationOrderComparer> reevaluation_queue;
+  stack< shared_ptr<Node> > touched_nodes;
+  vector< shared_ptr<Node> > touched_nodes2;
+  ProposalInfo this_proposal; // FIXME: define?
+  shared_ptr<ReevaluationResult> reevaluation_result =
+    shared_ptr<ReevaluationResult>(
+      new ReevaluationResult(xrp_node_to_go_from, true));
+  shared_ptr<ReevaluationParameters> reevaluation_parameters =
+    shared_ptr<ReevaluationParameters>(new ReevaluationParameters(dynamic_pointer_cast<NodeXRPApplication>(xrp_node_to_go_from)));
+  reevaluation_parameters->we_are_in_enumeration = false;
+  stack<OmitPattern> omit_patterns;
+  AddToReevaluationQueue(current_reevaluation, reevaluation_queue, touched_nodes, touched_nodes2, this_proposal, reevaluation_result, reevaluation_parameters, omit_patterns);
+  PropagateNewValue(reevaluation_queue, touched_nodes, touched_nodes2, this_proposal, reevaluation_parameters);
+  set< shared_ptr<NodeXRPApplication> > creating_random_choices;
+  set< shared_ptr<NodeXRPApplication> > deleting_random_choices;
+  GetCreatingRandomChoices(touched_nodes2, creating_random_choices);
+  GetDeletingRandomChoices(touched_nodes2, deleting_random_choices);
+  FinalizeProposal(touched_nodes, MH_APPROVED, deleting_random_choices, creating_random_choices);
+  return reevaluation_parameters->__unsatisfied_constraint;
 }
 
 shared_ptr<VentureValue> GetBranchValue(shared_ptr<Node> node) {

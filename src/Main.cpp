@@ -1,4 +1,5 @@
 
+#include "HeaderPre.h"
 #include "Header.h"
 
 #include "VentureValues.h"
@@ -74,7 +75,6 @@ int main(int argc, char *argv[])
   
   cout << "See why: Or just NULL? does not work!" << endl;
   cout << "Notice: There should not be the 'NIL' type! Only the 'LIST' type!" << endl;
-  cout << "IMPORTANT! Delete touched_nodes_copy!" << endl;
   
   int port = 8082;
   cout << argv[0] << endl;
