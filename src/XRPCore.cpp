@@ -68,12 +68,29 @@ XRP::Sample(vector< shared_ptr<VentureValue> >& arguments,
   loglikelihood = GetSampledLoglikelihood(arguments, new_sample);
   evaluation_config.__log_unconstrained_score += loglikelihood;
 
-  if (this->IsRandomChoice() == true && evaluation_config.in_proposal == false) {
-    AddToRandomChoices(dynamic_pointer_cast<NodeXRPApplication>(caller->shared_from_this()));
+  if (this->IsRandomChoice() == true) {
+    if (evaluation_config.in_proposal == false) {
+      AddToRandomChoices(dynamic_pointer_cast<NodeXRPApplication>(caller->shared_from_this()));
+    } else {
+      evaluation_config.reevaluation_config_ptr->creating_random_choices.insert(dynamic_pointer_cast<NodeXRPApplication>(caller->shared_from_this()));
+    }
   }
   
   //Debug// cout << "Incorporate from " << caller << endl;
   Incorporate(arguments, new_sample);
+  
+  if (evaluation_config.in_proposal == true) {
+    if (this->GetName() == "XRP__memoized_procedure")
+    {
+      string mem_table_key = XRP__memoized_procedure__MakeMapKeyFromArguments(arguments);
+      XRP__memoizer_map_element& mem_table_element =
+        (*(dynamic_pointer_cast<XRP__memoized_procedure>(this->shared_from_this())->mem_table.find(mem_table_key))).second;
+      if (mem_table_element.active_uses == 1) {
+        UnabsorbBranchProbability(mem_table_element.application_caller_node, evaluation_config.reevaluation_config_ptr);
+      }
+    }
+  }
+  
   return new_sample;
 }
 
@@ -114,7 +131,7 @@ XRP::RescorerResampler(vector< shared_ptr<VentureValue> >& old_arguments,
   }
   
   if (forced_resampling || !CouldBeRescored()
-        || (GetSampledLoglikelihood(new_arguments, caller->my_sampled_value) == log(0.0) && this->GetName() != "ERP__Normal")
+        || (GetSampledLoglikelihood(new_arguments, caller->my_sampled_value) == log(0.0))
         ) { // Resampling.
 
     shared_ptr<VentureValue> new_sample;
@@ -132,17 +149,31 @@ XRP::RescorerResampler(vector< shared_ptr<VentureValue> >& old_arguments,
     } else {
       new_sample = Sampler(new_arguments, caller, evaluation_config);
     }
+    if (this->IsRandomChoice() == true) {
+      assert(evaluation_config.in_proposal == true);
+      reevaluation_parameters->creating_random_choices.insert(dynamic_pointer_cast<NodeXRPApplication>(caller));
+    }
     real new_loglikelihood = GetSampledLoglikelihood(new_arguments, new_sample);
-    //Debug// cout << "Incorporate from " << caller << endl;
-    Incorporate(new_arguments, new_sample);
 
     evaluation_config.__log_unconstrained_score += new_loglikelihood;
+    
+    Incorporate(new_arguments, new_sample);
 
     return shared_ptr<RescorerResamplerResult>(new RescorerResamplerResult(new_sample,
                                                                            new_loglikelihood)); // FIXME: This thing does nothing now, but it should work when mem would be implemented in the right way!
   } else { // Rescoring.
-    // real new_loglikelihood = GetSampledLoglikelihood(new_arguments, caller->sampled_value);
-    //Debug// cout << "Incorporate from " << caller << endl;
+    // Rescoring:
+    // 1) If arguments have changed.
+    // 2) If operator has changed, but it is the same XRP type.
+    if (this->IsRandomChoice() == true) {
+      assert(evaluation_config.in_proposal == true);
+      reevaluation_parameters->creating_random_choices.insert(dynamic_pointer_cast<NodeXRPApplication>(caller));
+    }
+    
+    real new_loglikelihood = GetSampledLoglikelihood(new_arguments, caller->my_sampled_value);
+    
+    evaluation_config.__log_unconstrained_score += new_loglikelihood;
+    
     Incorporate(new_arguments, caller->my_sampled_value);
     
     return shared_ptr<RescorerResamplerResult>(

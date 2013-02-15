@@ -54,6 +54,8 @@ struct Node : public VentureValue {
   size_t constraint_times;
   
   string comment;
+
+  shared_ptr<VentureValue> already_propagated;
   
   // boost::mutex occupying_mutex;
   shared_ptr<ProposalInfo> occupying_proposal_info;

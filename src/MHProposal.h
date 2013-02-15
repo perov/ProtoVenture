@@ -64,7 +64,9 @@ struct ProposalInfo : public boost::enable_shared_from_this<ProposalInfo> {
   bool request_to_terminate;
 };
 
-pair<real, real> AbsorbBranchProbability(shared_ptr<Node> first_node);
+pair<real, real> AbsorbBranchProbability(shared_ptr<Node> first_node, shared_ptr<ReevaluationParameters> reevaluation_parameters);
+
+void UnabsorbBranchProbability(shared_ptr<Node> first_node, shared_ptr<ReevaluationParameters> reevaluation_parameters);
 
 void Enumerate(shared_ptr<NodeXRPApplication> principal_node);
 

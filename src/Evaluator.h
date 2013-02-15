@@ -36,9 +36,9 @@ shared_ptr<NodeEvaluation> FindConstrainingNode(shared_ptr<Node> node, int delta
 
 enum ConstrainingResult { CONSTRAININGRESULT_ALREADY_PROPER_VALUE, CONSTRAININGRESULT_VALUE_HAS_BEEN_CHANGED, CONSTRAININGRESULT_CANNOT_CONSTRAIN };
 
-ConstrainingResult ConstrainBranch(shared_ptr<NodeEvaluation> node, shared_ptr<VentureValue> desired_value, shared_ptr<ReevaluationParameters> reevaluation_parameters);
+ConstrainingResult ConstrainBranch(shared_ptr<NodeEvaluation> node, shared_ptr<VentureValue> desired_value, shared_ptr<ReevaluationParameters> reevaluation_parameters, size_t constraint_times);
 
-shared_ptr<VentureValue> UnconstrainBranch(shared_ptr<NodeEvaluation> node);
+shared_ptr<VentureValue> UnconstrainBranch(shared_ptr<NodeEvaluation> node, size_t constraint_times, shared_ptr<ReevaluationParameters> reevaluation_parameters);
 
 shared_ptr<VentureValue> GetBranchValue(shared_ptr<Node> node);
 

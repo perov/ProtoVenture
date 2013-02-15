@@ -136,7 +136,7 @@ void ForgetDirective(size_t directive_id) {
     // Check for ASSUME.
     // DeleteBranch(directives[directive_id].directive_node, false);
     if (directives[directive_id].directive_node->GetNodeType() == DIRECTIVE_OBSERVE) {
-      UnconstrainBranch(directives[directive_id].directive_node);
+      UnconstrainBranch(directives[directive_id].directive_node, 1, shared_ptr<ReevaluationParameters>());
     }
     directives.erase(directive_id);
   }
@@ -144,8 +144,6 @@ void ForgetDirective(size_t directive_id) {
 
 void RejectionSamplingForObserve() {
   map<size_t, directive_entry> old_directives;
-
-  VENTURECONSTANT__MAX_ALLOWED_NUMBER_OF_SECONDS_FOR_REJECTION_SAMPLING;
 
   time_t starting_time = time(NULL);
 
@@ -161,6 +159,7 @@ void RejectionSamplingForObserve() {
          old_directive++)
     {
       bool unsatisfied_constraint;
+      last_directive_id = old_directive->first - 1;
       if (old_directive->second.directive_node->GetNodeType() == DIRECTIVE_ASSUME) {
         shared_ptr<NodeDirectiveAssume> current_directive =
           dynamic_pointer_cast<NodeDirectiveAssume>(old_directive->second.directive_node);

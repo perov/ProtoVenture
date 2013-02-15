@@ -144,6 +144,14 @@ void AddToReevaluationQueue
     } else {
       if (current_reevaluation.reevaluation_node->parent.lock() != shared_ptr<NodeEvaluation>()) {
         if (current_reevaluation.reevaluation_node->parent.lock()->GetNodeType() == APPLICATION_CALLER &&
+              current_reevaluation.reevaluation_node->parent.lock()->already_propagated != shared_ptr<VentureValue>()) {
+          assert(CompareValue(current_reevaluation.reevaluation_node->parent.lock()->already_propagated, reevaluation_result->passing_value));
+          continue;
+        }
+      }
+
+      if (current_reevaluation.reevaluation_node->parent.lock() != shared_ptr<NodeEvaluation>()) {
+        if (current_reevaluation.reevaluation_node->parent.lock()->GetNodeType() == APPLICATION_CALLER &&
               dynamic_pointer_cast<NodeApplicationCaller>(current_reevaluation.reevaluation_node->parent.lock())->application_operator ==
                 current_reevaluation.reevaluation_node) {
           if (CompareValue(reevaluation_result->passing_value,
@@ -246,6 +254,11 @@ void FinalizeProposal
  shared_ptr<ReevaluationParameters>& reevaluation_parameters)
 {
   if (mh_decision == MH_APPROVED) {
+    // Order matters!
+    // If firstly we remove, then incorporate:
+    //   ASSUME proc (mem (lambda () (flip)))
+    //   PREDICT (if (flip) (proc) (proc))
+    // (from_Clojure_engine_tests_with_theoretical_25_test.py)
     for (set< shared_ptr<NodeXRPApplication> >::const_iterator iterator = reevaluation_parameters->deleting_random_choices.begin();
          iterator != reevaluation_parameters->deleting_random_choices.end();
          iterator++) {
@@ -262,6 +275,7 @@ void FinalizeProposal
 
   while (!reevaluation_parameters->touched_nodes.empty()) {
     shared_ptr<Node> current_node = reevaluation_parameters->touched_nodes.top();
+    current_node->already_propagated = shared_ptr<VentureValue>();
     reevaluation_parameters->touched_nodes.pop();
     if (current_node->was_deleted == true) { continue; } // FIXME: Why do we need it?
     if (current_node->GetNodeType() == VARIABLE) {
@@ -281,13 +295,15 @@ void FinalizeProposal
       assert(dynamic_pointer_cast<NodeApplicationCaller>(current_node)->MH_made_action != MH_ACTION__EMPTY_STATUS);
 
       if (dynamic_pointer_cast<NodeApplicationCaller>(current_node)->new_application_node != shared_ptr<NodeEvaluation>()) {
-        {
-          // Adding back.
-          set< shared_ptr<NodeXRPApplication> > useless_set;
-          //Debug// cout << "IT__AddBack: " << dynamic_pointer_cast<NodeApplicationCaller>(current_node)->new_application_node << endl;
-          //Change//GatherBranch__POld(dynamic_pointer_cast<NodeApplicationCaller>(current_node)->new_application_node, MH_ACTION__EMPTY_STATUS, useless_set, false); // Adding.
+        UnabsorbBranchProbability(dynamic_pointer_cast<NodeApplicationCaller>(current_node)->application_node, shared_ptr<ReevaluationParameters>());
+        
+        if (mh_decision == MH_DECLINED) {
+          if (current_node->constraint_times > 0) {
+            FindConstrainingNode(dynamic_pointer_cast<NodeApplicationCaller>(current_node)->new_application_node, -1 * current_node->constraint_times);
+            FindConstrainingNode(dynamic_pointer_cast<NodeApplicationCaller>(current_node)->application_node, current_node->constraint_times);
+          }
         }
-
+        
         if (mh_decision == MH_APPROVED) {
           ////Debug// cout << "IT__DeleteOld: " << dynamic_pointer_cast<NodeApplicationCaller>(current_node)->application_node << endl;
           //Q_NewToOld += GatherBranch__QNewToOld(dynamic_pointer_cast<NodeApplicationCaller>(current_node)->application_node, MH_ACTION__EMPTY_STATUS);
@@ -336,6 +352,44 @@ void FinalizeProposal
       throw std::runtime_error("Unexpected node type.");
     }
   }
+  
+  /*
+  if (dynamic_pointer_cast<NodeXRPApplication>(
+        dynamic_pointer_cast<NodeApplicationCaller>(
+          dynamic_pointer_cast<NodeDirectiveObserve>(directives[2].directive_node)->expression)->application_node)->constraint_times == 0) {
+    cout << "Should not be1!" << endl;
+    throw std::runtime_error("Should not be1!\n");
+  }
+  shared_ptr<NodeXRPApplication> constraint_xrp =
+    dynamic_pointer_cast<NodeXRPApplication>(
+        dynamic_pointer_cast<NodeApplicationCaller>(
+          dynamic_pointer_cast<NodeDirectiveObserve>(directives[2].directive_node)->expression)->application_node);
+  if (random_choices.count(constraint_xrp) != 0) {
+    cout << "Should not be1a!" << endl;
+    throw std::runtime_error("Should not be1a!\n");
+  }
+  if (dynamic_pointer_cast<NodeXRPApplication>(
+        dynamic_pointer_cast<NodeApplicationCaller>(
+          dynamic_pointer_cast<NodeDirectiveObserve>(directives[2].directive_node)->expression)->new_application_node) != shared_ptr<NodeXRPApplication>() &&
+      dynamic_pointer_cast<NodeXRPApplication>(
+        dynamic_pointer_cast<NodeApplicationCaller>(
+          dynamic_pointer_cast<NodeDirectiveObserve>(directives[2].directive_node)->expression)->new_application_node)->constraint_times == 0) {
+    cout << "Should not be2!" << endl;
+    throw std::runtime_error("Should not be2!\n");
+  }
+  if (dynamic_pointer_cast<NodeXRPApplication>(
+        dynamic_pointer_cast<NodeApplicationCaller>(
+          dynamic_pointer_cast<NodeDirectiveObserve>(directives[2].directive_node)->expression)->new_application_node) != shared_ptr<NodeXRPApplication>()) {
+    shared_ptr<NodeXRPApplication> constraint_xrp =
+      dynamic_pointer_cast<NodeXRPApplication>(
+          dynamic_pointer_cast<NodeApplicationCaller>(
+            dynamic_pointer_cast<NodeDirectiveObserve>(directives[2].directive_node)->expression)->new_application_node);
+    if (random_choices.count(constraint_xrp) != 0) {
+      cout << "Should not be2a!" << endl;
+      throw std::runtime_error("Should not be2a!\n");
+    }
+  }
+  */
 }
 
 MHProposalResults MakeMHProposal
@@ -403,27 +457,13 @@ MHProposalResults MakeMHProposal
 
   PropagateNewValue(reevaluation_queue, touched_nodes, touched_nodes2, this_proposal, reevaluation_parameters);
 
-  //Debug// cout << "Finished propagation part" << endl;
-  
-  if (reevaluation_parameters->__unsatisfied_constraint == true) {
-    // throw std::runtime_error("Unsatisfied constraint. Sorry, rejection sampling still is not implemented."); // FIXME: implement!
-  }
-
   real Q_OldToNew = reevaluation_parameters->__log_q_from_old_to_new;
-  real Q_NewToOld = 0.0; // Calculated below.
-  real P_new = 0.0; // Calculated below.
-  set< shared_ptr<NodeXRPApplication> > creating_random_choices;
-  real P_old = 0.0; // Calculated below.
-  set< shared_ptr<NodeXRPApplication> > deleting_random_choices;
+  real Q_NewToOld = reevaluation_parameters->__log_q_from_new_to_old;
+  real P_new = reevaluation_parameters->__log_p_new;
+  real P_old = reevaluation_parameters->__log_p_old;
   
-  //Debug// cout << "Random choice: " << random_choice << endl;
-
-  //Change//Q_NewToOld
-  //Change//P_new = GetCreatingRandomChoices(touched_nodes2, creating_random_choices);
-  //Change//P_old = GetDeletingRandomChoices(touched_nodes2, deleting_random_choices);
-
   size_t posterior_number_of_random_choices =
-    number_of_random_choices + creating_random_choices.size() - deleting_random_choices.size();
+    number_of_random_choices + reevaluation_parameters->creating_random_choices.size() - reevaluation_parameters->deleting_random_choices.size();
   real number_of_random_choices_formula_component =
     log((1.0 / posterior_number_of_random_choices)
           / (1.0 / number_of_random_choices));
@@ -461,9 +501,11 @@ MHProposalResults MakeMHProposal
   // cout << "***" << endl;
 
   /*
-  cout << "New MH decision: " << mh_decision << " " << random_choice->xrp->xrp->GetName() << " " << random_choice->my_sampled_value->GetString()
+  cout << "New MH decision: " << mh_decision << " " << random_choice->xrp->xrp->GetName()
+       << " " << random_choice->node_key
+       << " " << random_choice->my_sampled_value->GetString()
        << " " << dynamic_pointer_cast<NodeXRPApplication>(dynamic_pointer_cast<NodeApplicationCaller>(random_choice->parent.lock())->new_application_node)->my_sampled_value->GetString()
-       << " " << number_of_random_choices << " " << creating_random_choices.size() << " " << deleting_random_choices.size()
+       << " " << number_of_random_choices << " " << reevaluation_parameters->creating_random_choices.size() << " " << reevaluation_parameters->deleting_random_choices.size()
        << " " << P_new << " " << P_old << " " << Q_NewToOld << " " << Q_OldToNew << endl << endl;
   */
 
@@ -472,123 +514,8 @@ MHProposalResults MakeMHProposal
   return MHProposalResults(P_new);
 }
 
-/*
-real GatherBranch__QNewToOld(shared_ptr<Node> first_node, size_t node_action) {
-  real changed_probability = log(1.0);
-  queue< shared_ptr<Node> > processing_queue;
-  processing_queue.push(first_node);
-  while (!processing_queue.empty()) {
-    processing_queue.front()->GetChildren(processing_queue);
-    shared_ptr<Node> current_node = processing_queue.front();
-    processing_queue.pop();
-
-    if (current_node->GetNodeType() == XRP_APPLICATION) {
-      shared_ptr<NodeXRPApplication> current_node2 = dynamic_pointer_cast<NodeXRPApplication>(current_node);
-
-      vector< shared_ptr<VentureValue> > got_arguments = GetArgumentsFromEnvironment(current_node2->environment, // Not efficient?
-                                      dynamic_pointer_cast<NodeEvaluation>(current_node2), true);
-      current_node2->xrp->xrp->Remove(got_arguments, current_node2->my_sampled_value);
-      
-      if (node_action == MH_ACTION__RESAMPLED) {
-        if (current_node2->forced_by_observations == false) {
-          changed_probability += current_node2->xrp->xrp->GetSampledLoglikelihood(got_arguments, current_node2->my_sampled_value);
-        }
-      }
-
-      if (current_node->GetNodeType() == XRP_APPLICATION &&
-            dynamic_pointer_cast<NodeXRPApplication>(current_node)->xrp->xrp->GetName() == "XRP__memoized_procedure")
-      {
-        string mem_table_key = XRP__memoized_procedure__MakeMapKeyFromArguments(got_arguments);
-        XRP__memoizer_map_element& mem_table_element =
-          (*(dynamic_pointer_cast<XRP__memoized_procedure>(dynamic_pointer_cast<NodeXRPApplication>(current_node)->xrp->xrp)->mem_table.find(mem_table_key))).second;
-        if (mem_table_element.active_uses == 0) {
-          processing_queue.push(mem_table_element.application_caller_node);
-        }
-      }
-    }
-  }
-  return changed_probability;
-}
-
-real GatherBranch__PNew(shared_ptr<Node> first_node, size_t node_action, set< shared_ptr<NodeXRPApplication> >& changing_random_choices) {
-  real changed_probability = log(1.0);
-  queue< shared_ptr<Node> > processing_queue;
-  processing_queue.push(first_node);
-  while (!processing_queue.empty()) {
-    processing_queue.front()->GetChildren(processing_queue);
-    shared_ptr<Node> current_node = processing_queue.front();
-    processing_queue.pop();
-
-    if (current_node->GetNodeType() == XRP_APPLICATION) {
-      shared_ptr<NodeXRPApplication> current_node2 = dynamic_pointer_cast<NodeXRPApplication>(current_node);
-
-      vector< shared_ptr<VentureValue> > got_arguments = GetArgumentsFromEnvironment(current_node2->environment, // Not efficient?
-                                      dynamic_pointer_cast<NodeEvaluation>(current_node2), false);
-      current_node2->xrp->xrp->Remove(got_arguments, current_node2->my_sampled_value);
-      
-      changed_probability += current_node2->xrp->xrp->GetSampledLoglikelihood(got_arguments, current_node2->my_sampled_value);
-      //cout << "Current: "
-      //     << current_node2->xrp->xrp->GetName() << " "
-      //     << current_node2->xrp->xrp->GetSampledLoglikelihood(got_arguments, current_node2->my_sampled_value) << endl;
-      if (current_node2->xrp->xrp->IsRandomChoice() && current_node2->forced_by_observations == false) {
-        changing_random_choices.insert(current_node2);
-      }
-
-      if (current_node->GetNodeType() == XRP_APPLICATION &&
-            dynamic_pointer_cast<NodeXRPApplication>(current_node)->xrp->xrp->GetName() == "XRP__memoized_procedure")
-      {
-        string mem_table_key = XRP__memoized_procedure__MakeMapKeyFromArguments(got_arguments);
-        XRP__memoizer_map_element& mem_table_element =
-          (*(dynamic_pointer_cast<XRP__memoized_procedure>(dynamic_pointer_cast<NodeXRPApplication>(current_node)->xrp->xrp)->mem_table.find(mem_table_key))).second;
-        if (mem_table_element.active_uses == 0) {
-          processing_queue.push(mem_table_element.application_caller_node);
-        }
-      }
-    }
-  }
-  return changed_probability;
-}
-
-real GatherBranch__POld(shared_ptr<Node> first_node, size_t node_action, set< shared_ptr<NodeXRPApplication> >& changing_random_choices, bool if_old_variables) {
-  real changed_probability = log(1.0);
-  int number_of_random_choices = 0;
-  queue< shared_ptr<Node> > processing_queue;
-  processing_queue.push(first_node);
-  while (!processing_queue.empty()) {
-    processing_queue.front()->GetChildren(processing_queue);
-    shared_ptr<Node> current_node = processing_queue.front();
-    processing_queue.pop();
-
-    if (current_node->GetNodeType() == XRP_APPLICATION) {
-      shared_ptr<NodeXRPApplication> current_node2 = dynamic_pointer_cast<NodeXRPApplication>(current_node);
-
-      vector< shared_ptr<VentureValue> > got_arguments = GetArgumentsFromEnvironment(current_node2->environment, // Not efficient?
-                                      dynamic_pointer_cast<NodeEvaluation>(current_node2), if_old_variables);
-      
-      changed_probability += current_node2->xrp->xrp->GetSampledLoglikelihood(got_arguments, current_node2->my_sampled_value);
-      if (current_node2->xrp->xrp->IsRandomChoice() && current_node2->forced_by_observations == false) {
-        changing_random_choices.insert(current_node2);
-      }
-      current_node2->xrp->xrp->Incorporate(got_arguments, current_node2->my_sampled_value);
-
-      if (current_node->GetNodeType() == XRP_APPLICATION &&
-            dynamic_pointer_cast<NodeXRPApplication>(current_node)->xrp->xrp->GetName() == "XRP__memoized_procedure")
-      {
-        string mem_table_key = XRP__memoized_procedure__MakeMapKeyFromArguments(got_arguments);
-        XRP__memoizer_map_element& mem_table_element =
-          (*(dynamic_pointer_cast<XRP__memoized_procedure>(dynamic_pointer_cast<NodeXRPApplication>(current_node)->xrp->xrp)->mem_table.find(mem_table_key))).second;
-        if (mem_table_element.active_uses == 1) {
-          processing_queue.push(mem_table_element.application_caller_node);
-        }
-      }
-    }
-  }
-  return changed_probability;
-}
-*/
-
 // Returns pair<logP_constraint, logP_unconstraint>
-pair<real, real> AbsorbBranchProbability(shared_ptr<Node> first_node) {
+pair<real, real> AbsorbBranchProbability(shared_ptr<Node> first_node, shared_ptr<ReevaluationParameters> reevaluation_parameters) {
   real constraint_loglikelihood = log(1.0);
   real unconstraint_loglikelihood = log(1.0);
   queue< shared_ptr<Node> > processing_queue;
@@ -611,6 +538,7 @@ pair<real, real> AbsorbBranchProbability(shared_ptr<Node> first_node) {
         if (current_node2->constraint_times > 0) {
           constraint_loglikelihood += node_loglikelihood;
         } else {
+          reevaluation_parameters->deleting_random_choices.insert(current_node2);
           unconstraint_loglikelihood += node_loglikelihood;
         }
       }
@@ -628,6 +556,48 @@ pair<real, real> AbsorbBranchProbability(shared_ptr<Node> first_node) {
     }
   }
   return pair<real, real>(constraint_loglikelihood, unconstraint_loglikelihood);
+}
+
+void UnabsorbBranchProbability(shared_ptr<Node> first_node, shared_ptr<ReevaluationParameters> reevaluation_parameters) {
+  queue< shared_ptr<Node> > processing_queue;
+  processing_queue.push(first_node);
+  while (!processing_queue.empty()) {
+    processing_queue.front()->GetChildren(processing_queue);
+    shared_ptr<Node> current_node = processing_queue.front();
+    processing_queue.pop();
+
+    if (current_node->GetNodeType() == XRP_APPLICATION) {
+      shared_ptr<NodeXRPApplication> current_node2 = dynamic_pointer_cast<NodeXRPApplication>(current_node);
+
+      vector< shared_ptr<VentureValue> > got_arguments = GetArgumentsFromEnvironment(current_node2->environment, // Not efficient?
+                                      dynamic_pointer_cast<NodeEvaluation>(current_node2), true);
+      real node_loglikelihood = current_node2->xrp->xrp->GetSampledLoglikelihood(got_arguments, current_node2->my_sampled_value);
+      current_node2->xrp->xrp->Incorporate(got_arguments, current_node2->my_sampled_value);
+      
+      if (reevaluation_parameters != shared_ptr<ReevaluationParameters>()) {
+        if (current_node2->xrp->xrp->IsRandomChoice()) {
+          if (current_node2->constraint_times > 0) {
+            reevaluation_parameters->__log_p_new += node_loglikelihood;
+          } else {
+            reevaluation_parameters->creating_random_choices.insert(current_node2);
+            reevaluation_parameters->__log_p_new += node_loglikelihood;
+            reevaluation_parameters->__log_q_from_old_to_new += node_loglikelihood;
+          }
+        }
+      }
+  
+      if (current_node->GetNodeType() == XRP_APPLICATION &&
+            dynamic_pointer_cast<NodeXRPApplication>(current_node)->xrp->xrp->GetName() == "XRP__memoized_procedure")
+      {
+        string mem_table_key = XRP__memoized_procedure__MakeMapKeyFromArguments(got_arguments);
+        XRP__memoizer_map_element& mem_table_element =
+          (*(dynamic_pointer_cast<XRP__memoized_procedure>(dynamic_pointer_cast<NodeXRPApplication>(current_node)->xrp->xrp)->mem_table.find(mem_table_key))).second;
+        if (mem_table_element.active_uses == 1) {
+          processing_queue.push(mem_table_element.application_caller_node);
+        }
+      }
+    }
+  }
 }
 
 void Enumerate(shared_ptr<NodeXRPApplication> principal_node) {

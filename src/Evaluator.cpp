@@ -158,7 +158,7 @@ shared_ptr<VentureValue> LookupValue(shared_ptr<NodeEnvironment> environment,
 shared_ptr<NodeEvaluation> FindConstrainingNode(shared_ptr<Node> node, int delta) {
   while (true) {
     assert(node != shared_ptr<Node>());
-    assert(delta != -1 || node->constraint_times != 0);
+    assert(static_cast<int>(node->constraint_times) + delta >= 0);
     node->constraint_times += delta;
     if (node->GetNodeType() == LOOKUP) {
       node = dynamic_pointer_cast<NodeLookup>(node)->where_lookuped.lock();
@@ -198,42 +198,47 @@ shared_ptr<NodeEvaluation> FindConstrainingNode(shared_ptr<Node> node, int delta
   }
 }
 
-// If possible to force (return True) or not (return False)?
-ConstrainingResult ConstrainBranch(shared_ptr<NodeEvaluation> node, shared_ptr<VentureValue> desired_value, shared_ptr<ReevaluationParameters> reevaluation_parameters) {
-  shared_ptr<NodeEvaluation> constraining_node = FindConstrainingNode(node, 1);
+ConstrainingResult ConstrainBranch(shared_ptr<NodeEvaluation> toppest_branch_node, shared_ptr<VentureValue> desired_value, shared_ptr<ReevaluationParameters> reevaluation_parameters, size_t constraint_times) {
+  shared_ptr<NodeEvaluation> constraining_node = FindConstrainingNode(toppest_branch_node, constraint_times);
 
-  if (node->constraint_times == 0 &&
-        node->GetNodeType() == XRP_APPLICATION &&
-        dynamic_pointer_cast<NodeXRPApplication>(node)->xrp->xrp->IsRandomChoice()) {
-    DeleteRandomChoices(dynamic_pointer_cast<NodeXRPApplication>(node));
+  if (constraining_node->constraint_times == constraint_times && // "== constraint_times", not "== 0", because we just have already constraint it once!
+        constraining_node->GetNodeType() == XRP_APPLICATION &&
+        dynamic_pointer_cast<NodeXRPApplication>(constraining_node)->xrp->xrp->IsRandomChoice()) {
+    if (reevaluation_parameters->creating_random_choices.count(dynamic_pointer_cast<NodeXRPApplication>(constraining_node)) == 1) {
+      reevaluation_parameters->creating_random_choices.erase(dynamic_pointer_cast<NodeXRPApplication>(constraining_node));
+    } else {
+      reevaluation_parameters->deleting_random_choices.insert(dynamic_pointer_cast<NodeXRPApplication>(constraining_node));
+    }
   }
 
-  if (node->GetNodeType() == SELF_EVALUATING) {
-    shared_ptr<NodeSelfEvaluating> node2 = dynamic_pointer_cast<NodeSelfEvaluating>(node);
+  if (constraining_node->GetNodeType() == SELF_EVALUATING) {
+    shared_ptr<NodeSelfEvaluating> node2 = dynamic_pointer_cast<NodeSelfEvaluating>(constraining_node);
     if (CompareValue(node2->value, desired_value)) {
       return CONSTRAININGRESULT_ALREADY_PROPER_VALUE;
     } else {
       reevaluation_parameters->__unsatisfied_constraint = true;
       return CONSTRAININGRESULT_CANNOT_CONSTRAIN;
     }
-  } else if (node->GetNodeType() == XRP_APPLICATION) {
-    shared_ptr<NodeXRPApplication> node2 = dynamic_pointer_cast<NodeXRPApplication>(node);
+  } else if (constraining_node->GetNodeType() == XRP_APPLICATION) {
+    shared_ptr<NodeXRPApplication> node2 = dynamic_pointer_cast<NodeXRPApplication>(constraining_node);
     if (CompareValue(node2->my_sampled_value, desired_value)) {
       return CONSTRAININGRESULT_ALREADY_PROPER_VALUE;
     } else {
-      if (node2->constraint_times > 1) { // "> 1", not "> 0", because we just have already constraint it once!
+      if (node2->constraint_times > constraint_times) { // "> constraint_times", not "> 0", because we just have already constraint it once!
         reevaluation_parameters->__unsatisfied_constraint = true;
         return CONSTRAININGRESULT_CANNOT_CONSTRAIN; // The already forced value is not the value we want. Rejecting.
       } else {
-        vector< shared_ptr<VentureValue> > got_arguments = GetArgumentsFromEnvironment(node->environment, // Not efficient?
-                                        node,
+        vector< shared_ptr<VentureValue> > got_arguments = GetArgumentsFromEnvironment(node2->environment, // Not efficient?
+                                        node2,
                                         false);
         node2->xrp->xrp->Remove(got_arguments, node2->my_sampled_value);
         //real logscore_change = -1.0 * node2->xrp->xrp->GetSampledLoglikelihood(got_arguments, node2->my_sampled_value);
         // Assuming that if it was rescored, it saved the necessary value, i.e. there would not be necessity in
         // the forcing. Otherwise:
         reevaluation_parameters->__log_q_from_old_to_new -= node2->xrp->xrp->GetSampledLoglikelihood(got_arguments, node2->my_sampled_value);
+        reevaluation_parameters->__log_p_new -= node2->xrp->xrp->GetSampledLoglikelihood(got_arguments, node2->my_sampled_value);
         node2->my_sampled_value = desired_value;
+        reevaluation_parameters->__log_p_new += node2->xrp->xrp->GetSampledLoglikelihood(got_arguments, node2->my_sampled_value);
         //logscore_change +=node2->xrp->xrp->GetSampledLoglikelihood(got_arguments, node2->my_sampled_value);
         node2->xrp->xrp->Incorporate(got_arguments, node2->my_sampled_value);
 
@@ -257,12 +262,21 @@ ConstrainingResult ConstrainBranch(shared_ptr<NodeEvaluation> node, shared_ptr<V
   }
 }
 
-shared_ptr<VentureValue> UnconstrainBranch(shared_ptr<NodeEvaluation> node) {
-  shared_ptr<NodeEvaluation> potentially_constraint_node = FindConstrainingNode(node, -1);
+shared_ptr<VentureValue> UnconstrainBranch(shared_ptr<NodeEvaluation> node, size_t constraint_times, shared_ptr<ReevaluationParameters> reevaluation_parameters) {
+  shared_ptr<NodeEvaluation> potentially_constraint_node = FindConstrainingNode(node, -1 * static_cast<int>(constraint_times));
   if (potentially_constraint_node->constraint_times == 0 &&
         potentially_constraint_node->GetNodeType() == XRP_APPLICATION &&
         dynamic_pointer_cast<NodeXRPApplication>(potentially_constraint_node)->xrp->xrp->IsRandomChoice()) {
-    AddToRandomChoices(dynamic_pointer_cast<NodeXRPApplication>(potentially_constraint_node));
+    shared_ptr<NodeXRPApplication> node2 = dynamic_pointer_cast<NodeXRPApplication>(potentially_constraint_node);
+    vector< shared_ptr<VentureValue> > got_arguments = GetArgumentsFromEnvironment(node2->environment, // Not efficient?
+                                    node2,
+                                    true);
+    reevaluation_parameters->__log_q_from_new_to_old -= node2->xrp->xrp->GetSampledLoglikelihood(got_arguments, node2->my_sampled_value);
+    if (reevaluation_parameters == shared_ptr<ReevaluationParameters>()) {
+      AddToRandomChoices(dynamic_pointer_cast<NodeXRPApplication>(potentially_constraint_node));
+    } else {
+      reevaluation_parameters->creating_random_choices.insert(dynamic_pointer_cast<NodeXRPApplication>(potentially_constraint_node));
+    }
   }
   if (potentially_constraint_node->GetNodeType() == SELF_EVALUATING) {
     return dynamic_pointer_cast<NodeSelfEvaluating>(potentially_constraint_node)->value;

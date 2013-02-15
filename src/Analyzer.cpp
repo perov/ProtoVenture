@@ -406,7 +406,7 @@ void NodeApplicationCaller::GetChildren(queue< shared_ptr<Node> >& processing_qu
     processing_queue.push(application_operands[index]);
   }
   if (this->evaluated == true) { // Is it right?
-    if (application_node.get() == 0) {
+    if (application_node.get() == 0 && false) {
       stack< shared_ptr<Node> > tmp;
       tmp.push(dynamic_pointer_cast<Node>(this->shared_from_this()));
       //cout << this->evaluated << endl;
@@ -414,8 +414,10 @@ void NodeApplicationCaller::GetChildren(queue< shared_ptr<Node> >& processing_qu
       DrawGraphDuringMH(GetLastDirectiveNode(), tmp);
       assert(false);
     }
-    assert(application_node.get() != 0);
-    processing_queue.push(application_node);
+    //assert(application_node.get() != 0);
+    if (application_node.get() != 0) {
+      processing_queue.push(application_node);
+    }
   }
 };
 
@@ -597,19 +599,21 @@ NodeDirectiveObserve::Evaluate(shared_ptr<NodeEnvironment> environment, Evaluati
   reevaluation_parameters->we_are_in_enumeration = false;
 
   ConstrainingResult constraining_result =
-    ConstrainBranch(this->expression, this->observed_value, reevaluation_parameters);
+    ConstrainBranch(this->expression, this->observed_value, reevaluation_parameters, 1);
             
   if (constraining_result == CONSTRAININGRESULT_CANNOT_CONSTRAIN) {
     // Doing nothing, because we have marked the flag "__unsatisfied_constraint" in the function "ConstrainBranch".
     evaluation_config.unsatisfied_constraint = true;
   } else if (constraining_result == CONSTRAININGRESULT_ALREADY_PROPER_VALUE) {
     // Doing nothing.
+    // Though, we should finalize below, otherwise maybe we do not deleted the node from the random choices pool.
   } else if (constraining_result == CONSTRAININGRESULT_VALUE_HAS_BEEN_CHANGED) {
     PropagateNewValue(reevaluation_queue, touched_nodes, touched_nodes2, this_proposal, reevaluation_parameters);
-    FinalizeProposal(MH_APPROVED, reevaluation_parameters);
   } else {
     throw std::runtime_error("Strange 'constraining_result'.");
   }
+  
+  FinalizeProposal(MH_APPROVED, reevaluation_parameters);
   
   return NIL_INSTANCE;
 }
@@ -847,6 +851,7 @@ NodeApplicationCaller::Reevaluate__TryToRescore(shared_ptr<VentureValue> passing
   assert(dynamic_pointer_cast<NodeXRPApplication>(this->new_application_node)->shared_from_this() != dynamic_pointer_cast<NodeXRPApplication>(this->application_node)->shared_from_this());
   dynamic_pointer_cast<NodeXRPApplication>(this->new_application_node)->xrp = xrp_reference;
   dynamic_pointer_cast<NodeXRPApplication>(this->new_application_node)->environment = local_environment;
+  dynamic_pointer_cast<NodeXRPApplication>(this->new_application_node)->constraint_times = 0; // Because it would be constraint soon by separate operation.
   
   if (passing_value != shared_ptr<VentureValue>()) {
     dynamic_pointer_cast<NodeXRPApplication>(this->new_application_node)->my_sampled_value = passing_value;
@@ -879,12 +884,14 @@ NodeApplicationCaller::Reevaluate__TryToRescore(shared_ptr<VentureValue> passing
 
   if (result->new_value != shared_ptr<VentureValue>()) { // Resampled.
     this->MH_made_action = MH_ACTION__RESAMPLED;
+    reevaluation_parameters->__log_p_new += tmp_evaluation_config.__log_unconstrained_score;
     reevaluation_parameters->__log_q_from_old_to_new += tmp_evaluation_config.__log_unconstrained_score;
     assert(result->new_loglikelihood == log(1.0) || xrp_reference->xrp->IsRandomChoice() == true); // For now all XRPs, which are being resampled and which are not forced to be resampled, should return it.
     dynamic_pointer_cast<NodeXRPApplication>(this->new_application_node)->my_sampled_value = result->new_value;
     return shared_ptr<ReevaluationResult>(
       new ReevaluationResult(result->new_value, true));
   } else { // Rescored.
+    reevaluation_parameters->__log_p_new += tmp_evaluation_config.__log_unconstrained_score;
     this->MH_made_action = MH_ACTION__RESCORED;
     return shared_ptr<ReevaluationResult>(
       new ReevaluationResult(shared_ptr<VentureValue>(), false));
@@ -896,14 +903,31 @@ NodeApplicationCaller::Reevaluate(shared_ptr<VentureValue> passing_value,
                                   shared_ptr<Node> sender,
                                   shared_ptr<ReevaluationParameters> reevaluation_parameters) {
   assert(this->MH_made_action == MH_ACTION__EMPTY_STATUS);
+  
+  if (sender == this->application_node->shared_from_this() &&
+        this->application_node->GetNodeType() == XRP_APPLICATION &&
+        passing_value == shared_ptr<VentureValue>())
+  {
+
+  } else if (sender == this->application_node->shared_from_this()) {
+      // Just passing up (came from lambda or from memoized procedure).
+      this->MH_made_action = MH_ACTION__LAMBDA_PROPAGATED;
+      return shared_ptr<ReevaluationResult>(
+        new ReevaluationResult(passing_value, true));
+  }
 
   shared_ptr<ReevaluationResult> reevaluation_result;
 
-  pair<real, real> branch_loglikelihoods = AbsorbBranchProbability(this->application_node);
   shared_ptr<VentureValue> value_for_constraining;
   if (this->constraint_times > 0) {
-    value_for_constraining = UnconstrainBranch(this->application_node);
+    value_for_constraining = UnconstrainBranch(this->application_node, this->constraint_times, reevaluation_parameters);
   }
+  
+  pair<real, real> branch_loglikelihoods = AbsorbBranchProbability(this->application_node, reevaluation_parameters);
+  
+  reevaluation_parameters->__log_p_old += branch_loglikelihoods.first; // logP_constraint
+  reevaluation_parameters->__log_p_old += branch_loglikelihoods.second; // logP_unconstraint
+  reevaluation_parameters->__log_q_from_new_to_old += branch_loglikelihoods.second; // logP_unconstraint
 
   if (sender == this->application_node->shared_from_this() &&
         this->application_node->GetNodeType() == XRP_APPLICATION &&
@@ -913,11 +937,6 @@ NodeApplicationCaller::Reevaluate(shared_ptr<VentureValue> passing_value,
     // 1) it is a principal node,
     // 2) arguments have changed.
     reevaluation_result = this->Reevaluate__TryToRescore(passing_value, sender, reevaluation_parameters, dynamic_pointer_cast<NodeXRPApplication>(this->application_node)->xrp);
-  } else if (sender == this->application_node->shared_from_this()) {
-    // Just passing up (came from lambda or from memoized procedure).
-    this->MH_made_action = MH_ACTION__LAMBDA_PROPAGATED;
-    reevaluation_result = shared_ptr<ReevaluationResult>(
-      new ReevaluationResult(passing_value, true));
   } else if (sender == this->application_operator->shared_from_this()) {
     // Operator has changed.
     
@@ -956,6 +975,9 @@ NodeApplicationCaller::Reevaluate(shared_ptr<VentureValue> passing_value,
                             new_application_node,
                             dynamic_pointer_cast<NodeApplicationCaller>(this->shared_from_this()),
                             local_evaluation_config);
+      reevaluation_parameters->__log_p_new += local_evaluation_config.__log_unconstrained_score;
+      // Commented, because during evaluation we cannot have constrained scores
+      // reevaluation_parameters->__log_p_new += local_evaluation_config.__log_constrained_score;
       reevaluation_parameters->__log_q_from_old_to_new += local_evaluation_config.__log_unconstrained_score;
 
       reevaluation_result = shared_ptr<ReevaluationResult>(
@@ -967,8 +989,8 @@ NodeApplicationCaller::Reevaluate(shared_ptr<VentureValue> passing_value,
 
   if (this->constraint_times > 0) {
     ConstrainingResult constraining_result =
-      ConstrainBranch(this->new_application_node, value_for_constraining, reevaluation_parameters);
-
+      ConstrainBranch(this->new_application_node, value_for_constraining, reevaluation_parameters, this->constraint_times);
+      
     if (constraining_result == CONSTRAININGRESULT_CANNOT_CONSTRAIN) {
       // Doing nothing, because we have marked the flag "__unsatisfied_constraint" in the function "ConstrainBranch".
       return shared_ptr<ReevaluationResult>(
@@ -976,9 +998,11 @@ NodeApplicationCaller::Reevaluate(shared_ptr<VentureValue> passing_value,
     } else if (constraining_result == CONSTRAININGRESULT_ALREADY_PROPER_VALUE) {
       return reevaluation_result;
     } else if (constraining_result == CONSTRAININGRESULT_VALUE_HAS_BEEN_CHANGED) {
-      // Doing nothing, because we have added propagation in the function "ConstrainBranch".
+      // We have added propagation in the function "ConstrainBranch".
+      assert(this->already_propagated == shared_ptr<VentureValue>());
+      this->already_propagated = value_for_constraining;
       return shared_ptr<ReevaluationResult>(
-        new ReevaluationResult(shared_ptr<VentureValue>(), false));
+        new ReevaluationResult(value_for_constraining, true));
     } else {
       throw std::runtime_error("Strange 'constraining_result'.");
     }
@@ -1011,8 +1035,13 @@ shared_ptr<ReevaluationResult>
 NodeDirectiveObserve::Reevaluate(shared_ptr<VentureValue> passing_value,
                                  shared_ptr<Node> sender,
                                  shared_ptr<ReevaluationParameters> reevaluation_parameters) {
-  throw std::runtime_error("The OBSERVE directive's node should not be reevaluated.");
-  
+  if (CompareValue(passing_value, this->observed_value)) {
+    return shared_ptr<ReevaluationResult>(
+      new ReevaluationResult(shared_ptr<VentureValue>(), false));
+  } else {
+    throw std::runtime_error("The OBSERVE directive's node should not be reevaluated.");
+  }
+
   /*
   pair<bool, shared_ptr<NodeEvaluation> > forcing_result = ForceExpressionValue(this->expression, this->observed_value, reevaluation_parameters);
   if (forcing_result.first == false) {
