@@ -59,8 +59,8 @@ void PauseInference() {
     continuous_inference_status = 2;
     clock_t start_time = clock();
     while (continuous_inference_status != 3) {
-      if ((( static_cast<float>(clock() - start_time)) / CLOCKS_PER_SEC) > 3.0) {
-        throw std::runtime_error("Cannot stop the inference for more than 3 seconds.");
+      if ((( static_cast<float>(clock() - start_time)) / CLOCKS_PER_SEC) > VENTURE__MAX_TIME_FOR_PAUSED_CONTINUOUS_INFERENCE) {
+        throw std::runtime_error("Cannot stop the inference for more than " + boost::lexical_cast<string>(VENTURE__MAX_TIME_FOR_PAUSED_CONTINUOUS_INFERENCE) + " second(s).");
       }
       struct timespec ts = {0, 1}; // 1 ns -- is it okay? :)
 #ifdef _MSC_VER
@@ -136,7 +136,7 @@ void ForgetDirective(size_t directive_id) {
     // Check for ASSUME.
     // DeleteBranch(directives[directive_id].directive_node, false);
     if (directives[directive_id].directive_node->GetNodeType() == DIRECTIVE_OBSERVE) {
-      UnconstrainBranch(directives[directive_id].directive_node, 1, shared_ptr<ReevaluationParameters>());
+      UnconstrainBranch(dynamic_pointer_cast<NodeDirectiveObserve>(directives[directive_id].directive_node)->expression, 1, shared_ptr<ReevaluationParameters>());
     }
     directives.erase(directive_id);
   }

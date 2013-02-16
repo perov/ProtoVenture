@@ -271,10 +271,15 @@ shared_ptr<VentureValue> UnconstrainBranch(shared_ptr<NodeEvaluation> node, size
     vector< shared_ptr<VentureValue> > got_arguments = GetArgumentsFromEnvironment(node2->environment, // Not efficient?
                                     node2,
                                     true);
-    reevaluation_parameters->__log_q_from_new_to_old -= node2->xrp->xrp->GetSampledLoglikelihood(got_arguments, node2->my_sampled_value);
     if (reevaluation_parameters == shared_ptr<ReevaluationParameters>()) {
       AddToRandomChoices(dynamic_pointer_cast<NodeXRPApplication>(potentially_constraint_node));
     } else {
+      // Imporant, because we work as follows:
+      // 1) Unconstrain.
+      // 2) Absorb.
+      // 3) Evaluate.
+      // 4) Constrain.
+      reevaluation_parameters->__log_q_from_new_to_old -= node2->xrp->xrp->GetSampledLoglikelihood(got_arguments, node2->my_sampled_value);
       reevaluation_parameters->creating_random_choices.insert(dynamic_pointer_cast<NodeXRPApplication>(potentially_constraint_node));
     }
   }

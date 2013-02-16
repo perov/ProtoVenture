@@ -70,7 +70,8 @@ XRP::Sample(vector< shared_ptr<VentureValue> >& arguments,
 
   if (this->IsRandomChoice() == true) {
     if (evaluation_config.in_proposal == false) {
-      AddToRandomChoices(dynamic_pointer_cast<NodeXRPApplication>(caller->shared_from_this()));
+      AddToRandomChoices(dynamic_pointer_cast<NodeXRPApplication>(caller));
+      cout << "Adding a random choice" << endl;
     } else {
       evaluation_config.reevaluation_config_ptr->creating_random_choices.insert(dynamic_pointer_cast<NodeXRPApplication>(caller->shared_from_this()));
     }
@@ -78,13 +79,13 @@ XRP::Sample(vector< shared_ptr<VentureValue> >& arguments,
   
   //Debug// cout << "Incorporate from " << caller << endl;
   Incorporate(arguments, new_sample);
-  
+
   if (evaluation_config.in_proposal == true) {
-    if (this->GetName() == "XRP__memoized_procedure")
-    {
+    if (this->GetName() == "XRP__memoized_procedure") {
       string mem_table_key = XRP__memoized_procedure__MakeMapKeyFromArguments(arguments);
       XRP__memoizer_map_element& mem_table_element =
         (*(dynamic_pointer_cast<XRP__memoized_procedure>(this->shared_from_this())->mem_table.find(mem_table_key))).second;
+      //cout << "active uses: " << mem_table_element.active_uses << " | " << evaluation_config.in_proposal << endl;
       if (mem_table_element.active_uses == 1) {
         UnabsorbBranchProbability(mem_table_element.application_caller_node, evaluation_config.reevaluation_config_ptr);
       }
@@ -123,6 +124,7 @@ XRP::RescorerResampler(vector< shared_ptr<VentureValue> >& old_arguments,
       break;
     }
   }
+  cout << "Pam: " << arguments_are_different << " " << forced_resampling << " " << sampled_value_has_changed << " " << this->GetName() << endl;
   if (arguments_are_different == false && !forced_resampling && !sampled_value_has_changed) {
     return shared_ptr<RescorerResamplerResult>(
       new RescorerResamplerResult(shared_ptr<VentureValue>(),
@@ -158,6 +160,16 @@ XRP::RescorerResampler(vector< shared_ptr<VentureValue> >& old_arguments,
     evaluation_config.__log_unconstrained_score += new_loglikelihood;
     
     Incorporate(new_arguments, new_sample);
+    
+    if (this->GetName() == "XRP__memoized_procedure") {
+      string mem_table_key = XRP__memoized_procedure__MakeMapKeyFromArguments(new_arguments);
+      XRP__memoizer_map_element& mem_table_element =
+        (*(dynamic_pointer_cast<XRP__memoized_procedure>(this->shared_from_this())->mem_table.find(mem_table_key))).second;
+      //cout << "active uses: " << mem_table_element.active_uses << " | " << evaluation_config.in_proposal << endl;
+      if (mem_table_element.active_uses == 1) {
+        UnabsorbBranchProbability(mem_table_element.application_caller_node, reevaluation_parameters);
+      }
+    }
 
     return shared_ptr<RescorerResamplerResult>(new RescorerResamplerResult(new_sample,
                                                                            new_loglikelihood)); // FIXME: This thing does nothing now, but it should work when mem would be implemented in the right way!

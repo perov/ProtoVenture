@@ -574,6 +574,8 @@ NodeDirectivePredict::Evaluate(shared_ptr<NodeEnvironment> environment, Evaluati
 
 shared_ptr<VentureValue>
 NodeDirectiveObserve::Evaluate(shared_ptr<NodeEnvironment> environment, EvaluationConfig& evaluation_config) {
+  return NIL_INSTANCE;
+
   Evaluator(this->expression,
             environment,
             dynamic_pointer_cast<Node>(this->shared_from_this()),
