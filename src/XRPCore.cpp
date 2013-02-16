@@ -71,7 +71,7 @@ XRP::Sample(vector< shared_ptr<VentureValue> >& arguments,
   if (this->IsRandomChoice() == true) {
     if (evaluation_config.in_proposal == false) {
       AddToRandomChoices(dynamic_pointer_cast<NodeXRPApplication>(caller));
-      cout << "Adding a random choice" << endl;
+      //cout << "Adding a random choice" << endl;
     } else {
       evaluation_config.reevaluation_config_ptr->creating_random_choices.insert(dynamic_pointer_cast<NodeXRPApplication>(caller->shared_from_this()));
     }
@@ -124,7 +124,7 @@ XRP::RescorerResampler(vector< shared_ptr<VentureValue> >& old_arguments,
       break;
     }
   }
-  cout << "Pam: " << arguments_are_different << " " << forced_resampling << " " << sampled_value_has_changed << " " << this->GetName() << endl;
+  //cout << "Pam: " << arguments_are_different << " " << forced_resampling << " " << sampled_value_has_changed << " " << this->GetName() << endl;
   if (arguments_are_different == false && !forced_resampling && !sampled_value_has_changed) {
     return shared_ptr<RescorerResamplerResult>(
       new RescorerResamplerResult(shared_ptr<VentureValue>(),

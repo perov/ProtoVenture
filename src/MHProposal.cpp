@@ -400,7 +400,7 @@ MHProposalResults MakeMHProposal
 {
   int proposal_unique_id = 0; // FIXME: deprecated?
 
-  cout << "MH starts" << endl;
+  //cout << "MH starts" << endl;
 
   //Debug// cout << "New MH" << endl;
 
@@ -502,14 +502,14 @@ MHProposalResults MakeMHProposal
   }
   // cout << "***" << endl;
 
-  ///*
+  /*
   cout << "New MH decision: " << mh_decision << " " << random_choice->xrp->xrp->GetName()
        << " " << random_choice->node_key
        << " " << random_choice->my_sampled_value->GetString()
        << " " << dynamic_pointer_cast<NodeXRPApplication>(dynamic_pointer_cast<NodeApplicationCaller>(random_choice->parent.lock())->new_application_node)->my_sampled_value->GetString()
        << " " << number_of_random_choices << " " << reevaluation_parameters->creating_random_choices.size() << " " << reevaluation_parameters->deleting_random_choices.size()
        << " " << P_new << " " << P_old << " " << Q_NewToOld << " " << Q_OldToNew << endl << endl;
-  //*/
+  */
 
   FinalizeProposal(mh_decision, reevaluation_parameters);
 
