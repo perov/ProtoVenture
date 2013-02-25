@@ -78,6 +78,7 @@ real XRP__CRPsampler::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >
 
 void XRP__CRPsampler::Incorporate(vector< shared_ptr<VentureValue> >& arguments,
                               shared_ptr<VentureValue> sampled_value) {
+  assert(ToVentureType<VentureAtom>(sampled_value)->data <= 3);
   if (this->atoms.count(ToVentureType<VentureAtom>(sampled_value)->data) == 1) {
     this->atoms[ToVentureType<VentureAtom>(sampled_value)->data]++;
   } else {

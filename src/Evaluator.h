@@ -32,7 +32,7 @@ shared_ptr<VentureValue> LookupValue(shared_ptr<NodeEnvironment> environment,
                                      shared_ptr<NodeEvaluation> lookuper,
                                      bool old_values);
 
-shared_ptr<NodeEvaluation> FindConstrainingNode(shared_ptr<Node> node, int delta);
+shared_ptr<NodeEvaluation> FindConstrainingNode(shared_ptr<Node> node, int delta, bool if_old_arguments);
 
 enum ConstrainingResult { CONSTRAININGRESULT_ALREADY_PROPER_VALUE, CONSTRAININGRESULT_VALUE_HAS_BEEN_CHANGED, CONSTRAININGRESULT_CANNOT_CONSTRAIN };
 

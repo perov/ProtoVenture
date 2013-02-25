@@ -306,7 +306,7 @@ void ApplyToMeAndAllMyChildren(shared_ptr<Node>,
                                bool old_values,
                                void (*f)(shared_ptr<Node>, bool));
 
-void DrawGraphDuringMH(shared_ptr<Node> first_node, stack< shared_ptr<Node> >& touched_nodes);
+void DrawGraphDuringMH(stack< shared_ptr<Node> >& touched_nodes);
 
 void CopyLocalEnvironmentByContent
   (shared_ptr<NodeEnvironment> existing_environment,

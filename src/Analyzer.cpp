@@ -411,7 +411,7 @@ void NodeApplicationCaller::GetChildren(queue< shared_ptr<Node> >& processing_qu
       tmp.push(dynamic_pointer_cast<Node>(this->shared_from_this()));
       //cout << this->evaluated << endl;
       assert(false);
-      DrawGraphDuringMH(GetLastDirectiveNode(), tmp);
+      DrawGraphDuringMH(tmp);
       assert(false);
     }
     //assert(application_node.get() != 0);
@@ -921,6 +921,7 @@ NodeApplicationCaller::Reevaluate(shared_ptr<VentureValue> passing_value,
   shared_ptr<VentureValue> value_for_constraining;
   if (this->constraint_times > 0) {
     value_for_constraining = UnconstrainBranch(this->application_node, this->constraint_times, reevaluation_parameters);
+    //cout << "Unconstraining value: " << value_for_constraining->GetString() << endl;
   }
   
   pair<real, real> branch_loglikelihoods = AbsorbBranchProbability(this->application_node, reevaluation_parameters);
@@ -990,12 +991,18 @@ NodeApplicationCaller::Reevaluate(shared_ptr<VentureValue> passing_value,
   if (this->constraint_times > 0) {
     ConstrainingResult constraining_result =
       ConstrainBranch(this->new_application_node, value_for_constraining, reevaluation_parameters, this->constraint_times);
+    //cout << "Constraining result: " << constraining_result << endl;
+    //if (reevaluation_result->passing_value != shared_ptr<VentureValue>()) {
+    //  cout << "Passing value: " << reevaluation_result->passing_value->GetString() << endl;
+    //}
+    //cout << "Pass further?: " << reevaluation_result->pass_further << endl;
       
     if (constraining_result == CONSTRAININGRESULT_CANNOT_CONSTRAIN) {
       // Doing nothing, because we have marked the flag "__unsatisfied_constraint" in the function "ConstrainBranch".
       return shared_ptr<ReevaluationResult>(
         new ReevaluationResult(shared_ptr<VentureValue>(), false));
     } else if (constraining_result == CONSTRAININGRESULT_ALREADY_PROPER_VALUE) {
+      assert(reevaluation_result->pass_further == false || CompareValue(reevaluation_result->passing_value, value_for_constraining));
       return reevaluation_result;
     } else if (constraining_result == CONSTRAININGRESULT_VALUE_HAS_BEEN_CHANGED) {
       // We have added propagation in the function "ConstrainBranch".
@@ -1039,7 +1046,11 @@ NodeDirectiveObserve::Reevaluate(shared_ptr<VentureValue> passing_value,
     return shared_ptr<ReevaluationResult>(
       new ReevaluationResult(shared_ptr<VentureValue>(), false));
   } else {
-    throw std::runtime_error("The OBSERVE directive's node should not be reevaluated.");
+    cout << passing_value->GetString() << endl;
+    cout << this->observed_value->GetString() << endl;
+    cout << reevaluation_parameters->__unsatisfied_constraint << endl;
+    DrawGraphDuringMH(reevaluation_parameters->touched_nodes);
+    throw std::runtime_error("The OBSERVE directive's node should not be reevaluated with passing value != observed_value.");
   }
 
   /*
@@ -1103,16 +1114,28 @@ string NodeEvaluation::__GetLocationAsString() {
   return return_string;
 }
 
-void DrawGraphDuringMH(shared_ptr<Node> first_node, stack< shared_ptr<Node> >& touched_nodes) {
+void DrawGraphDuringMH(stack< shared_ptr<Node> >& touched_nodes) {
 #ifdef _MSC_VER
   cout << "Writing the graph" << endl;
 
   std::ofstream graph_file;
   graph_file.open("C:/Temp/graph_output.txt");
   graph_file << "digraph G {" << endl;
-
+  
   queue< pair< string, shared_ptr<Node> > > processing_queue;
-  processing_queue.push(make_pair("", first_node));
+
+  map<size_t, directive_entry>::reverse_iterator previous = directives.rend();
+  for (map<size_t, directive_entry>::reverse_iterator directive = directives.rbegin();
+       directive != directives.rend();
+       directive++) {
+    if (previous == directives.rend()) {
+      processing_queue.push(make_pair("", directive->second.directive_node));
+    } else {
+      processing_queue.push(make_pair(previous->second.directive_node->GetUniqueID(), directive->second.directive_node));
+    }
+    previous = directive;
+  }
+
   while (!processing_queue.empty()) {
     queue< shared_ptr<Node> > temporal_queue;
     if (processing_queue.front().second == shared_ptr<Node>()) {
@@ -1157,6 +1180,7 @@ void DrawGraphDuringMH(shared_ptr<Node> first_node, stack< shared_ptr<Node> >& t
       << ": " << processing_queue.front().second->GetContent();
     graph_file << "\\n" << processing_queue.front().second->comment;
     graph_file << "\\n" << dynamic_pointer_cast<NodeEvaluation>(processing_queue.front().second)->node_key;
+    graph_file << "\\nCT: " << dynamic_pointer_cast<NodeEvaluation>(processing_queue.front().second)->constraint_times;
     graph_file << "\"" << endl;
     if (!(already_existent_element == GetStackContainer(touched_nodes).end())) {
       graph_file << ",color=red";
@@ -1178,6 +1202,7 @@ void DrawGraphDuringMH(shared_ptr<Node> first_node, stack< shared_ptr<Node> >& t
 }
 
 void AddToRandomChoices(weak_ptr<NodeXRPApplication> random_choice) {
+  assert(random_choice.lock()->GetType() == NODE && random_choice.lock()->GetNodeType() == XRP_APPLICATION);
   pair< set< weak_ptr<NodeXRPApplication> >::iterator, bool > result = random_choices.insert(random_choice);
   if (result.second == true) { // New element has been inserted.
     random_choices_vector.push_back(result.first);

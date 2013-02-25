@@ -216,7 +216,7 @@ void PropagateNewValue
     if (!(already_existent_element == GetStackContainer(touched_nodes).end())) {
       int distance = std::distance(GetStackContainer(touched_nodes).begin(), already_existent_element);
       //cout << "Pam: " << distance << endl;
-      DrawGraphDuringMH(GetLastDirectiveNode(), touched_nodes);
+      DrawGraphDuringMH(touched_nodes);
     }
 #endif
 #endif
@@ -299,8 +299,8 @@ void FinalizeProposal
         
         if (mh_decision == MH_DECLINED) {
           if (current_node->constraint_times > 0) {
-            FindConstrainingNode(dynamic_pointer_cast<NodeApplicationCaller>(current_node)->new_application_node, -1 * current_node->constraint_times);
-            FindConstrainingNode(dynamic_pointer_cast<NodeApplicationCaller>(current_node)->application_node, current_node->constraint_times);
+            FindConstrainingNode(dynamic_pointer_cast<NodeApplicationCaller>(current_node)->new_application_node, -1 * current_node->constraint_times, false);
+            FindConstrainingNode(dynamic_pointer_cast<NodeApplicationCaller>(current_node)->application_node, current_node->constraint_times, true);
           }
         }
         
@@ -400,8 +400,6 @@ MHProposalResults MakeMHProposal
 {
   int proposal_unique_id = 0; // FIXME: deprecated?
 
-  //cout << "MH starts" << endl;
-
   //Debug// cout << "New MH" << endl;
 
   ProposalInfo this_proposal;
@@ -480,6 +478,10 @@ MHProposalResults MakeMHProposal
 
   to_compare += scores_part;
   MHDecision mh_decision;
+  
+  if (reevaluation_parameters->__unsatisfied_constraint == true) {
+    cout << "Rejection sampling happens" << endl;
+  }
 
   if (principal_node != shared_ptr<NodeXRPApplication>()) {
     if (forcing_not_collecting == false) {

@@ -41,6 +41,14 @@ void InitRIPL();
 shared_ptr<VentureValue> ReportValue(size_t directive_id);
 void ForgetDirective(size_t directive_id);
 
+struct directive_entry__only_expression {
+  NodeTypes node_type;
+  shared_ptr<VentureSymbol> name;
+  shared_ptr<VentureValue> original_expression;
+  shared_ptr<VentureValue> observed_value;
+  string directive_as_string;
+};
+
 void RejectionSamplingForObserve();
 bool ExecuteDirective(string& directive_as_string,
                         shared_ptr<NodeEvaluation> directive_node,

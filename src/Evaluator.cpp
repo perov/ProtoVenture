@@ -155,7 +155,7 @@ shared_ptr<VentureValue> LookupValue(shared_ptr<NodeEnvironment> environment,
   }
 }
 
-shared_ptr<NodeEvaluation> FindConstrainingNode(shared_ptr<Node> node, int delta) {
+shared_ptr<NodeEvaluation> FindConstrainingNode(shared_ptr<Node> node, int delta, bool if_old_arguments) {
   while (true) {
     assert(node != shared_ptr<Node>());
     assert(static_cast<int>(node->constraint_times) + delta >= 0);
@@ -179,14 +179,14 @@ shared_ptr<NodeEvaluation> FindConstrainingNode(shared_ptr<Node> node, int delta
       if (dynamic_pointer_cast<NodeXRPApplication>(node)->xrp->xrp->GetName() == "XRP__memoized_procedure") {
         vector< shared_ptr<VentureValue> > got_arguments = GetArgumentsFromEnvironment(dynamic_pointer_cast<NodeXRPApplication>(node)->environment, // Not efficient?
                                         dynamic_pointer_cast<NodeEvaluation>(node),
-                                        false);
+                                        if_old_arguments);
         string mem_table_key = XRP__memoized_procedure__MakeMapKeyFromArguments(got_arguments);
         if (dynamic_pointer_cast<XRP__memoized_procedure>(dynamic_pointer_cast<NodeXRPApplication>(node)->xrp->xrp)->mem_table.count(mem_table_key) == 0) {
           throw std::runtime_error("Cannot find the necessary key in the mem table.");
         }
         XRP__memoizer_map_element& mem_table_element =
           (*(dynamic_pointer_cast<XRP__memoized_procedure>(dynamic_pointer_cast<NodeXRPApplication>(node)->xrp->xrp)->mem_table.find(mem_table_key))).second;
-        return FindConstrainingNode(mem_table_element.application_caller_node, delta);
+        return FindConstrainingNode(mem_table_element.application_caller_node, delta, if_old_arguments);
       } else {
         return dynamic_pointer_cast<NodeEvaluation>(node);
       }
@@ -199,8 +199,11 @@ shared_ptr<NodeEvaluation> FindConstrainingNode(shared_ptr<Node> node, int delta
 }
 
 ConstrainingResult ConstrainBranch(shared_ptr<NodeEvaluation> toppest_branch_node, shared_ptr<VentureValue> desired_value, shared_ptr<ReevaluationParameters> reevaluation_parameters, size_t constraint_times) {
-  shared_ptr<NodeEvaluation> constraining_node = FindConstrainingNode(toppest_branch_node, constraint_times);
+  shared_ptr<NodeEvaluation> constraining_node = FindConstrainingNode(toppest_branch_node, constraint_times, false);
 
+  //cout << "toppest_branch_node node: " << toppest_branch_node << endl;
+  //cout << "Constraining node: " << constraining_node << endl;
+  
   if (constraining_node->constraint_times == constraint_times && // "== constraint_times", not "== 0", because we just have already constraint it once!
         constraining_node->GetNodeType() == XRP_APPLICATION &&
         dynamic_pointer_cast<NodeXRPApplication>(constraining_node)->xrp->xrp->IsRandomChoice()) {
@@ -221,6 +224,7 @@ ConstrainingResult ConstrainBranch(shared_ptr<NodeEvaluation> toppest_branch_nod
     }
   } else if (constraining_node->GetNodeType() == XRP_APPLICATION) {
     shared_ptr<NodeXRPApplication> node2 = dynamic_pointer_cast<NodeXRPApplication>(constraining_node);
+    //cout << "Current: " << node2->my_sampled_value->GetString() << " VS Desired: " << desired_value->GetString() << endl;
     if (CompareValue(node2->my_sampled_value, desired_value)) {
       return CONSTRAININGRESULT_ALREADY_PROPER_VALUE;
     } else {
@@ -263,7 +267,7 @@ ConstrainingResult ConstrainBranch(shared_ptr<NodeEvaluation> toppest_branch_nod
 }
 
 shared_ptr<VentureValue> UnconstrainBranch(shared_ptr<NodeEvaluation> node, size_t constraint_times, shared_ptr<ReevaluationParameters> reevaluation_parameters) {
-  shared_ptr<NodeEvaluation> potentially_constraint_node = FindConstrainingNode(node, -1 * static_cast<int>(constraint_times));
+  shared_ptr<NodeEvaluation> potentially_constraint_node = FindConstrainingNode(node, -1 * static_cast<int>(constraint_times), true);
   if (potentially_constraint_node->constraint_times == 0 &&
         potentially_constraint_node->GetNodeType() == XRP_APPLICATION &&
         dynamic_pointer_cast<NodeXRPApplication>(potentially_constraint_node)->xrp->xrp->IsRandomChoice()) {

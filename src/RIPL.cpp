@@ -82,6 +82,10 @@ void ReturnInferenceIfNecessary() {
 
 void DeleteRIPL() {
   // Reconsider this function.
+  
+  //cout << "Size: " << directives.size() << endl;
+  //cout << "Empty?: " << directives.empty() << endl;
+  //cout << (directives.begin() == directives.end()) << endl;
   for (map<size_t, directive_entry>::iterator iterator = directives.begin(); iterator != directives.end(); iterator++) {
     DeleteBranch(iterator->second.directive_node, false);
   }
@@ -95,7 +99,7 @@ void ClearRIPL()
 {
   DeleteRIPL();
   //assert(random_choices.size() == 0);
-  random_choices.clear();
+  ClearRandomChoices();
   InitRIPL();
 }
 
@@ -143,51 +147,78 @@ void ForgetDirective(size_t directive_id) {
 }
 
 void RejectionSamplingForObserve() {
-  map<size_t, directive_entry> old_directives;
+  map<size_t, directive_entry__only_expression> old_directives;
+
+  for (map<size_t, directive_entry>::iterator directive = directives.begin();
+        directive != directives.end();
+        directive++)
+  {
+    old_directives[directive->first].node_type = directive->second.directive_node->GetNodeType();
+    old_directives[directive->first].directive_as_string = directive->second.directice_as_string;
+    if (old_directives[directive->first].node_type == DIRECTIVE_ASSUME) {
+      old_directives[directive->first].name =
+        dynamic_pointer_cast<NodeDirectiveAssume>(directive->second.directive_node)->name;
+      old_directives[directive->first].original_expression =
+        dynamic_pointer_cast<NodeDirectiveAssume>(directive->second.directive_node)->original_expression;
+    } else if (old_directives[directive->first].node_type == DIRECTIVE_PREDICT) {
+      old_directives[directive->first].original_expression =
+        dynamic_pointer_cast<NodeDirectivePredict>(directive->second.directive_node)->original_expression;
+    } else if (old_directives[directive->first].node_type == DIRECTIVE_OBSERVE) {
+      old_directives[directive->first].original_expression =
+        dynamic_pointer_cast<NodeDirectiveObserve>(directive->second.directive_node)->original_expression;
+      old_directives[directive->first].observed_value =
+        dynamic_pointer_cast<NodeDirectiveObserve>(directive->second.directive_node)->observed_value;
+    } else {
+      throw std::runtime_error("Unknown directive (1).");
+    }
+  }
 
   time_t starting_time = time(NULL);
 
+  size_t number_of_rejecting_sampling_iterations = 0;
+
   while (true) {
+    number_of_rejecting_sampling_iterations++;
+
     ClearRIPL();
 
     if (time(NULL) - starting_time > VENTURECONSTANT__MAX_ALLOWED_NUMBER_OF_SECONDS_FOR_REJECTION_SAMPLING) {
-      throw std::runtime_error("Rejection sampling has not successfully found any suitable state within " + boost::lexical_cast<string>(VENTURECONSTANT__MAX_ALLOWED_NUMBER_OF_SECONDS_FOR_REJECTION_SAMPLING) + " second(s).");
+      throw std::runtime_error("Rejection sampling has not successfully found any suitable state within " + boost::lexical_cast<string>(VENTURECONSTANT__MAX_ALLOWED_NUMBER_OF_SECONDS_FOR_REJECTION_SAMPLING) + " second(s), made iterations: " + boost::lexical_cast<string>(number_of_rejecting_sampling_iterations) + ".");
     }
 
-    for (map<size_t, directive_entry>::iterator old_directive = old_directives.begin();
+    bool unsatisfied_constraint = false;
+
+    for (map<size_t, directive_entry__only_expression>::iterator old_directive = old_directives.begin();
          old_directive != old_directives.end();
          old_directive++)
     {
-      bool unsatisfied_constraint;
       last_directive_id = old_directive->first - 1;
-      if (old_directive->second.directive_node->GetNodeType() == DIRECTIVE_ASSUME) {
-        shared_ptr<NodeDirectiveAssume> current_directive =
-          dynamic_pointer_cast<NodeDirectiveAssume>(old_directive->second.directive_node);
+      if (old_directive->second.node_type == DIRECTIVE_ASSUME) {
         unsatisfied_constraint =
-          ExecuteDirective(old_directive->second.directice_as_string,
-                           shared_ptr<NodeEvaluation>(new NodeDirectiveAssume(current_directive->name, AnalyzeExpression(current_directive->original_expression))),
-                           current_directive->original_expression);
-      } else if (old_directive->second.directive_node->GetNodeType() == DIRECTIVE_PREDICT) {
-        shared_ptr<NodeDirectivePredict> current_directive =
-          dynamic_pointer_cast<NodeDirectivePredict>(old_directive->second.directive_node);
+          ExecuteDirective(old_directive->second.directive_as_string,
+                           shared_ptr<NodeEvaluation>(new NodeDirectiveAssume(old_directive->second.name, AnalyzeExpression(old_directive->second.original_expression))),
+                           old_directive->second.original_expression);
+      } else if (old_directive->second.node_type == DIRECTIVE_PREDICT) {
         unsatisfied_constraint =
-          ExecuteDirective(old_directive->second.directice_as_string,
-                           shared_ptr<NodeEvaluation>(new NodeDirectivePredict(AnalyzeExpression(current_directive->original_expression))),
-                           current_directive->original_expression);
-      } else if (old_directive->second.directive_node->GetNodeType() == DIRECTIVE_OBSERVE) {
-        shared_ptr<NodeDirectiveObserve> current_directive =
-          dynamic_pointer_cast<NodeDirectiveObserve>(old_directive->second.directive_node);
+          ExecuteDirective(old_directive->second.directive_as_string,
+                           shared_ptr<NodeEvaluation>(new NodeDirectivePredict(AnalyzeExpression(old_directive->second.original_expression))),
+                           old_directive->second.original_expression);
+      } else if (old_directive->second.node_type == DIRECTIVE_OBSERVE) {
         unsatisfied_constraint =
-          ExecuteDirective(old_directive->second.directice_as_string,
-                           shared_ptr<NodeEvaluation>(new NodeDirectiveObserve(AnalyzeExpression(current_directive->original_expression), current_directive->observed_value)),
-                           current_directive->original_expression);
+          ExecuteDirective(old_directive->second.directive_as_string,
+                           shared_ptr<NodeEvaluation>(new NodeDirectiveObserve(AnalyzeExpression(old_directive->second.original_expression), old_directive->second.observed_value)),
+                           old_directive->second.original_expression);
       } else {
         throw std::runtime_error("Unknown directive (1).");
       }
 
       if (unsatisfied_constraint == true) {
-        continue;
+        break;
       }
+    }
+    
+    if (unsatisfied_constraint == false) {
+      return;
     }
   }
 }
