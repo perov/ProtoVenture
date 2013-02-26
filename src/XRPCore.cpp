@@ -86,7 +86,7 @@ XRP::Sample(vector< shared_ptr<VentureValue> >& arguments,
       XRP__memoizer_map_element& mem_table_element =
         (*(dynamic_pointer_cast<XRP__memoized_procedure>(this->shared_from_this())->mem_table.find(mem_table_key))).second;
       //cout << "active uses: " << mem_table_element.active_uses << " | " << evaluation_config.in_proposal << endl;
-      if (mem_table_element.active_uses == 1) {
+      if (mem_table_element.active_uses == 1 && mem_table_element.hidden_uses > 0) {
         UnabsorbBranchProbability(mem_table_element.application_caller_node, evaluation_config.reevaluation_config_ptr);
       }
     }
@@ -132,6 +132,8 @@ XRP::RescorerResampler(vector< shared_ptr<VentureValue> >& old_arguments,
                                   // Added Jan/5/2013: Especially when we now do not cancel by default?
   }
   
+  assert(!CouldBeRescored() || !(GetSampledLoglikelihood(new_arguments, caller->my_sampled_value) == log(0.0)));
+
   if (forced_resampling || !CouldBeRescored()
         || (GetSampledLoglikelihood(new_arguments, caller->my_sampled_value) == log(0.0))
         ) { // Resampling.
@@ -166,7 +168,7 @@ XRP::RescorerResampler(vector< shared_ptr<VentureValue> >& old_arguments,
       XRP__memoizer_map_element& mem_table_element =
         (*(dynamic_pointer_cast<XRP__memoized_procedure>(this->shared_from_this())->mem_table.find(mem_table_key))).second;
       //cout << "active uses: " << mem_table_element.active_uses << " | " << evaluation_config.in_proposal << endl;
-      if (mem_table_element.active_uses == 1) {
+      if (mem_table_element.active_uses == 1 && mem_table_element.hidden_uses > 0) {
         UnabsorbBranchProbability(mem_table_element.application_caller_node, reevaluation_parameters);
       }
     }
