@@ -137,7 +137,7 @@ real ERP__Poisson::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& a
     lambda = arguments[0]->GetReal();
     double likelihood =
            gsl_ran_poisson_pdf(ToVentureType<VentureReal>(sampled_value)->GetReal(),
-                             mu);
+                             lambda);
     return log(likelihood);
   } else {
     throw std::runtime_error("Wrong number of arguments.");
