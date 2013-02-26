@@ -51,7 +51,7 @@ struct ProposalInfo;
 struct OmitPattern;
 
 struct ReevaluationParameters : public boost::enable_shared_from_this<ReevaluationParameters> {
-  ReevaluationParameters::ReevaluationParameters
+  ReevaluationParameters
   (shared_ptr<NodeXRPApplication> principal_node,
    set<ReevaluationEntry,
        ReevaluationOrderComparer>& reevaluation_queue,
