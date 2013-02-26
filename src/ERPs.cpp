@@ -166,6 +166,101 @@ shared_ptr<VentureValue> ERP__Gamma::Sampler(vector< shared_ptr<VentureValue> >&
 }
 string ERP__Gamma::GetName() { return "ERP__Gamma"; }
 
+real ERP__InverseGamma::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
+                                shared_ptr<VentureValue> sampled_value) {
+  real alpha;
+  real beta;
+  if (arguments.size() == 2) {
+    VentureSmoothedCount::CheckMyData(arguments[0].get());
+    alpha = arguments[0]->GetReal();
+    VentureSmoothedCount::CheckMyData(arguments[1].get());
+    beta = arguments[1]->GetReal();
+    double likelihood =
+           gsl_ran_gamma_pdf(1.0 / ToVentureType<VentureReal>(sampled_value)->GetReal(),
+                             alpha,
+                             1.0 / beta);
+    return log(likelihood);
+  } else {
+    throw std::runtime_error("Wrong number of arguments.");
+  }
+}
+shared_ptr<VentureValue> ERP__InverseGamma::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+  real alpha;
+  real beta;
+  if (arguments.size() == 2) {
+    VentureSmoothedCount::CheckMyData(arguments[0].get());
+    alpha = arguments[0]->GetReal();
+    VentureSmoothedCount::CheckMyData(arguments[1].get());
+    beta = arguments[1]->GetReal();
+    double random_value =
+           gsl_ran_gamma(random_generator,
+                         alpha,
+                         1.0 / beta);
+    return shared_ptr<VentureReal>(new VentureReal(1.0 / random_value));
+  } else {
+    throw std::runtime_error("Wrong number of arguments.");
+  }
+}
+string ERP__InverseGamma::GetName() { return "ERP__InverseGamma"; }
+
+real ERP__ChiSquared::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
+                                shared_ptr<VentureValue> sampled_value) {
+  real nu;
+  if (arguments.size() == 1) {
+    VentureSmoothedCount::CheckMyData(arguments[0].get());
+    nu = arguments[0]->GetReal();
+    double likelihood =
+           gsl_ran_chisq_pdf(ToVentureType<VentureReal>(sampled_value)->GetReal(),
+                             nu);
+    return log(likelihood);
+  } else {
+    throw std::runtime_error("Wrong number of arguments.");
+  }
+}
+shared_ptr<VentureValue> ERP__ChiSquared::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+  real nu;
+  if (arguments.size() == 1) {
+    VentureSmoothedCount::CheckMyData(arguments[1].get());
+    nu = arguments[0]->GetReal();
+    double random_value =
+           gsl_ran_chisq(random_generator,
+                         nu);
+    return shared_ptr<VentureReal>(new VentureReal(random_value));
+  } else {
+    throw std::runtime_error("Wrong number of arguments.");
+  }
+}
+string ERP__ChiSquared::GetName() { return "ERP__ChiSquared"; }
+
+real ERP__InverseChiSquared::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
+                                shared_ptr<VentureValue> sampled_value) {
+  real nu;
+  if (arguments.size() == 1) {
+    VentureSmoothedCount::CheckMyData(arguments[0].get());
+    nu = arguments[0]->GetReal();
+    double likelihood =
+           gsl_ran_chisq_pdf(1.0 / ToVentureType<VentureReal>(sampled_value)->GetReal(),
+                             nu);
+    return log(likelihood);
+  } else {
+    throw std::runtime_error("Wrong number of arguments.");
+  }
+}
+shared_ptr<VentureValue> ERP__InverseChiSquared::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+  real nu;
+  if (arguments.size() == 1) {
+    VentureSmoothedCount::CheckMyData(arguments[1].get());
+    nu = arguments[0]->GetReal();
+    double random_value =
+           gsl_ran_chisq(random_generator,
+                         nu);
+    return shared_ptr<VentureReal>(new VentureReal(1.0 / random_value));
+  } else {
+    throw std::runtime_error("Wrong number of arguments.");
+  }
+}
+string ERP__InverseChiSquared::GetName() { return "ERP__InverseChiSquared"; }
+
 real ERP__UniformDiscrete::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
                                  shared_ptr<VentureValue> sampled_value) {
   int left_bound;
