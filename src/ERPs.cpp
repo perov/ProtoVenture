@@ -129,6 +129,35 @@ shared_ptr<VentureValue> ERP__Beta::Sampler(vector< shared_ptr<VentureValue> >& 
 }
 string ERP__Beta::GetName() { return "ERP__Beta"; }
 
+real ERP__Poisson::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
+                                shared_ptr<VentureValue> sampled_value) {
+  real lambda;
+  if (arguments.size() == 1) {
+    VentureSmoothedCount::CheckMyData(arguments[0].get());
+    lambda = arguments[0]->GetReal();
+    double likelihood =
+           gsl_ran_poisson_pdf(ToVentureType<VentureReal>(sampled_value)->GetReal(),
+                             mu);
+    return log(likelihood);
+  } else {
+    throw std::runtime_error("Wrong number of arguments.");
+  }
+}
+shared_ptr<VentureValue> ERP__Poisson::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+  real lambda;
+  if (arguments.size() == 1) {
+    VentureSmoothedCount::CheckMyData(arguments[0].get());
+    lambda = arguments[0]->GetReal();
+    double random_value =
+           gsl_ran_poisson(random_generator,
+                         lambda);
+    return shared_ptr<VentureReal>(new VentureReal(random_value));
+  } else {
+    throw std::runtime_error("Wrong number of arguments.");
+  }
+}
+string ERP__Poisson::GetName() { return "ERP__Poisson"; }
+
 real ERP__Gamma::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
                                 shared_ptr<VentureValue> sampled_value) {
   real alpha;
