@@ -282,7 +282,9 @@ void FinalizeProposal
       assert(dynamic_pointer_cast<NodeVariable>(current_node)->new_value != shared_ptr<VentureValue>());
       if (mh_decision == MH_APPROVED) {
         if (dynamic_pointer_cast<NodeVariable>(current_node)->output_references.size() == 1 &&
-              dynamic_pointer_cast<NodeVariable>(current_node)->output_references.begin()->lock()->GetNodeType() == XRP_APPLICATION) {
+              dynamic_pointer_cast<NodeVariable>(current_node)->output_references.begin()->lock()->GetNodeType() == XRP_APPLICATION &&
+              (dynamic_pointer_cast<NodeXRPApplication>(dynamic_pointer_cast<NodeVariable>(current_node)->output_references.begin()->lock())->xrp->xrp->GetName() != "XRP__SymmetricDirichletMultinomial_maker" ||
+               global_environment->variables.count("fast-calc-joint-prob") != 1)) {
           // Do nothing, because arguments of the NodeXRPApplication has been changed.
         } else {
           dynamic_pointer_cast<NodeVariable>(current_node)->value = dynamic_pointer_cast<NodeVariable>(current_node)->new_value;
@@ -293,6 +295,17 @@ void FinalizeProposal
       continue; // Right?
     } else if (current_node->GetNodeType() == APPLICATION_CALLER) {
       assert(dynamic_pointer_cast<NodeApplicationCaller>(current_node)->MH_made_action != MH_ACTION__EMPTY_STATUS);
+
+      if (dynamic_pointer_cast<NodeApplicationCaller>(current_node)->MH_made_action == MH_ACTION__SDD_RESCORED) {
+        if (mh_decision == MH_DECLINED) {
+          shared_ptr<XRP__DirichletMultinomial_sampler> xrpobject =
+            dynamic_pointer_cast<XRP__DirichletMultinomial_sampler>(dynamic_pointer_cast<VentureXRP>(dynamic_pointer_cast<NodeXRPApplication>(dynamic_pointer_cast<NodeApplicationCaller>(current_node)->application_node)->my_sampled_value)->xrp);
+          for (size_t index = 0; index < xrpobject->statistics.size(); index++) {
+            xrpobject->statistics[index] += xrpobject->old_a - xrpobject->new_a;
+          }
+          xrpobject->sum_of_statistics += (xrpobject->old_a - xrpobject->new_a) * xrpobject->statistics.size();
+        }
+      }
 
       if (dynamic_pointer_cast<NodeApplicationCaller>(current_node)->new_application_node != shared_ptr<NodeEvaluation>()) {
         UnabsorbBranchProbability(dynamic_pointer_cast<NodeApplicationCaller>(current_node)->application_node, shared_ptr<ReevaluationParameters>());

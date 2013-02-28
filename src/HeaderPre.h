@@ -57,6 +57,7 @@ const real comparison_epsilon = 0.00000001;
 #include <gsl/gsl_randist.h>
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_matrix.h>
+#include <gsl/gsl_sf_gamma.h>
 extern gsl_rng* random_generator;
 
 #include <ctime>

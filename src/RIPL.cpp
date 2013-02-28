@@ -331,6 +331,16 @@ void BindStandardElementsToGlobalEnvironment() {
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new ERP__Categorical()))));
   
   BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol("symmetric-dirichlet")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new ERP__SymmetricDirichlet()))));
+  BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol("dirichlet")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new ERP__Dirichlet()))));
+  BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol("categorical-sp")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new ERP__CategoricalSP()))));
+  
+  BindToEnvironment(global_environment,
                     shared_ptr<VentureSymbol>(new VentureSymbol("list")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__List()))));
   BindToEnvironment(global_environment,

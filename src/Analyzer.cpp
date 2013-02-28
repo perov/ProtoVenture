@@ -916,8 +916,66 @@ NodeApplicationCaller::Reevaluate(shared_ptr<VentureValue> passing_value,
         new ReevaluationResult(passing_value, true));
   }
 
-  shared_ptr<ReevaluationResult> reevaluation_result;
 
+  if (sender == this->application_node->shared_from_this() &&
+        this->application_node->GetNodeType() == XRP_APPLICATION &&
+        passing_value == shared_ptr<VentureValue>())
+  {
+    if (sender != reevaluation_parameters->principal_node) {
+      if (dynamic_pointer_cast<NodeXRPApplication>(sender)->xrp->xrp->GetName() == "XRP__SymmetricDirichletMultinomial_maker" &&
+            global_environment->variables.count("fast-calc-joint-prob") == 1) {
+        vector< shared_ptr<VentureValue> > got_old_arguments = GetArgumentsFromEnvironment(this->application_node->environment,
+          dynamic_pointer_cast<NodeEvaluation>(this->application_node), true);
+
+        // Should be with adding references!
+        vector< shared_ptr<VentureValue> > got_new_arguments = GetArgumentsFromEnvironment(this->application_node->environment,
+          dynamic_pointer_cast<NodeEvaluation>(this->application_node), false);
+
+        shared_ptr<XRP__DirichletMultinomial_sampler> xrpobject =
+          dynamic_pointer_cast<XRP__DirichletMultinomial_sampler>(dynamic_pointer_cast<VentureXRP>(dynamic_pointer_cast<NodeXRPApplication>(sender)->my_sampled_value)->xrp);
+        
+        assert(got_old_arguments[1]->GetInteger() == got_new_arguments[1]->GetInteger());
+
+        double old_a = got_old_arguments[0]->GetReal();
+        double new_a = got_new_arguments[0]->GetReal();
+
+        double old_A = old_a * got_old_arguments[1]->GetInteger();
+        double new_A = new_a * got_new_arguments[1]->GetInteger();
+
+        vector<double> Ns(got_old_arguments[1]->GetInteger());
+        double N = 0.0;
+
+        for (size_t index = 0; index < got_old_arguments[1]->GetInteger(); index++) {
+          Ns[index] = xrpobject->statistics[index] - old_a;
+          N += Ns[index];
+        }
+
+        double oldlogP = gsl_sf_lngamma(old_A) - gsl_sf_lngamma(old_A + N);
+        double newlogP = gsl_sf_lngamma(new_A) - gsl_sf_lngamma(new_A + N);
+
+        for (size_t index = 0; index < got_old_arguments[1]->GetInteger(); index++) {
+          oldlogP += (gsl_sf_lngamma(Ns[index] + old_a) - gsl_sf_lngamma(old_a));
+          newlogP += (gsl_sf_lngamma(Ns[index] + new_a) - gsl_sf_lngamma(new_a));
+
+          xrpobject->statistics[index] += new_a - old_a;
+        }
+        xrpobject->sum_of_statistics += (new_a - old_a) * got_old_arguments[1]->GetInteger();
+        xrpobject->old_a = old_a;
+        xrpobject->new_a = new_a;
+
+        reevaluation_parameters->__log_p_old += oldlogP;
+        reevaluation_parameters->__log_p_new += newlogP;
+
+        this->MH_made_action = MH_ACTION__SDD_RESCORED;
+        return shared_ptr<ReevaluationResult>(
+          new ReevaluationResult(shared_ptr<VentureValue>(), false));
+      }
+    }
+  }
+
+  shared_ptr<ReevaluationResult> reevaluation_result;
+  
+  reevaluation_parameters->__tmp_for_unconstrain = 0.0;
   shared_ptr<VentureValue> value_for_constraining;
   if (this->constraint_times > 0) {
     value_for_constraining = UnconstrainBranch(this->application_node, this->constraint_times, reevaluation_parameters);
@@ -928,7 +986,6 @@ NodeApplicationCaller::Reevaluate(shared_ptr<VentureValue> passing_value,
   
   reevaluation_parameters->__log_p_old += branch_loglikelihoods.first; // logP_constraint
   reevaluation_parameters->__log_p_old += branch_loglikelihoods.second; // logP_unconstraint
-  reevaluation_parameters->__log_q_from_new_to_old += branch_loglikelihoods.second; // logP_unconstraint
 
   if (sender == this->application_node->shared_from_this() &&
         this->application_node->GetNodeType() == XRP_APPLICATION &&
@@ -938,6 +995,13 @@ NodeApplicationCaller::Reevaluate(shared_ptr<VentureValue> passing_value,
     // 1) it is a principal node,
     // 2) arguments have changed.
     reevaluation_result = this->Reevaluate__TryToRescore(passing_value, sender, reevaluation_parameters, dynamic_pointer_cast<NodeXRPApplication>(this->application_node)->xrp);
+    
+    if (this->MH_made_action == MH_ACTION__RESAMPLED) { // This construction repeats three times.
+      reevaluation_parameters->__log_q_from_new_to_old += branch_loglikelihoods.second; // logP_unconstraint
+      reevaluation_parameters->__log_q_from_new_to_old += reevaluation_parameters->__tmp_for_unconstrain;
+    } else if (this->MH_made_action == MH_ACTION__RESCORED) {
+      // reevaluation_parameters->__log_q_from_new_to_old += branch_loglikelihoods.second; // logP_unconstraint
+    }
   } else if (sender == this->application_operator->shared_from_this()) {
     // Operator has changed.
     
@@ -952,9 +1016,23 @@ NodeApplicationCaller::Reevaluate(shared_ptr<VentureValue> passing_value,
           dynamic_pointer_cast<VentureXRP>(evaluated_operator)->xrp->CouldBeRescored())
     {
       reevaluation_result = this->Reevaluate__TryToRescore(shared_ptr<VentureValue>(), sender, reevaluation_parameters, dynamic_pointer_cast<VentureXRP>(evaluated_operator));
+
+      if (this->MH_made_action == MH_ACTION__RESAMPLED) { // This construction repeats three times.
+        reevaluation_parameters->__log_q_from_new_to_old += branch_loglikelihoods.second; // logP_unconstraint
+        reevaluation_parameters->__log_q_from_new_to_old += reevaluation_parameters->__tmp_for_unconstrain;
+      } else if (this->MH_made_action == MH_ACTION__RESCORED) {
+        // reevaluation_parameters->__log_q_from_new_to_old += branch_loglikelihoods.second; // logP_unconstraint
+      }
     } else {
       this->MH_made_action = MH_ACTION__RESAMPLED;
 
+      if (this->MH_made_action == MH_ACTION__RESAMPLED) { // This construction repeats three times.
+        reevaluation_parameters->__log_q_from_new_to_old += branch_loglikelihoods.second; // logP_unconstraint
+        reevaluation_parameters->__log_q_from_new_to_old += reevaluation_parameters->__tmp_for_unconstrain;
+      } else if (this->MH_made_action == MH_ACTION__RESCORED) {
+        // reevaluation_parameters->__log_q_from_new_to_old += branch_loglikelihoods.second; // logP_unconstraint
+      }
+      
       shared_ptr<NodeEnvironment> previous_environment; // This part should be in the "EvaluateApplication(...)"
                                                         // in order to avoid duplication.
       if (evaluated_operator->GetType() == LAMBDA) {

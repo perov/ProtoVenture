@@ -58,10 +58,10 @@ shared_ptr<VentureValue> ProcessAtom(const string& token)
   } else if (token.substr(0, 2) == "a[") {
     string value = token.substr(2, token.length() - 2 - 1);
     return shared_ptr<VentureValue>(new VentureAtom(boost::lexical_cast<int>(value)));
-  } else if (token.substr(0, 3) == "sp[") {
+  } else if (token.substr(0, 3) == "sc[") {
     string value = token.substr(3, token.length() - 3 - 1);
     return shared_ptr<VentureValue>(new VentureSmoothedCount(boost::lexical_cast<real>(value)));
-  } else if (token.substr(0, 3) == "sc[") {
+  } else if (token.substr(0, 3) == "sp[") {
     string value = token.substr(3, token.length() - 3 - 1);
     vector<string> elements_as_strings;
     boost::split(elements_as_strings, value, boost::is_any_of(","));

@@ -52,7 +52,7 @@ VentureProbability::VentureProbability(const real data) : data(data) {
 VentureSimplexPoint::VentureSimplexPoint(vector<real>& input_data)
   // : data(SOMEFUNCTION(data)) -- it should be implemented in this way? 
 {
-  this->CheckMyData(this); // Blank.
+  // this->CheckMyData(this); // Blank. // FIXME!
   if (input_data.size() <= 1) {
     throw std::runtime_error("VentureSimplexPoint should be at least two-dimensional.");
   }
@@ -295,6 +295,7 @@ void __BlankFunction1() { // Why without this function the g++ (Unix) with -O2 r
   ToVentureType<VentureCount>(shared_ptr<VentureValue>());
   ToVentureType<VentureBoolean>(shared_ptr<VentureValue>());
   ToVentureType<VentureList>(shared_ptr<VentureValue>());
+  ToVentureType<VentureSimplexPoint>(shared_ptr<VentureValue>());
 }
 
 // *** CompareByValue ***
