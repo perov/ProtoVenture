@@ -278,7 +278,7 @@ real ERP__InverseChiSquared::GetSampledLoglikelihood(vector< shared_ptr<VentureV
 shared_ptr<VentureValue> ERP__InverseChiSquared::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
   real nu;
   if (arguments.size() == 1) {
-    VentureSmoothedCount::CheckMyData(arguments[1].get());
+    VentureSmoothedCount::CheckMyData(arguments[0].get());
     nu = arguments[0]->GetReal();
     double random_value =
            gsl_ran_chisq(random_generator,
