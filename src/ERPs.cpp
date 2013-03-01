@@ -138,7 +138,7 @@ real ERP__Poisson::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& a
     VentureSmoothedCount::CheckMyData(arguments[0].get());
     lambda = arguments[0]->GetReal();
     double likelihood =
-           gsl_ran_poisson_pdf(ToVentureType<VentureReal>(sampled_value)->GetReal(),
+           gsl_ran_poisson_pdf(ToVentureType<VentureCount>(sampled_value)->GetInteger(),
                              lambda);
     return log(likelihood);
   } else {
