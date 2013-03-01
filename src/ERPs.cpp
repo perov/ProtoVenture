@@ -150,10 +150,10 @@ shared_ptr<VentureValue> ERP__Poisson::Sampler(vector< shared_ptr<VentureValue> 
   if (arguments.size() == 1) {
     VentureSmoothedCount::CheckMyData(arguments[0].get());
     lambda = arguments[0]->GetReal();
-    double random_value =
+    int random_value =
            gsl_ran_poisson(random_generator,
                          lambda);
-    return shared_ptr<VentureReal>(new VentureReal(random_value));
+    return shared_ptr<VentureCount>(new VentureCount(random_value));
   } else {
     throw std::runtime_error("Wrong number of arguments.");
   }
