@@ -18,5 +18,7 @@ int UniformDiscrete(int a, int b);
 real NormalDistributionLogLikelihood(real sampled_value_real, real average, real sigma);
 real BetaDistributionLogLikelihood(real sampled_value_real, real alpha, real beta);
 real PoissonDistributionLogLikelihood(int sampled_value_count, real lambda);
+real GammaDistributionLogLikelihood(real sampled_value_real, real alpha, real beta);
+real InverseGammaDistributionLogLikelihood(real sampled_value_real, real alpha, real beta);
 
 #endif

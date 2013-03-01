@@ -55,22 +55,43 @@ int UniformDiscrete(int a, int b) {
 real NormalDistributionLogLikelihood(real sampled_value_real, real average, real sigma) {
   double loglikelihood = 0.0;
   loglikelihood -= log(sigma);
-  loglikelihood -= 0.5 * log(2 * 3.14159265358979323846264338327950);
-  loglikelihood -= pow(sampled_value_real - average, 2.0) / (2 * pow(sigma, 2.0));
+  loglikelihood -= 0.5 * log(2.0 * 3.14159265358979323846264338327950);
+  loglikelihood -= pow(sampled_value_real - average, 2.0) / (2.0 * pow(sigma, 2.0));
   return loglikelihood;
 }
 
 real BetaDistributionLogLikelihood(real sampled_value_real, real alpha, real beta) {
-  double loglikelihood = gsl_sf_lnbeta(alpha, beta);
-  loglikelihood += log(sampled_value_real) * (alpha - 1);
-  loglikelihood += log(1-sampled_value_real) * (beta - 1);
+  //x^{a-1} * (1-x)^{b-1} / Beta(a, b)
+  double loglikelihood = 0.0;
+  loglikelihood += (alpha - 1.0) * log(sampled_value_real);
+  loglikelihood += (beta - 1.0) * log(1.0 - sampled_value_real);
+  loglikelihood -= gsl_sf_lnbeta(alpha, beta);
   return loglikelihood;
 }
 
 real PoissonDistributionLogLikelihood(int sampled_value_count, real lambda) {
+  //l^k * e^{-l} / k!
   double loglikelihood = sampled_value_count * log(lambda);
   loglikelihood -= gsl_sf_lnfact(sampled_value_count);
   loglikelihood -= lambda;
+  return loglikelihood;
+}
+
+real GammaDistributionLogLikelihood(real sampled_value_real, real alpha, real beta) {
+  //b^a * x^{a-1} * e^{-b * x} / Gamma(a)
+  double loglikelihood = alpha * log(beta);
+  loglikelihood += (alpha - 1.0) * log(sampled_value_real);
+  loglikelihood -= beta * sampled_value_real;
+  loglikelihood -= gsl_sf_lngamma(alpha);
+  return loglikelihood;
+}
+
+real InverseGammaDistributionLogLikelihood(real sampled_value_real, real alpha, real beta) {
+  //b^a * x^{-a-1} * e^{-b / x} / Gamma(a)
+  double loglikelihood = alpha * log(beta);
+  loglikelihood -= (alpha + 1.0) * log(sampled_value_real);
+  loglikelihood -= beta / sampled_value_real;
+  loglikelihood -= gsl_sf_lngamma(alpha);
   return loglikelihood;
 }
 
