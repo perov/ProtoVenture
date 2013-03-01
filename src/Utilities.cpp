@@ -1,6 +1,7 @@
 
 #include "HeaderPre.h"
 #include "Utilities.h"
+#include <gsl/gsl_sf.h>
 
 // http://stackoverflow.com/questions/4523178/how-to-print-out-all-elements-in-a-stdstack-or-stdqueue-conveniently
 template < class Type, class Container >
@@ -51,10 +52,17 @@ int UniformDiscrete(int a, int b) {
   return static_cast<int>(gsl_ran_flat(random_generator, a, b + 1));
 }
 
-real NormalDistributionLoglikelihood(real sampled_value_real, real average, real sigma) {
+real NormalDistributionLogLikelihood(real sampled_value_real, real average, real sigma) {
   double loglikelihood = 0.0;
   loglikelihood -= log(sigma);
   loglikelihood -= 0.5 * log(2 * 3.14159265358979323846264338327950);
   loglikelihood -= pow(sampled_value_real - average, 2.0) / (2 * pow(sigma, 2.0));
   return loglikelihood;
 }
+
+real BetaDistributionLogLikelihood(real sampled_value_real, real alpha, real beta) {
+  double loglikelihood = gsl_sf_lnbeta(alpha, beta);
+  loglikelihood += log(sampled_value_real) * (alpha - 1) + log(1-sampled_value_real) * (beta - 1);
+  return loglikelihood;
+}
+

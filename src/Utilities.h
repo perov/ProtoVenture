@@ -15,6 +15,8 @@ const Container& GetStackContainer
 
 int UniformDiscrete(int a, int b);
 
-real NormalDistributionLoglikelihood(real sampled_value_real, real average, real sigma);
+real NormalDistributionLogLikelihood(real sampled_value_real, real average, real sigma);
+real BetaDistributionLogLikelihood(real sampled_value_real, real alpha, real beta);
+
 
 #endif

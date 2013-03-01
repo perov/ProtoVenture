@@ -68,7 +68,7 @@ real ERP__Normal::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& ar
     //                            sigma);
     //return log(likelihood);
     real sampled_value_real = ToVentureType<VentureReal>(sampled_value)->GetReal();
-    return NormalDistributionLoglikelihood(sampled_value_real, average, sigma);
+    return NormalDistributionLogLikelihood(sampled_value_real, average, sigma);
   } else {
     throw std::runtime_error("Wrong number of arguments.");
   }
@@ -101,11 +101,13 @@ real ERP__Beta::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& argu
     alpha = arguments[0]->GetReal();
     VentureSmoothedCount::CheckMyData(arguments[1].get());
     beta = arguments[1]->GetReal();
-    double likelihood =
-           gsl_ran_beta_pdf(ToVentureType<VentureReal>(sampled_value)->GetReal(),
-                            alpha,
-                            beta);
-    return log(likelihood);
+    //double likelihood =
+    //       gsl_ran_beta_pdf(ToVentureType<VentureReal>(sampled_value)->GetReal(),
+    //                        alpha,
+    //                        beta);
+    //return log(likelihood);
+    real sampled_value_real = ToVentureType<VentureReal>(sampled_value)->GetReal();
+    return BetaDistributionLogLikelihood(sampled_value_real, alpha, beta);
   } else {
     throw std::runtime_error("Wrong number of arguments.");
   }
