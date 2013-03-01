@@ -137,10 +137,12 @@ real ERP__Poisson::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& a
   if (arguments.size() == 1) {
     VentureSmoothedCount::CheckMyData(arguments[0].get());
     lambda = arguments[0]->GetReal();
-    double likelihood =
-           gsl_ran_poisson_pdf(ToVentureType<VentureCount>(sampled_value)->GetInteger(),
-                             lambda);
-    return log(likelihood);
+    //double likelihood =
+    //       gsl_ran_poisson_pdf(ToVentureType<VentureCount>(sampled_value)->GetInteger(),
+    //                         lambda);
+    //return log(likelihood);
+    int sampled_value_count = ToVentureType<VentureCount>(sampled_value)->GetInteger();
+    return PoissonDistributionLogLikelihood(sampled_value_count, lambda);
   } else {
     throw std::runtime_error("Wrong number of arguments.");
   }

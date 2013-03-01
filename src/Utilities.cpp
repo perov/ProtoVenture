@@ -62,7 +62,15 @@ real NormalDistributionLogLikelihood(real sampled_value_real, real average, real
 
 real BetaDistributionLogLikelihood(real sampled_value_real, real alpha, real beta) {
   double loglikelihood = gsl_sf_lnbeta(alpha, beta);
-  loglikelihood += log(sampled_value_real) * (alpha - 1) + log(1-sampled_value_real) * (beta - 1);
+  loglikelihood += log(sampled_value_real) * (alpha - 1);
+  loglikelihood += log(1-sampled_value_real) * (beta - 1);
+  return loglikelihood;
+}
+
+real PoissonDistributionLogLikelihood(int sampled_value_count, real lambda) {
+  double loglikelihood = sampled_value_count * log(lambda);
+  loglikelihood -= gsl_sf_lnfact(sampled_value_count);
+  loglikelihood -= lambda;
   return loglikelihood;
 }
 
