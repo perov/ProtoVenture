@@ -1,4 +1,3 @@
-
 #include "HeaderPre.h"
 #include "Utilities.h"
 #include <gsl/gsl_sf.h>
@@ -92,6 +91,24 @@ real InverseGammaDistributionLogLikelihood(real sampled_value_real, real alpha, 
   loglikelihood -= (alpha + 1.0) * log(sampled_value_real);
   loglikelihood -= beta / sampled_value_real;
   loglikelihood -= gsl_sf_lngamma(alpha);
+  return loglikelihood;
+}
+
+real ChiSquaredDistributionLogLikelihood(real sampled_value_real, real nu) {
+  //(x / 2)^{nu/2 - 1} * e^{-x/2} / (2 * Gamma(nu / 2))
+  double loglikelihood = (0.5 * nu - 1.0) * log(0.5 * sampled_value_real);
+  loglikelihood -= 0.5 * sampled_value_real;
+  loglikelihood -= log(2.0);
+  loglikelihood -= gsl_sf_lngamma(0.5 * nu);
+  return loglikelihood;
+}
+
+real InverseChiSquaredDistributionLogLikelihood(real sampled_value_real, real nu) {
+  //(2x)^{-nu/2 - 1} * e^{-1/2x} / (2 * Gamma(nu / 2))
+  double loglikelihood = (-0.5 * nu  - 1.0) * log(2.0 * sampled_value_real);
+  loglikelihood -= 0.5 / sampled_value_real;
+  loglikelihood -= log(2.0);
+  loglikelihood -= gsl_sf_lngamma(0.5 * nu);
   return loglikelihood;
 }
 

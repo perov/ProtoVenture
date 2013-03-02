@@ -246,10 +246,12 @@ real ERP__ChiSquared::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >
   if (arguments.size() == 1) {
     VentureSmoothedCount::CheckMyData(arguments[0].get());
     nu = arguments[0]->GetReal();
-    double likelihood =
-           gsl_ran_chisq_pdf(ToVentureType<VentureReal>(sampled_value)->GetReal(),
-                             nu);
-    return log(likelihood);
+    //double likelihood =
+    //       gsl_ran_chisq_pdf(ToVentureType<VentureReal>(sampled_value)->GetReal(),
+    //                         nu);
+    //return log(likelihood);
+    real sampled_value_real = ToVentureType<VentureReal>(sampled_value)->GetReal();
+    return ChiSquaredDistributionLogLikelihood(sampled_value_real, nu);
   } else {
     throw std::runtime_error("Wrong number of arguments.");
   }
@@ -275,10 +277,12 @@ real ERP__InverseChiSquared::GetSampledLoglikelihood(vector< shared_ptr<VentureV
   if (arguments.size() == 1) {
     VentureSmoothedCount::CheckMyData(arguments[0].get());
     nu = arguments[0]->GetReal();
-    double likelihood =
-           gsl_ran_chisq_pdf(1.0 / ToVentureType<VentureReal>(sampled_value)->GetReal(),
-                             nu);
-    return log(likelihood);
+    //double likelihood =
+    //       gsl_ran_chisq_pdf(1.0 / ToVentureType<VentureReal>(sampled_value)->GetReal(),
+    //                         nu);
+    //return log(likelihood);
+    real sampled_value_real = ToVentureType<VentureReal>(sampled_value)->GetReal();
+    return InverseChiSquaredDistributionLogLikelihood(sampled_value_real, nu);
   } else {
     throw std::runtime_error("Wrong number of arguments.");
   }

@@ -20,5 +20,7 @@ real BetaDistributionLogLikelihood(real sampled_value_real, real alpha, real bet
 real PoissonDistributionLogLikelihood(int sampled_value_count, real lambda);
 real GammaDistributionLogLikelihood(real sampled_value_real, real alpha, real beta);
 real InverseGammaDistributionLogLikelihood(real sampled_value_real, real alpha, real beta);
+real ChiSquaredDistributionLogLikelihood(real sampled_value_real, real nu);
+real InverseChiSquaredDistributionLogLikelihood(real sampled_value_real, real nu);
 
 #endif
