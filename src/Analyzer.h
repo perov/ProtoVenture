@@ -10,7 +10,7 @@ enum NodeTypes { UNDEFINED_NODE, ENVIRONMENT, VARIABLE, UNDEFINED_EVALUATION_NOD
                  DIRECTIVE_PREDICT, DIRECTIVE_OBSERVE, SELF_EVALUATING, LAMBDA_CREATOR,
                  LOOKUP, APPLICATION_CALLER, XRP_APPLICATION};
 
-enum MHMadeActions { MH_ACTION__EMPTY_STATUS, MH_ACTION__RESCORED, MH_ACTION__RESAMPLED, MH_ACTION__LAMBDA_PROPAGATED };
+enum MHMadeActions { MH_ACTION__EMPTY_STATUS, MH_ACTION__RESCORED, MH_ACTION__RESAMPLED, MH_ACTION__LAMBDA_PROPAGATED, MH_ACTION__SDD_RESCORED };
 
 string GetNodeTypeAsString(size_t node_type);
 
@@ -306,7 +306,7 @@ void ApplyToMeAndAllMyChildren(shared_ptr<Node>,
                                bool old_values,
                                void (*f)(shared_ptr<Node>, bool));
 
-void DrawGraphDuringMH(shared_ptr<Node> first_node, stack< shared_ptr<Node> >& touched_nodes);
+void DrawGraphDuringMH(stack< shared_ptr<Node> >& touched_nodes);
 
 void CopyLocalEnvironmentByContent
   (shared_ptr<NodeEnvironment> existing_environment,

@@ -83,7 +83,7 @@ shared_ptr<VentureValue> XRP__memoized_procedure::Sampler(vector< shared_ptr<Ven
     (*(this->mem_table.find(mem_table_key))).second;
 
   mem_table_element.hidden_uses++;
-  //cout << "Returning (from mem): " << mem_table_element.result->value->GetString() << endl;
+  //cout << "Returning (from mem): " << GetBranchValue(mem_table_element.application_caller_node)->GetString() << endl;
   return GetBranchValue(mem_table_element.application_caller_node);
 }
 
@@ -122,6 +122,8 @@ void XRP__memoized_procedure::Incorporate(vector< shared_ptr<VentureValue> >& ar
   XRP__memoizer_map_element& mem_table_element =
     (*(this->mem_table.find(mem_table_key))).second;
   if (mem_table_element.hidden_uses == 0) {
+    stack< shared_ptr<Node> > tmp;
+    DrawGraphDuringMH(tmp);
     throw std::runtime_error("(2) Cannot do 'mem_table_element.hidden_uses--'.");
   }
   mem_table_element.hidden_uses--;
@@ -143,7 +145,7 @@ void XRP__memoized_procedure::Remove(vector< shared_ptr<VentureValue> >& argumen
     (*(this->mem_table.find(mem_table_key))).second;
   if (mem_table_element.active_uses == 0) {
     stack< shared_ptr<Node> > tmp;
-    DrawGraphDuringMH(GetLastDirectiveNode(), tmp);
+    DrawGraphDuringMH(tmp);
     throw std::runtime_error("Cannot do 'mem_table_element.active_uses--'.");
   }
   mem_table_element.hidden_uses++;

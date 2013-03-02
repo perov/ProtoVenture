@@ -63,6 +63,7 @@ struct ReevaluationParameters : public boost::enable_shared_from_this<Reevaluati
   real __log_p_new;
   real __log_q_from_old_to_new;
   real __log_q_from_new_to_old;
+  real __tmp_for_unconstrain;
   bool __unsatisfied_constraint;
   shared_ptr<NodeXRPApplication> principal_node;
   

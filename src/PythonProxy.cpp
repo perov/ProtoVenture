@@ -226,7 +226,7 @@ ForPython__clear(PyObject *self, PyObject *args)
 
 PyObject*
 ForPython__forget(PyObject *self, PyObject *args)
-{ //try {
+{ try {
   PauseInference();
   int directive_id;
   if(!PyArg_ParseTuple(args, "i:forget", &directive_id)) {
@@ -238,11 +238,11 @@ ForPython__forget(PyObject *self, PyObject *args)
   ReturnInferenceIfNecessary();
   Py_INCREF(Py_None);
   return Py_None;
-} //catch(handling_python_error&) { return NULL; } catch(std::runtime_error& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }
+} catch(handling_python_error&) { return NULL; } catch(std::runtime_error& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }
 
 PyObject*
 ForPython__infer(PyObject *self, PyObject *args)
-{ //try {
+{ try {
   PauseInference();
   int number_of_required_inferences;
   if(!PyArg_ParseTuple(args, "i:infer", &number_of_required_inferences)) {
@@ -266,7 +266,7 @@ ForPython__infer(PyObject *self, PyObject *args)
   ReturnInferenceIfNecessary();
   Py_INCREF(Py_None);
   return Py_None;
-} //catch(handling_python_error&) { return NULL; } catch(std::runtime_error& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }
+} catch(handling_python_error&) { return NULL; } catch(std::runtime_error& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }
 
 PyObject*
 ForPython__start_continuous_inference(PyObject *self, PyObject *args)
@@ -347,7 +347,7 @@ ForPython__assume(PyObject *self, PyObject *args)
 
 PyObject*
 ForPython__predict(PyObject *self, PyObject *args)
-{ try {
+{ //try {
   PauseInference();
   shared_ptr<VentureValue> expression;
   if(!PyArg_ParseTuple(args, "O&:predict",
@@ -366,7 +366,7 @@ ForPython__predict(PyObject *self, PyObject *args)
   PyObject* returning_python_object = Py_BuildValue("(iO)", static_cast<int>(directive_id), directive_value->GetAsPythonObject());
   ReturnInferenceIfNecessary();
   return returning_python_object;
-} catch(handling_python_error&) { return NULL; } catch(std::runtime_error& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }
+} //catch(handling_python_error&) { return NULL; } catch(std::runtime_error& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }
 
 PyObject*
 ForPython__observe(PyObject *self, PyObject *args)
@@ -411,7 +411,7 @@ ForPython__draw_graph_to_file(PyObject *self, PyObject *args) // FIXME: deprecat
     return NULL; // ReturnInferenceIfNecessary(); ?
   }
   stack< shared_ptr<Node> > tmp;
-  DrawGraphDuringMH(GetLastDirectiveNode(), tmp);
+  DrawGraphDuringMH(tmp);
   ReturnInferenceIfNecessary();
 
   //cout << "Finishing to deal with OBSERVE" << endl;

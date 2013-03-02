@@ -216,7 +216,7 @@ void PropagateNewValue
     if (!(already_existent_element == GetStackContainer(touched_nodes).end())) {
       int distance = std::distance(GetStackContainer(touched_nodes).begin(), already_existent_element);
       //cout << "Pam: " << distance << endl;
-      DrawGraphDuringMH(GetLastDirectiveNode(), touched_nodes);
+      DrawGraphDuringMH(touched_nodes);
     }
 #endif
 #endif
@@ -282,7 +282,9 @@ void FinalizeProposal
       assert(dynamic_pointer_cast<NodeVariable>(current_node)->new_value != shared_ptr<VentureValue>());
       if (mh_decision == MH_APPROVED) {
         if (dynamic_pointer_cast<NodeVariable>(current_node)->output_references.size() == 1 &&
-              dynamic_pointer_cast<NodeVariable>(current_node)->output_references.begin()->lock()->GetNodeType() == XRP_APPLICATION) {
+              dynamic_pointer_cast<NodeVariable>(current_node)->output_references.begin()->lock()->GetNodeType() == XRP_APPLICATION &&
+              (dynamic_pointer_cast<NodeXRPApplication>(dynamic_pointer_cast<NodeVariable>(current_node)->output_references.begin()->lock())->xrp->xrp->GetName() != "XRP__SymmetricDirichletMultinomial_maker" ||
+               global_environment->variables.count("fast-calc-joint-prob") != 1)) {
           // Do nothing, because arguments of the NodeXRPApplication has been changed.
         } else {
           dynamic_pointer_cast<NodeVariable>(current_node)->value = dynamic_pointer_cast<NodeVariable>(current_node)->new_value;
@@ -294,13 +296,24 @@ void FinalizeProposal
     } else if (current_node->GetNodeType() == APPLICATION_CALLER) {
       assert(dynamic_pointer_cast<NodeApplicationCaller>(current_node)->MH_made_action != MH_ACTION__EMPTY_STATUS);
 
+      if (dynamic_pointer_cast<NodeApplicationCaller>(current_node)->MH_made_action == MH_ACTION__SDD_RESCORED) {
+        if (mh_decision == MH_DECLINED) {
+          shared_ptr<XRP__DirichletMultinomial_sampler> xrpobject =
+            dynamic_pointer_cast<XRP__DirichletMultinomial_sampler>(dynamic_pointer_cast<VentureXRP>(dynamic_pointer_cast<NodeXRPApplication>(dynamic_pointer_cast<NodeApplicationCaller>(current_node)->application_node)->my_sampled_value)->xrp);
+          for (size_t index = 0; index < xrpobject->statistics.size(); index++) {
+            xrpobject->statistics[index] += xrpobject->old_a - xrpobject->new_a;
+          }
+          xrpobject->sum_of_statistics += (xrpobject->old_a - xrpobject->new_a) * xrpobject->statistics.size();
+        }
+      }
+
       if (dynamic_pointer_cast<NodeApplicationCaller>(current_node)->new_application_node != shared_ptr<NodeEvaluation>()) {
         UnabsorbBranchProbability(dynamic_pointer_cast<NodeApplicationCaller>(current_node)->application_node, shared_ptr<ReevaluationParameters>());
         
         if (mh_decision == MH_DECLINED) {
           if (current_node->constraint_times > 0) {
-            FindConstrainingNode(dynamic_pointer_cast<NodeApplicationCaller>(current_node)->new_application_node, -1 * current_node->constraint_times);
-            FindConstrainingNode(dynamic_pointer_cast<NodeApplicationCaller>(current_node)->application_node, current_node->constraint_times);
+            FindConstrainingNode(dynamic_pointer_cast<NodeApplicationCaller>(current_node)->new_application_node, -1 * current_node->constraint_times, false);
+            FindConstrainingNode(dynamic_pointer_cast<NodeApplicationCaller>(current_node)->application_node, current_node->constraint_times, true);
           }
         }
         
@@ -400,8 +413,6 @@ MHProposalResults MakeMHProposal
 {
   int proposal_unique_id = 0; // FIXME: deprecated?
 
-  //cout << "MH starts" << endl;
-
   //Debug// cout << "New MH" << endl;
 
   ProposalInfo this_proposal;
@@ -480,6 +491,10 @@ MHProposalResults MakeMHProposal
 
   to_compare += scores_part;
   MHDecision mh_decision;
+  
+  if (reevaluation_parameters->__unsatisfied_constraint == true) {
+    cout << "Rejection sampling happens" << endl;
+  }
 
   if (principal_node != shared_ptr<NodeXRPApplication>()) {
     if (forcing_not_collecting == false) {

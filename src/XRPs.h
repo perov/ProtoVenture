@@ -94,6 +94,9 @@ public:
 
   vector<real> statistics;
   real sum_of_statistics;
+
+  double old_a;
+  double new_a;
 };
 
 #endif

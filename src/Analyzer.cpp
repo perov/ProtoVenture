@@ -411,7 +411,7 @@ void NodeApplicationCaller::GetChildren(queue< shared_ptr<Node> >& processing_qu
       tmp.push(dynamic_pointer_cast<Node>(this->shared_from_this()));
       //cout << this->evaluated << endl;
       assert(false);
-      DrawGraphDuringMH(GetLastDirectiveNode(), tmp);
+      DrawGraphDuringMH(tmp);
       assert(false);
     }
     //assert(application_node.get() != 0);
@@ -916,18 +916,76 @@ NodeApplicationCaller::Reevaluate(shared_ptr<VentureValue> passing_value,
         new ReevaluationResult(passing_value, true));
   }
 
-  shared_ptr<ReevaluationResult> reevaluation_result;
 
+  if (sender == this->application_node->shared_from_this() &&
+        this->application_node->GetNodeType() == XRP_APPLICATION &&
+        passing_value == shared_ptr<VentureValue>())
+  {
+    if (sender != reevaluation_parameters->principal_node) {
+      if (dynamic_pointer_cast<NodeXRPApplication>(sender)->xrp->xrp->GetName() == "XRP__SymmetricDirichletMultinomial_maker" &&
+            global_environment->variables.count("fast-calc-joint-prob") == 1) {
+        vector< shared_ptr<VentureValue> > got_old_arguments = GetArgumentsFromEnvironment(this->application_node->environment,
+          dynamic_pointer_cast<NodeEvaluation>(this->application_node), true);
+
+        // Should be with adding references!
+        vector< shared_ptr<VentureValue> > got_new_arguments = GetArgumentsFromEnvironment(this->application_node->environment,
+          dynamic_pointer_cast<NodeEvaluation>(this->application_node), false);
+
+        shared_ptr<XRP__DirichletMultinomial_sampler> xrpobject =
+          dynamic_pointer_cast<XRP__DirichletMultinomial_sampler>(dynamic_pointer_cast<VentureXRP>(dynamic_pointer_cast<NodeXRPApplication>(sender)->my_sampled_value)->xrp);
+        
+        assert(got_old_arguments[1]->GetInteger() == got_new_arguments[1]->GetInteger());
+
+        double old_a = got_old_arguments[0]->GetReal();
+        double new_a = got_new_arguments[0]->GetReal();
+
+        double old_A = old_a * got_old_arguments[1]->GetInteger();
+        double new_A = new_a * got_new_arguments[1]->GetInteger();
+
+        vector<double> Ns(got_old_arguments[1]->GetInteger());
+        double N = 0.0;
+
+        for (size_t index = 0; index < got_old_arguments[1]->GetInteger(); index++) {
+          Ns[index] = xrpobject->statistics[index] - old_a;
+          N += Ns[index];
+        }
+
+        double oldlogP = gsl_sf_lngamma(old_A) - gsl_sf_lngamma(old_A + N);
+        double newlogP = gsl_sf_lngamma(new_A) - gsl_sf_lngamma(new_A + N);
+
+        for (size_t index = 0; index < got_old_arguments[1]->GetInteger(); index++) {
+          oldlogP += (gsl_sf_lngamma(Ns[index] + old_a) - gsl_sf_lngamma(old_a));
+          newlogP += (gsl_sf_lngamma(Ns[index] + new_a) - gsl_sf_lngamma(new_a));
+
+          xrpobject->statistics[index] += new_a - old_a;
+        }
+        xrpobject->sum_of_statistics += (new_a - old_a) * got_old_arguments[1]->GetInteger();
+        xrpobject->old_a = old_a;
+        xrpobject->new_a = new_a;
+
+        reevaluation_parameters->__log_p_old += oldlogP;
+        reevaluation_parameters->__log_p_new += newlogP;
+
+        this->MH_made_action = MH_ACTION__SDD_RESCORED;
+        return shared_ptr<ReevaluationResult>(
+          new ReevaluationResult(shared_ptr<VentureValue>(), false));
+      }
+    }
+  }
+
+  shared_ptr<ReevaluationResult> reevaluation_result;
+  
+  reevaluation_parameters->__tmp_for_unconstrain = 0.0;
   shared_ptr<VentureValue> value_for_constraining;
   if (this->constraint_times > 0) {
     value_for_constraining = UnconstrainBranch(this->application_node, this->constraint_times, reevaluation_parameters);
+    //cout << "Unconstraining value: " << value_for_constraining->GetString() << endl;
   }
   
   pair<real, real> branch_loglikelihoods = AbsorbBranchProbability(this->application_node, reevaluation_parameters);
   
   reevaluation_parameters->__log_p_old += branch_loglikelihoods.first; // logP_constraint
   reevaluation_parameters->__log_p_old += branch_loglikelihoods.second; // logP_unconstraint
-  reevaluation_parameters->__log_q_from_new_to_old += branch_loglikelihoods.second; // logP_unconstraint
 
   if (sender == this->application_node->shared_from_this() &&
         this->application_node->GetNodeType() == XRP_APPLICATION &&
@@ -937,6 +995,13 @@ NodeApplicationCaller::Reevaluate(shared_ptr<VentureValue> passing_value,
     // 1) it is a principal node,
     // 2) arguments have changed.
     reevaluation_result = this->Reevaluate__TryToRescore(passing_value, sender, reevaluation_parameters, dynamic_pointer_cast<NodeXRPApplication>(this->application_node)->xrp);
+    
+    if (this->MH_made_action == MH_ACTION__RESAMPLED) { // This construction repeats three times.
+      reevaluation_parameters->__log_q_from_new_to_old += branch_loglikelihoods.second; // logP_unconstraint
+      reevaluation_parameters->__log_q_from_new_to_old += reevaluation_parameters->__tmp_for_unconstrain;
+    } else if (this->MH_made_action == MH_ACTION__RESCORED) {
+      // reevaluation_parameters->__log_q_from_new_to_old += branch_loglikelihoods.second; // logP_unconstraint
+    }
   } else if (sender == this->application_operator->shared_from_this()) {
     // Operator has changed.
     
@@ -951,9 +1016,23 @@ NodeApplicationCaller::Reevaluate(shared_ptr<VentureValue> passing_value,
           dynamic_pointer_cast<VentureXRP>(evaluated_operator)->xrp->CouldBeRescored())
     {
       reevaluation_result = this->Reevaluate__TryToRescore(shared_ptr<VentureValue>(), sender, reevaluation_parameters, dynamic_pointer_cast<VentureXRP>(evaluated_operator));
+
+      if (this->MH_made_action == MH_ACTION__RESAMPLED) { // This construction repeats three times.
+        reevaluation_parameters->__log_q_from_new_to_old += branch_loglikelihoods.second; // logP_unconstraint
+        reevaluation_parameters->__log_q_from_new_to_old += reevaluation_parameters->__tmp_for_unconstrain;
+      } else if (this->MH_made_action == MH_ACTION__RESCORED) {
+        // reevaluation_parameters->__log_q_from_new_to_old += branch_loglikelihoods.second; // logP_unconstraint
+      }
     } else {
       this->MH_made_action = MH_ACTION__RESAMPLED;
 
+      if (this->MH_made_action == MH_ACTION__RESAMPLED) { // This construction repeats three times.
+        reevaluation_parameters->__log_q_from_new_to_old += branch_loglikelihoods.second; // logP_unconstraint
+        reevaluation_parameters->__log_q_from_new_to_old += reevaluation_parameters->__tmp_for_unconstrain;
+      } else if (this->MH_made_action == MH_ACTION__RESCORED) {
+        // reevaluation_parameters->__log_q_from_new_to_old += branch_loglikelihoods.second; // logP_unconstraint
+      }
+      
       shared_ptr<NodeEnvironment> previous_environment; // This part should be in the "EvaluateApplication(...)"
                                                         // in order to avoid duplication.
       if (evaluated_operator->GetType() == LAMBDA) {
@@ -990,12 +1069,18 @@ NodeApplicationCaller::Reevaluate(shared_ptr<VentureValue> passing_value,
   if (this->constraint_times > 0) {
     ConstrainingResult constraining_result =
       ConstrainBranch(this->new_application_node, value_for_constraining, reevaluation_parameters, this->constraint_times);
+    //cout << "Constraining result: " << constraining_result << endl;
+    //if (reevaluation_result->passing_value != shared_ptr<VentureValue>()) {
+    //  cout << "Passing value: " << reevaluation_result->passing_value->GetString() << endl;
+    //}
+    //cout << "Pass further?: " << reevaluation_result->pass_further << endl;
       
     if (constraining_result == CONSTRAININGRESULT_CANNOT_CONSTRAIN) {
       // Doing nothing, because we have marked the flag "__unsatisfied_constraint" in the function "ConstrainBranch".
       return shared_ptr<ReevaluationResult>(
         new ReevaluationResult(shared_ptr<VentureValue>(), false));
     } else if (constraining_result == CONSTRAININGRESULT_ALREADY_PROPER_VALUE) {
+      assert(reevaluation_result->pass_further == false || CompareValue(reevaluation_result->passing_value, value_for_constraining));
       return reevaluation_result;
     } else if (constraining_result == CONSTRAININGRESULT_VALUE_HAS_BEEN_CHANGED) {
       // We have added propagation in the function "ConstrainBranch".
@@ -1039,7 +1124,11 @@ NodeDirectiveObserve::Reevaluate(shared_ptr<VentureValue> passing_value,
     return shared_ptr<ReevaluationResult>(
       new ReevaluationResult(shared_ptr<VentureValue>(), false));
   } else {
-    throw std::runtime_error("The OBSERVE directive's node should not be reevaluated.");
+    cout << passing_value->GetString() << endl;
+    cout << this->observed_value->GetString() << endl;
+    cout << reevaluation_parameters->__unsatisfied_constraint << endl;
+    DrawGraphDuringMH(reevaluation_parameters->touched_nodes);
+    throw std::runtime_error("The OBSERVE directive's node should not be reevaluated with passing value != observed_value.");
   }
 
   /*
@@ -1103,16 +1192,28 @@ string NodeEvaluation::__GetLocationAsString() {
   return return_string;
 }
 
-void DrawGraphDuringMH(shared_ptr<Node> first_node, stack< shared_ptr<Node> >& touched_nodes) {
+void DrawGraphDuringMH(stack< shared_ptr<Node> >& touched_nodes) {
 #ifdef _MSC_VER
   cout << "Writing the graph" << endl;
 
   std::ofstream graph_file;
   graph_file.open("C:/Temp/graph_output.txt");
   graph_file << "digraph G {" << endl;
-
+  
   queue< pair< string, shared_ptr<Node> > > processing_queue;
-  processing_queue.push(make_pair("", first_node));
+
+  map<size_t, directive_entry>::reverse_iterator previous = directives.rend();
+  for (map<size_t, directive_entry>::reverse_iterator directive = directives.rbegin();
+       directive != directives.rend();
+       directive++) {
+    if (previous == directives.rend()) {
+      processing_queue.push(make_pair("", directive->second.directive_node));
+    } else {
+      processing_queue.push(make_pair(previous->second.directive_node->GetUniqueID(), directive->second.directive_node));
+    }
+    previous = directive;
+  }
+
   while (!processing_queue.empty()) {
     queue< shared_ptr<Node> > temporal_queue;
     if (processing_queue.front().second == shared_ptr<Node>()) {
@@ -1157,6 +1258,7 @@ void DrawGraphDuringMH(shared_ptr<Node> first_node, stack< shared_ptr<Node> >& t
       << ": " << processing_queue.front().second->GetContent();
     graph_file << "\\n" << processing_queue.front().second->comment;
     graph_file << "\\n" << dynamic_pointer_cast<NodeEvaluation>(processing_queue.front().second)->node_key;
+    graph_file << "\\nCT: " << dynamic_pointer_cast<NodeEvaluation>(processing_queue.front().second)->constraint_times;
     graph_file << "\"" << endl;
     if (!(already_existent_element == GetStackContainer(touched_nodes).end())) {
       graph_file << ",color=red";
@@ -1178,6 +1280,7 @@ void DrawGraphDuringMH(shared_ptr<Node> first_node, stack< shared_ptr<Node> >& t
 }
 
 void AddToRandomChoices(weak_ptr<NodeXRPApplication> random_choice) {
+  assert(random_choice.lock()->GetType() == NODE && random_choice.lock()->GetNodeType() == XRP_APPLICATION);
   pair< set< weak_ptr<NodeXRPApplication> >::iterator, bool > result = random_choices.insert(random_choice);
   if (result.second == true) { // New element has been inserted.
     random_choices_vector.push_back(result.first);
