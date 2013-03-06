@@ -554,7 +554,7 @@ real ERP__CompareImages::GetSampledLoglikelihood(vector< shared_ptr<VentureValue
         // color = digits[digit_id_2][instance_2][new_x][new_y];
       }
       if (arguments[0]->GetInteger() == arguments[1]->GetInteger()) {
-        loglikelihood += NormalDistributionLoglikelihood(digits[digit_id_1][instance_1][x][y] + 100, 0, noise);
+        // loglikelihood += NormalDistributionLoglikelihood(digits[digit_id_1][instance_1][x][y] + 100, 0, noise);
       } else {
         // loglikelihood += NormalDistributionLoglikelihood(static_cast<int>(digits[digit_id_1][instance_1][x][y]) - static_cast<int>(color), 0, noise);
       }
