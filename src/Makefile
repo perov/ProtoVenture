@@ -1,11 +1,11 @@
 CXX = g++
-CXXFLAGS = -c -O2 -I/usr/include/python2.7
+CXXFLAGS = -c -O2 -I/usr/include/python2.6
 OBJECTS = $(patsubst %.cpp,%.o,$(wildcard *.cpp))
 DEPENDS = ${OBJECTS:.o=.d}
 EXEC = venture
 
 ${EXEC} : ${OBJECTS}
-	${CXX} ${OBJECTS} -o ${EXEC} -lpython2.7 -lgsl -lgslcblas -lpthread -lboost_thread-mt -lboost_system-mt
+	${CXX} ${OBJECTS} -o ${EXEC} -lpython2.6 -lgsl -lgslcblas -lpthread -lboost_thread-mt -lboost_system-mt
 
 %.o:%.cpp
 	${CXX} -MM -MF $*.d $*.cpp
