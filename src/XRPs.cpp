@@ -78,7 +78,6 @@ real XRP__CRPsampler::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >
 
 void XRP__CRPsampler::Incorporate(vector< shared_ptr<VentureValue> >& arguments,
                               shared_ptr<VentureValue> sampled_value) {
-  assert(ToVentureType<VentureAtom>(sampled_value)->data <= 3);
   if (this->atoms.count(ToVentureType<VentureAtom>(sampled_value)->data) == 1) {
     this->atoms[ToVentureType<VentureAtom>(sampled_value)->data]++;
   } else {
@@ -251,3 +250,85 @@ set< shared_ptr<VentureValue> > XRP__DirichletMultinomial_sampler::EnumeratingSu
   }
   return returning_set;
 }
+
+
+
+
+
+shared_ptr<VentureValue> XRP__Set::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+  return NIL_INSTANCE;
+}
+real XRP__Set::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
+                                      shared_ptr<VentureValue> sampled_value) {
+  return log(1.0);
+}
+void XRP__Set::Incorporate(vector< shared_ptr<VentureValue> >& arguments,
+                              shared_ptr<VentureValue> sampled_value) {}
+void XRP__Set::Remove(vector< shared_ptr<VentureValue> >& arguments,
+  shared_ptr<VentureValue> sampled_value) {}
+bool XRP__Set::IsRandomChoice() { return false; }
+bool XRP__Set::CouldBeRescored() { return false; }
+string XRP__Set::GetName() { return "XRP__Set"; }
+
+shared_ptr<VentureValue> XRP__NewSet::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+  return shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new XRP__Set())));
+}
+real XRP__NewSet::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
+                                      shared_ptr<VentureValue> sampled_value) {
+  return log(1.0);
+}
+void XRP__NewSet::Incorporate(vector< shared_ptr<VentureValue> >& arguments,
+                              shared_ptr<VentureValue> sampled_value) {}
+void XRP__NewSet::Remove(vector< shared_ptr<VentureValue> >& arguments,
+  shared_ptr<VentureValue> sampled_value) {}
+bool XRP__NewSet::IsRandomChoice() { return false; }
+bool XRP__NewSet::CouldBeRescored() { return false; }
+string XRP__NewSet::GetName() { return "XRP__NewSet"; }
+
+shared_ptr<VentureValue> XRP__AddToSet::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+  return NIL_INSTANCE;
+}
+real XRP__AddToSet::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
+                                      shared_ptr<VentureValue> sampled_value) {
+  return log(1.0);
+}
+void XRP__AddToSet::Incorporate(vector< shared_ptr<VentureValue> >& arguments,
+                              shared_ptr<VentureValue> sampled_value)
+{
+  shared_ptr<XRP__Set> the_set = dynamic_pointer_cast<XRP__Set>(ToVentureType<VentureXRP>(arguments[0])->xrp);
+  shared_ptr<VentureValue> element_to_add = arguments[1];
+  // assert(the_set->my_set.count(element_to_add) == 0);
+  the_set->my_set.insert(element_to_add);
+}
+void XRP__AddToSet::Remove(vector< shared_ptr<VentureValue> >& arguments,
+  shared_ptr<VentureValue> sampled_value)
+{
+  shared_ptr<XRP__Set> the_set = dynamic_pointer_cast<XRP__Set>(ToVentureType<VentureXRP>(arguments[0])->xrp);
+  shared_ptr<VentureValue> element_to_add = arguments[1];
+  assert(the_set->my_set.count(element_to_add) > 0);
+  the_set->my_set.erase(the_set->my_set.find(element_to_add));
+}
+bool XRP__AddToSet::IsRandomChoice() { return false; }
+bool XRP__AddToSet::CouldBeRescored() { return true; }
+string XRP__AddToSet::GetName() { return "XRP__AddToSet"; }
+
+shared_ptr<VentureValue> XRP__SampleFromSet::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+  shared_ptr<XRP__Set> the_set = dynamic_pointer_cast<XRP__Set>(ToVentureType<VentureXRP>(arguments[0])->xrp);
+  assert(the_set->my_set.size() > 0);
+  std::multiset< shared_ptr<VentureValue> >::iterator iterator = the_set->my_set.begin();
+  int random_choice_id = UniformDiscrete(0, the_set->my_set.size() - 1);
+  std::advance(iterator, random_choice_id);
+  return *iterator;
+}
+real XRP__SampleFromSet::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
+                                      shared_ptr<VentureValue> sampled_value) {
+  shared_ptr<XRP__Set> the_set = dynamic_pointer_cast<XRP__Set>(ToVentureType<VentureXRP>(arguments[0])->xrp);
+  return log(1.0 / static_cast<double>(the_set->my_set.size()));
+}
+void XRP__SampleFromSet::Incorporate(vector< shared_ptr<VentureValue> >& arguments,
+                              shared_ptr<VentureValue> sampled_value) {}
+void XRP__SampleFromSet::Remove(vector< shared_ptr<VentureValue> >& arguments,
+  shared_ptr<VentureValue> sampled_value) {}
+bool XRP__SampleFromSet::IsRandomChoice() { return true; }
+bool XRP__SampleFromSet::CouldBeRescored() { return false; }
+string XRP__SampleFromSet::GetName() { return "XRP__SampleFromSet"; }

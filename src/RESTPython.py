@@ -148,6 +148,95 @@ lisp_parser = lisp_parser_Class()
     
 MyRIPL = venture_engine
 
+"""
+MyRIPL.assume("clusters", lisp_parser.parse("(CRP/make (gamma 1.0 1.0))")) # (gamma 1.0 1.0)
+MyRIPL.assume("get-cluster-id", lisp_parser.parse("(mem (lambda (object-id) (clusters)))"))
+MyRIPL.assume("cluster-base-element", lisp_parser.parse("(mem (lambda (cluster-id x y) (beta-binomial/make (list (gamma 1.0) (gamma 1.0)))))"))
+MyRIPL.assume("offset", lisp_parser.parse("(mem (lambda (object-id dimension) (- (uniform-discrete 0 6) 3)))"))
+# MyRIPL.assume("offset", lisp_parser.parse("(lambda (object-id dimension) 0)"))
+
+import pickle
+data = pickle.load(open("C:/HWD/digits2_1.txt", "r"))
+number_of_digits = 10
+width = 10
+height = 10
+
+objects_clusters_ids = {}
+
+for object in range(number_of_digits):
+  (objects_clusters_ids[object], _) = MyRIPL.assume("cluster-for-object-" + str(object), lisp_parser.parse("(get-cluster-id " + str(object) + ")"))
+  for x in range(width):
+    for y in range(height):
+      pixel = data[object * (width + 1) + x + y * ((width + 1) * number_of_digits)][0]
+      if pixel == 255:
+        observing_value = 0
+      elif pixel == 0:
+        observing_value = 1
+      else:
+        print (1.0 / 0.0)
+      for_observe = "((cluster-base-element cluster-for-object-" + str(object) + " (+ " + str(x) + " (offset " + str(object) + " 1)) (+ " + str(y) + " (offset " + str(object) + " 2))))"
+      print for_observe + " = " + str(observing_value)
+      MyRIPL.observe(lisp_parser.parse(for_observe), observing_value)
+      # print MyRIPL.predict(lisp_parser.parse(for_observe))
+      
+# exit()
+  
+while True:
+  MyRIPL.infer(1000)
+  clusters = {}
+  for object in range(number_of_digits):
+    cluster_id = MyRIPL.report_value(objects_clusters_ids[object])
+    if not(cluster_id in clusters):
+      clusters[cluster_id] = []
+    clusters[cluster_id] += [object]
+  for cluster in clusters:
+    print "Cluster " + str(cluster) + ": " + str(clusters[cluster])
+  print MyRIPL.logscore()
+  print "***"
+  
+if 1 == 2:
+  MyRIPL.assume("noise", lisp_parser.parse("(* (gamma 1.0 1.0) 50.0)")) # 
+  MyRIPL.assume("clusters", lisp_parser.parse("(CRP/make (gamma 1.0 1.0))")) # (gamma 1.0 1.0)
+  MyRIPL.assume("get-cluster-id", lisp_parser.parse("(mem (lambda (object-id) (clusters)))"))
+  MyRIPL.assume("cluster-elements", lisp_parser.parse("(mem (lambda (cluster-id) (new-set)))"))
+  MyRIPL.assume("cluster-base-element", lisp_parser.parse("(mem (lambda (cluster-id) (sample-from-set (cluster-elements cluster-id))))"))
+
+  # objects = [10000, 10001, 10002, 10003, 20000, 20001, 20002, 20003]
+  objects = []
+  for digit in range(1, 2 + 1):
+    for instances in range(3):
+      objects += [(10000 * digit) + instances]
+  # objects = [10000, 10001]
+  # objects = [10000]
+
+  objects_clusters_ids = {}
+
+  for object in objects:
+    (objects_clusters_ids[object], _) = MyRIPL.assume("cluster-for-object-" + str(object), lisp_parser.parse("(get-cluster-id " + str(object) + ")"))
+    if (object % 10000 < 1):
+      MyRIPL.observe(lisp_parser.parse("(get-cluster-id " + str(object) + ")"), "a[" + str(object / 10000) + "]")
+    MyRIPL.predict(lisp_parser.parse("(add-to-set (cluster-elements (get-cluster-id " + str(object) + ")) " + str(object) + ")"))
+    # 0.05 -- appr. 5 degrees
+    MyRIPL.observe(lisp_parser.parse("(compare-images " + str(object) + " (cluster-base-element (get-cluster-id " + str(object) + ")) (normal 0.0 2.0) (normal 0.0 2.0) (normal 0.0 0.05) noise)"), True)
+
+  while True:
+    MyRIPL.infer(1000)
+    clusters = {}
+    for object in objects:
+      cluster_id = MyRIPL.report_value(objects_clusters_ids[object])
+      if not(cluster_id in clusters):
+        clusters[cluster_id] = []
+      clusters[cluster_id] += [object]
+    for cluster in clusters:
+      print "Cluster " + str(cluster) + ": " + str(clusters[cluster])
+    print "***"
+"""
+    
+# MyRIPL.clear()
+# MyRIPL.assume("fast-calc-joint-prob", 1)
+# MyRIPL.predict(lisp_parser.parse("((CRP/make (gamma 1.0 1.0)))"))
+# MyRIPL.infer(1000)
+
 # MyRIPL.clear()
 # MyRIPL.assume("fib", lisp_parser.parse("(mem (lambda (n) (if (int< n 2) n (int+ (if (flip) 1 0) (fib (int- n 1)) (fib (int- n 2))))))"))
 # print "Value" + str(MyRIPL.predict(lisp_parser.parse("(fib 5)")))

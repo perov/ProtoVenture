@@ -32,6 +32,8 @@ shared_ptr<NodeEnvironment> global_environment;
 size_t last_directive_id;
 map<size_t, directive_entry> directives;
 
+// unsigned char digits[10][50][28][28];
+
 int continuous_inference_status = 0; // NOT THREAD SAFE!
 
 int next_gensym_atom = 0; // Should become better for the multithread version.
@@ -43,7 +45,7 @@ void InitGSL() {
   random_generator = gsl_rng_alloc(gsl_rng_mt19937);
   unsigned long seed = static_cast<unsigned long>(time(NULL)); // time(NULL)
   if (false) {
-    seed = 1361054795;
+    seed = 1362378824;
     cout << "WARNING: RANDOM SEED is not random!" << endl;
   }
   cout << "Current seed: " << seed << endl;
@@ -71,6 +73,32 @@ int main(int argc, char *argv[])
 #ifdef _MSC_VER
   _CrtSetDbgFlag ( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
 #endif
+
+  /*
+  for (size_t digit_id = 0; digit_id < 5; digit_id++) {
+    FILE* fp = fopen(("C:/HWD/data/data" + boost::lexical_cast<string>(digit_id)).c_str(), "rb");
+    for (size_t instance_id = 0; instance_id < 100; instance_id++) {
+      //cout << "New char:" << endl;
+      for (size_t pixel_x = 0; pixel_x < 28; pixel_x++) {
+        for (size_t pixel_y = 0; pixel_y < 28; pixel_y++) {
+          fscanf(fp, "%c", &digits[digit_id][instance_id][pixel_x][pixel_y]);
+          if (digits[digit_id][instance_id][pixel_x][pixel_y] < 20) {
+            //cout << " ";
+          } else {
+            //cout << "*";
+          }
+          //cout << digits[digit_id][instance_id][pixel_x][pixel_y] / 26;
+          //if (digits[digit_id][instance_id][pixel_x][pixel_y] != 0) {
+          //  cout << "!!!" << endl;
+          //}
+        }
+        //cout << endl;
+      }
+      //getchar();
+    }
+    fclose(fp);
+  }
+  */
 
   InitGSL();
   InitRIPL();

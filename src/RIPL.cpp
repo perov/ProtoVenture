@@ -278,6 +278,19 @@ size_t ExecuteDirectiveWithRejectionSampling
 
 void BindStandardElementsToGlobalEnvironment() {
   BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol("compare-images")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new ERP__CompareImages()))));
+  BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol("new-set")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new XRP__NewSet()))));
+  BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol("add-to-set")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new XRP__AddToSet()))));
+  BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol("sample-from-set")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new XRP__SampleFromSet()))));
+
+  BindToEnvironment(global_environment,
                     shared_ptr<VentureSymbol>(new VentureSymbol("CRP/make")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new XRP__CRPmaker()))));
   BindToEnvironment(global_environment,

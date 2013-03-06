@@ -39,6 +39,8 @@ public:
   map<int, size_t> atoms; // next_gensym_atom
   size_t current_number_of_clients;
   real alpha; // Some XRPs do not save arguments.
+
+  double old_alpha;
 };
 
 
@@ -97,6 +99,71 @@ public:
 
   double old_a;
   double new_a;
+};
+
+
+
+
+class XRP__Set : public XRP {
+  virtual shared_ptr<VentureValue> Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config);
+  virtual real GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >&,
+                                       shared_ptr<VentureValue>);
+  virtual void Incorporate(vector< shared_ptr<VentureValue> >&,
+                                shared_ptr<VentureValue>);
+  virtual void Remove(vector< shared_ptr<VentureValue> >&,
+                           shared_ptr<VentureValue>);
+
+public:
+  virtual bool IsRandomChoice();
+  virtual bool CouldBeRescored();
+  virtual string GetName();
+  
+  std::multiset< shared_ptr<VentureValue> > my_set; // Should be connected with additional vector to efficiently sample from.
+};
+
+class XRP__NewSet : public XRP {
+  virtual shared_ptr<VentureValue> Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config);
+  virtual real GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >&,
+                                       shared_ptr<VentureValue>);
+  virtual void Incorporate(vector< shared_ptr<VentureValue> >&,
+                                shared_ptr<VentureValue>);
+  virtual void Remove(vector< shared_ptr<VentureValue> >&,
+                           shared_ptr<VentureValue>);
+
+public:
+  virtual bool IsRandomChoice();
+  virtual bool CouldBeRescored();
+  virtual string GetName();
+};
+
+class XRP__AddToSet : public XRP {
+  virtual shared_ptr<VentureValue> Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config);
+  virtual real GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >&,
+                                       shared_ptr<VentureValue>);
+  virtual void Incorporate(vector< shared_ptr<VentureValue> >&,
+                                shared_ptr<VentureValue>);
+  virtual void Remove(vector< shared_ptr<VentureValue> >&,
+                           shared_ptr<VentureValue>);
+
+public:
+  virtual bool IsRandomChoice();
+  virtual bool CouldBeRescored();
+  virtual string GetName();
+};
+
+class XRP__SampleFromSet : public XRP {
+  virtual shared_ptr<VentureValue> Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config);
+  virtual real GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >&,
+                                       shared_ptr<VentureValue>);
+  virtual void Incorporate(vector< shared_ptr<VentureValue> >&,
+                                shared_ptr<VentureValue>);
+  virtual void Remove(vector< shared_ptr<VentureValue> >&,
+                           shared_ptr<VentureValue>);
+
+public:
+  virtual bool IsRandomChoice();
+  virtual bool CouldBeRescored();
+  virtual string GetName();
 };
 
 #endif

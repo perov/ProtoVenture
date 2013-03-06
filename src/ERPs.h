@@ -8,6 +8,8 @@
 #include "Analyzer.h"
 #include "XRPCore.h"
 
+// extern unsigned char digits[10][50][28][28];
+
 class ERP : public XRP {
   virtual void Incorporate(vector< shared_ptr<VentureValue> >& arguments,
                    shared_ptr<VentureValue> sampled_value);
@@ -122,6 +124,17 @@ public:
 };
 
 class ERP__ConditionERP : public ERP {
+  virtual real GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
+                                 shared_ptr<VentureValue> sampled_value);
+  virtual shared_ptr<VentureValue> Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config);
+
+public:
+  virtual bool IsRandomChoice();
+  virtual bool CouldBeRescored();
+  virtual string GetName();
+};
+
+class ERP__CompareImages : public ERP {
   virtual real GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
                                  shared_ptr<VentureValue> sampled_value);
   virtual shared_ptr<VentureValue> Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config);

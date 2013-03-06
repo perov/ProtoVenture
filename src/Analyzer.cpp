@@ -898,6 +898,46 @@ NodeApplicationCaller::Reevaluate__TryToRescore(shared_ptr<VentureValue> passing
   }
 }
 
+#include <math.h>
+double lgamma(double x)
+{
+    double x0,x2,xp,gl,gl0;
+    int n,k;
+    static double a[] = {
+        8.333333333333333e-02,
+       -2.777777777777778e-03,
+        7.936507936507937e-04,
+       -5.952380952380952e-04,
+        8.417508417508418e-04,
+       -1.917526917526918e-03,
+        6.410256410256410e-03,
+       -2.955065359477124e-02,
+        1.796443723688307e-01,
+       -1.39243221690590};
+    
+    x0 = x;
+    if (x <= 0.0) return 1e308;
+    else if ((x == 1.0) || (x == 2.0)) return 0.0;
+    else if (x <= 7.0) {
+        n = (int)(7-x);
+        x0 = x+n;
+    }
+    x2 = 1.0/(x0*x0);
+    xp = 2.0*3.14159265358979323846264338327950;
+    gl0 = a[9];
+    for (k=8;k>=0;k--) {
+        gl0 = gl0*x2 + a[k];
+    }
+    gl = gl0/x0+0.5*log(xp)+(x0-0.5)*log(x0)-x0;
+    if (x <= 7.0) {
+        for (k=1;k<=n;k++) {
+            gl -= log(x0-1.0);
+            x0 -= 1.0;
+        }
+    }
+    return gl;
+}
+
 shared_ptr<ReevaluationResult>
 NodeApplicationCaller::Reevaluate(shared_ptr<VentureValue> passing_value,
                                   shared_ptr<Node> sender,
@@ -942,29 +982,64 @@ NodeApplicationCaller::Reevaluate(shared_ptr<VentureValue> passing_value,
         double old_A = old_a * got_old_arguments[1]->GetInteger();
         double new_A = new_a * got_new_arguments[1]->GetInteger();
 
-        vector<double> Ns(got_old_arguments[1]->GetInteger());
+        // vector<double> Ns(got_old_arguments[1]->GetInteger());
         double N = 0.0;
 
         for (size_t index = 0; index < got_old_arguments[1]->GetInteger(); index++) {
-          Ns[index] = xrpobject->statistics[index] - old_a;
-          N += Ns[index];
+          //Ns[index] = xrpobject->statistics[index] - old_a;
+          N += xrpobject->statistics[index] - old_a;
         }
 
-        double oldlogP = gsl_sf_lngamma(old_A) - gsl_sf_lngamma(old_A + N);
-        double newlogP = gsl_sf_lngamma(new_A) - gsl_sf_lngamma(new_A + N);
+        double oldlogP = lgamma(old_A) - lgamma(old_A + N);
+        double newlogP = lgamma(new_A) - lgamma(new_A + N);
 
         for (size_t index = 0; index < got_old_arguments[1]->GetInteger(); index++) {
-          oldlogP += (gsl_sf_lngamma(Ns[index] + old_a) - gsl_sf_lngamma(old_a));
-          newlogP += (gsl_sf_lngamma(Ns[index] + new_a) - gsl_sf_lngamma(new_a));
+          oldlogP += lgamma(xrpobject->statistics[index]);
+          newlogP += lgamma(xrpobject->statistics[index] + new_a - old_a);
 
           xrpobject->statistics[index] += new_a - old_a;
         }
+        
+        oldlogP -= lgamma(old_a) * got_old_arguments[1]->GetInteger();
+        newlogP -= lgamma(new_a) * got_old_arguments[1]->GetInteger();
+
         xrpobject->sum_of_statistics += (new_a - old_a) * got_old_arguments[1]->GetInteger();
         xrpobject->old_a = old_a;
         xrpobject->new_a = new_a;
 
         reevaluation_parameters->__log_p_old += oldlogP;
         reevaluation_parameters->__log_p_new += newlogP;
+
+        this->MH_made_action = MH_ACTION__SDD_RESCORED;
+        return shared_ptr<ReevaluationResult>(
+          new ReevaluationResult(shared_ptr<VentureValue>(), false));
+      }
+
+      if (dynamic_pointer_cast<NodeXRPApplication>(sender)->xrp->xrp->GetName() == "XRP__CRPmaker" &&
+            global_environment->variables.count("fast-calc-joint-prob") == 1) {
+        vector< shared_ptr<VentureValue> > got_old_arguments = GetArgumentsFromEnvironment(this->application_node->environment,
+          dynamic_pointer_cast<NodeEvaluation>(this->application_node), true);
+
+        // Should be with adding references!
+        vector< shared_ptr<VentureValue> > got_new_arguments = GetArgumentsFromEnvironment(this->application_node->environment,
+          dynamic_pointer_cast<NodeEvaluation>(this->application_node), false);
+
+        shared_ptr<XRP__CRPsampler> xrpobject =
+          dynamic_pointer_cast<XRP__CRPsampler>(dynamic_pointer_cast<VentureXRP>(dynamic_pointer_cast<NodeXRPApplication>(sender)->my_sampled_value)->xrp);
+        
+        // In the Wikipedia article:
+        // --- their theta is our alpha
+        // --- their alpha is equal to 0
+        // --- |B| is number of tables
+        // --- n is number of customers
+        real number_of_tables = xrpobject->atoms.size();
+        real number_of_customers = xrpobject->current_number_of_clients;
+        
+        reevaluation_parameters->__log_p_old += lgamma(got_old_arguments[0]->GetReal()) + number_of_tables * log(got_old_arguments[0]->GetReal()) - lgamma(got_old_arguments[0]->GetReal() + number_of_customers);
+        reevaluation_parameters->__log_p_new += lgamma(got_new_arguments[0]->GetReal()) + number_of_tables * log(got_new_arguments[0]->GetReal()) - lgamma(got_new_arguments[0]->GetReal() + number_of_customers);
+
+        xrpobject->old_alpha = xrpobject->alpha;
+        xrpobject->alpha = got_new_arguments[0]->GetReal();
 
         this->MH_made_action = MH_ACTION__SDD_RESCORED;
         return shared_ptr<ReevaluationResult>(

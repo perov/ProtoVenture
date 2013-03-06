@@ -126,6 +126,8 @@ XRP::RescorerResampler(vector< shared_ptr<VentureValue> >& old_arguments,
   }
   //cout << "Pam: " << arguments_are_different << " " << forced_resampling << " " << sampled_value_has_changed << " " << this->GetName() << endl;
   if (arguments_are_different == false && !forced_resampling && !sampled_value_has_changed) {
+    Incorporate(new_arguments, caller->my_sampled_value);
+    
     return shared_ptr<RescorerResamplerResult>(
       new RescorerResamplerResult(shared_ptr<VentureValue>(),
                                   0.0)); // Is it okay that we do not send the actual loglikelihood?

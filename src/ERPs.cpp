@@ -529,3 +529,42 @@ shared_ptr<VentureValue> ERP__ConditionERP::Sampler(vector< shared_ptr<VentureVa
 bool ERP__ConditionERP::IsRandomChoice() { return false; }
 bool ERP__ConditionERP::CouldBeRescored() { return false; }
 string ERP__ConditionERP::GetName() { return "ERP__ConditionERP"; }
+
+real ERP__CompareImages::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
+                                                shared_ptr<VentureValue> sampled_value) { // inline?
+  int digit_id_1 = arguments[0]->GetInteger() / 10000;
+  int digit_id_2 = arguments[1]->GetInteger() / 10000;
+  int instance_1 = arguments[0]->GetInteger() % 10000;
+  int instance_2 = arguments[1]->GetInteger() % 10000;
+  real offset_x = arguments[2]->GetReal();
+  real offset_y = arguments[3]->GetReal();
+  real rotate_angle = arguments[4]->GetReal();
+  real noise = arguments[5]->GetReal();
+  
+  real loglikelihood = 0;
+  for (char x = 0; x < 28; x++) {
+    for (char y = 0; y < 28; y++) {
+      int new_x = ((x + offset_x) * cos(rotate_angle) - (y + offset_y) * sin(rotate_angle));
+      int new_y = ((y + offset_y) * cos(rotate_angle) + (x + offset_x) * sin(rotate_angle));
+
+      char color;
+      if (new_x < 0 || new_x >= 28 || new_y < 0 || new_y >= 28) {
+        color = 0;
+      } else {
+        // color = digits[digit_id_2][instance_2][new_x][new_y];
+      }
+      if (arguments[0]->GetInteger() == arguments[1]->GetInteger()) {
+        loglikelihood += NormalDistributionLoglikelihood(digits[digit_id_1][instance_1][x][y] + 100, 0, noise);
+      } else {
+        // loglikelihood += NormalDistributionLoglikelihood(static_cast<int>(digits[digit_id_1][instance_1][x][y]) - static_cast<int>(color), 0, noise);
+      }
+    }
+  }
+  return loglikelihood;
+}
+shared_ptr<VentureValue> ERP__CompareImages::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+  return shared_ptr<VentureBoolean>(new VentureBoolean(true));
+}
+bool ERP__CompareImages::IsRandomChoice() { return true; }
+bool ERP__CompareImages::CouldBeRescored() { return true; }
+string ERP__CompareImages::GetName() { return "ERP__CompareImages"; }

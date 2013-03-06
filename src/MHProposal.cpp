@@ -283,7 +283,7 @@ void FinalizeProposal
       if (mh_decision == MH_APPROVED) {
         if (dynamic_pointer_cast<NodeVariable>(current_node)->output_references.size() == 1 &&
               dynamic_pointer_cast<NodeVariable>(current_node)->output_references.begin()->lock()->GetNodeType() == XRP_APPLICATION &&
-              (dynamic_pointer_cast<NodeXRPApplication>(dynamic_pointer_cast<NodeVariable>(current_node)->output_references.begin()->lock())->xrp->xrp->GetName() != "XRP__SymmetricDirichletMultinomial_maker" ||
+              ((dynamic_pointer_cast<NodeXRPApplication>(dynamic_pointer_cast<NodeVariable>(current_node)->output_references.begin()->lock())->xrp->xrp->GetName() != "XRP__SymmetricDirichletMultinomial_maker" && dynamic_pointer_cast<NodeXRPApplication>(dynamic_pointer_cast<NodeVariable>(current_node)->output_references.begin()->lock())->xrp->xrp->GetName() != "XRP__CRPmaker") ||
                global_environment->variables.count("fast-calc-joint-prob") != 1)) {
           // Do nothing, because arguments of the NodeXRPApplication has been changed.
         } else {
@@ -297,13 +297,24 @@ void FinalizeProposal
       assert(dynamic_pointer_cast<NodeApplicationCaller>(current_node)->MH_made_action != MH_ACTION__EMPTY_STATUS);
 
       if (dynamic_pointer_cast<NodeApplicationCaller>(current_node)->MH_made_action == MH_ACTION__SDD_RESCORED) {
-        if (mh_decision == MH_DECLINED) {
-          shared_ptr<XRP__DirichletMultinomial_sampler> xrpobject =
-            dynamic_pointer_cast<XRP__DirichletMultinomial_sampler>(dynamic_pointer_cast<VentureXRP>(dynamic_pointer_cast<NodeXRPApplication>(dynamic_pointer_cast<NodeApplicationCaller>(current_node)->application_node)->my_sampled_value)->xrp);
-          for (size_t index = 0; index < xrpobject->statistics.size(); index++) {
-            xrpobject->statistics[index] += xrpobject->old_a - xrpobject->new_a;
+        if (dynamic_pointer_cast<VentureXRP>(dynamic_pointer_cast<NodeXRPApplication>(dynamic_pointer_cast<NodeApplicationCaller>(current_node)->application_node)->my_sampled_value)->xrp->GetName() == "XRP__DirichletMultinomial_sampler")
+        {
+          if (mh_decision == MH_DECLINED) {
+            shared_ptr<XRP__DirichletMultinomial_sampler> xrpobject =
+              dynamic_pointer_cast<XRP__DirichletMultinomial_sampler>(dynamic_pointer_cast<VentureXRP>(dynamic_pointer_cast<NodeXRPApplication>(dynamic_pointer_cast<NodeApplicationCaller>(current_node)->application_node)->my_sampled_value)->xrp);
+            for (size_t index = 0; index < xrpobject->statistics.size(); index++) {
+              xrpobject->statistics[index] += xrpobject->old_a - xrpobject->new_a;
+            }
+            xrpobject->sum_of_statistics += (xrpobject->old_a - xrpobject->new_a) * xrpobject->statistics.size();
           }
-          xrpobject->sum_of_statistics += (xrpobject->old_a - xrpobject->new_a) * xrpobject->statistics.size();
+        } else if (dynamic_pointer_cast<VentureXRP>(dynamic_pointer_cast<NodeXRPApplication>(dynamic_pointer_cast<NodeApplicationCaller>(current_node)->application_node)->my_sampled_value)->xrp->GetName() == "XRP__CRPsampler") {
+          if (mh_decision == MH_DECLINED) {
+            shared_ptr<XRP__CRPsampler> xrpobject =
+              dynamic_pointer_cast<XRP__CRPsampler>(dynamic_pointer_cast<VentureXRP>(dynamic_pointer_cast<NodeXRPApplication>(dynamic_pointer_cast<NodeApplicationCaller>(current_node)->application_node)->my_sampled_value)->xrp);
+            xrpobject->alpha = xrpobject->old_alpha;
+          }
+        } else {
+          throw std::runtime_error("Unknown MH_ACTION__SDD_RESCORED source.");
         }
       }
 
