@@ -51,6 +51,15 @@ public:
   virtual string GetName();
 };
 
+class ERP__Poisson : public ERP {
+  virtual real GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
+                                 shared_ptr<VentureValue> sampled_value);
+  virtual shared_ptr<VentureValue> Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config);
+
+public:
+  virtual string GetName();
+};
+
 class ERP__Gamma : public ERP {
   virtual real GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
                                  shared_ptr<VentureValue> sampled_value);
@@ -60,7 +69,25 @@ public:
   virtual string GetName();
 };
 
-class ERP__SymmetricDirichlet : public ERP {
+class ERP__InverseGamma : public ERP {
+  virtual real GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
+                                 shared_ptr<VentureValue> sampled_value);
+  virtual shared_ptr<VentureValue> Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config);
+
+public:
+  virtual string GetName();
+};
+
+class ERP__ChiSquared : public ERP {
+  virtual real GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
+                                 shared_ptr<VentureValue> sampled_value);
+  virtual shared_ptr<VentureValue> Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config);
+
+public:
+  virtual string GetName();
+};
+
+class ERP__InverseChiSquared : public ERP {
   virtual real GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
                                  shared_ptr<VentureValue> sampled_value);
   virtual shared_ptr<VentureValue> Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config);
@@ -78,7 +105,7 @@ public:
   virtual string GetName();
 };
 
-class ERP__CategoricalSP : public ERP {
+class ERP__SymmetricDirichlet : public ERP {
   virtual real GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
                                  shared_ptr<VentureValue> sampled_value);
   virtual shared_ptr<VentureValue> Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config);
@@ -115,6 +142,15 @@ public:
 };
 
 class ERP__Categorical : public ERP {
+  virtual real GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
+                                 shared_ptr<VentureValue> sampled_value);
+  virtual shared_ptr<VentureValue> Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config);
+
+public:
+  virtual string GetName();
+};
+
+class ERP__CategoricalSP : public ERP {
   virtual real GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
                                  shared_ptr<VentureValue> sampled_value);
   virtual shared_ptr<VentureValue> Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config);
