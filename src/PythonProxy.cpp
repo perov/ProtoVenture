@@ -347,7 +347,7 @@ ForPython__assume(PyObject *self, PyObject *args)
 
 PyObject*
 ForPython__predict(PyObject *self, PyObject *args)
-{ //try {
+{ try {
   PauseInference();
   shared_ptr<VentureValue> expression;
   if(!PyArg_ParseTuple(args, "O&:predict",
@@ -366,7 +366,7 @@ ForPython__predict(PyObject *self, PyObject *args)
   PyObject* returning_python_object = Py_BuildValue("(iO)", static_cast<int>(directive_id), directive_value->GetAsPythonObject());
   ReturnInferenceIfNecessary();
   return returning_python_object;
-} //catch(handling_python_error&) { return NULL; } catch(std::runtime_error& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }
+} catch(handling_python_error&) { return NULL; } catch(std::runtime_error& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }
 
 PyObject*
 ForPython__observe(PyObject *self, PyObject *args)

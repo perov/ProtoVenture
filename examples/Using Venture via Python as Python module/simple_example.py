@@ -4,13 +4,14 @@ import venture_engine
 MyRIPL = venture_engine
 
 # Tricky coin
-MyRIPL.clear() # To delete previous sessions data.
-MyRIPL.assume("is-tricky", ['bernoulli', 0.1])
 
-# You can either write the Church code via the Python lists:
-# MyRIPL.assume("head-probability", ['if', 'is-tricky', ['beta', 1.0, 1.0], 0.5])
-# Or to parse it from the string:
-MyRIPL.assume("head-probability", parse("(if is-tricky (beta 1.0 1.0) 0.5)"))
+generative_model = """
+[CLEAR]
+[ASSUME is-tricky (bernoulli 0.1)]
+[ASSUME head-probability (if is-tricky (beta 1.0 1.0) 0.5)]
+"""
+loadToRIPL(MyRIPL, generative_model)
+
 (is_tricky, _) = MyRIPL.predict("is-tricky") # It could be done through the first ASSUME,
                                              # but we are using the PREDICT just to
                                              # check its operability.

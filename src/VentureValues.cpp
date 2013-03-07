@@ -296,6 +296,7 @@ void __BlankFunction1() { // Why without this function the g++ (Unix) with -O2 r
   ToVentureType<VentureBoolean>(shared_ptr<VentureValue>());
   ToVentureType<VentureList>(shared_ptr<VentureValue>());
   ToVentureType<VentureSimplexPoint>(shared_ptr<VentureValue>());
+  ToVentureType<VentureXRP>(shared_ptr<VentureValue>());
 }
 
 // *** CompareByValue ***
