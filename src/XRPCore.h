@@ -82,6 +82,8 @@ struct ReevaluationParameters : public boost::enable_shared_from_this<Reevaluati
   
   set< shared_ptr<NodeXRPApplication> > creating_random_choices;
   set< shared_ptr<NodeXRPApplication> > deleting_random_choices;
+  
+  map< shared_ptr<NodeXRPApplication>, shared_ptr<VentureValue> > new_values_for_memoized_procedures;
 };
 
 struct EvaluationConfig;
