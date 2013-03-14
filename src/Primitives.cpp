@@ -184,6 +184,48 @@ shared_ptr<VentureValue> Primitive__List::Sampler(vector< shared_ptr<VentureValu
 }
 string Primitive__List::GetName() { return "Primitive__List"; }
 
+shared_ptr<VentureValue> Primitive__First::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+  if (arguments.size() != 1) {
+    throw std::runtime_error("Wrong number of arguments.");
+  }
+  return GetFirst(ToVentureType<VentureList>(arguments[0]));
+}
+string Primitive__First::GetName() { return "Primitive__First"; }
+
+shared_ptr<VentureValue> Primitive__Rest::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+  if (arguments.size() != 1) {
+    throw std::runtime_error("Wrong number of arguments.");
+  }
+  return GetNext(ToVentureType<VentureList>(arguments[0]));
+}
+string Primitive__Rest::GetName() { return "Primitive__Rest"; }
+
+shared_ptr<VentureValue> Primitive__Length::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+  if (arguments.size() != 1) {
+    throw std::runtime_error("Wrong number of arguments.");
+  }
+  return shared_ptr<VentureCount>(new VentureCount(GetSize(ToVentureType<VentureList>(arguments[0]))));
+}
+string Primitive__Length::GetName() { return "Primitive__Length"; }
+
+shared_ptr<VentureValue> Primitive__EmptyQUESTIONMARK::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+  if (arguments.size() != 1) {
+    throw std::runtime_error("Wrong number of arguments.");
+  }
+  return shared_ptr<VentureBoolean>(new VentureBoolean(GetSize(ToVentureType<VentureList>(arguments[0])) == 0));
+}
+string Primitive__EmptyQUESTIONMARK::GetName() { return "Primitive__EmptyQUESTIONMARK"; }
+
+shared_ptr<VentureValue> Primitive__Nth::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+  if (arguments.size() != 2) {
+    throw std::runtime_error("Wrong number of arguments.");
+  }
+  assert(arguments[1]->GetInteger() >= 1);
+  assert(arguments[1]->GetInteger() <= GetSize(ToVentureType<VentureList>(arguments[0])));
+  return GetNth(ToVentureType<VentureList>(arguments[0]), arguments[1]->GetInteger());
+}
+string Primitive__Nth::GetName() { return "Primitive__Nth"; }
+
 shared_ptr<VentureValue> Primitive__Inc::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
   if (arguments.size() != 1) {
     throw std::runtime_error("Wrong number of arguments.");

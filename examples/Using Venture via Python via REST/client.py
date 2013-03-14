@@ -196,6 +196,35 @@ class RemoteRIPL():
     contents = json.loads(r.content)
     return contents
 
+  def load(self, generative_model_string): # Jay Baxter, March 04 2013.
+    import lisp_parser
+    parse = lisp_parser.parse
+    import re
+    """Convert a Church generative model string into a sequence of Venture directives."""
+    lines = re.findall(r'\[(.*?)\]', generative_model_string, re.DOTALL)
+    for line in lines:
+      arguments = line.split(" ", 1)
+      directive_name = arguments[0].lower()
+      if (directive_name == "assume"):
+        name_and_expression = arguments[1].split(" ", 1)
+        self.assume(name_and_expression[0], parse(name_and_expression[1]))
+      elif (directive_name == "predict"):
+        name_and_expression = arguments[1].split(" ", 1)
+        self.predict(parse(arguments[1]))
+      elif (directive_name == "observe"):
+        expression_and_literal_value = arguments[1].rsplit(" ", 1)
+        self.observe(parse(expression_and_literal_value[0]), expression_and_literal_value[1])
+      elif (directive_name == "infer"):
+        self.infer(int(arguments[1]))
+      elif (directive_name == "forget"):
+        self.forget(int(arguments[1]))
+      elif (directive_name == "report"):
+        self.report_value(int(arguments[1]))
+      elif (directive_name == "clear"):
+        self.clear()
+      else:
+        raise Exception("Unknown directive")
+    
 def directives_to_string(directives): # Change 8: added new utility.
   info = []
   info_element = [] # Better through info_element.append(...)?

@@ -232,6 +232,9 @@ void PropagateNewValue
         current_reevaluation.priority == REEVALUATION_PRIORITY__STANDARD) {
       // If it is memoized procedure, and it has received update from the memoizer node.
       reevaluation_result = shared_ptr<ReevaluationResult>(new ReevaluationResult(current_reevaluation.passing_value, true));
+      reevaluation_parameters->
+        new_values_for_memoized_procedures[dynamic_pointer_cast<NodeXRPApplication>(current_reevaluation.reevaluation_node)] =
+          current_reevaluation.passing_value;
       // FIXME: make here also necessary blocking.
     } else {
       reevaluation_result =
@@ -270,6 +273,14 @@ void FinalizeProposal
          iterator++) {
       //assert(deleting_random_choices.count(*iterator) == 0);
       AddToRandomChoices(*iterator);
+    }
+
+    for (map< shared_ptr<NodeXRPApplication>, shared_ptr<VentureValue> >::iterator iterator =
+           reevaluation_parameters->new_values_for_memoized_procedures.begin();
+         iterator !=
+           reevaluation_parameters->new_values_for_memoized_procedures.end();
+         iterator++) {
+      (iterator->first)->my_sampled_value = iterator->second;
     }
   }
 
