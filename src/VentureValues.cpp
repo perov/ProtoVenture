@@ -26,8 +26,8 @@ void VentureAtom::CheckMyData(VentureValue* venture_value) {
   }
 }
 void VentureSimplexPoint::CheckMyData(VentureValue* venture_value) {
-  if (venture_value->GetInteger() < 0) {
-    throw std::runtime_error("VentureCount should be non-negative.");
+  if (venture_value->GetReal() < 0) {
+    throw std::runtime_error("VentureSimplexPoint should be non-negative.");
   }
 }
 void VentureSmoothedCount::CheckMyData(VentureValue* venture_value) {
