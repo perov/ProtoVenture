@@ -53,15 +53,12 @@ shared_ptr<VentureValue> ERP__Flip::Sampler(vector< shared_ptr<VentureValue> >& 
 }
 string ERP__Flip::GetName() { return "ERP__Flip"; }
 
-real ERP__Normal::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
-                                shared_ptr<VentureValue> sampled_value) {
-  real average;
-  real sigma;
+real ERP__Normal::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<VentureValue> sampled_value) {
   if (arguments.size() == 2) {
     VentureReal::CheckMyData(arguments[0].get());
-    average = arguments[0]->GetReal();
+    real average = arguments[0]->GetReal();
     VentureSmoothedCount::CheckMyData(arguments[1].get());
-    sigma = arguments[1]->GetReal();
+    real sigma = arguments[1]->GetReal();
     //double likelihood =
     //       gsl_ran_gaussian_pdf(ToVentureType<VentureReal>(sampled_value)->GetReal() - // Should be ToVentureType<VentureReal>(sampled_value) in a good way.
     //                              average,
@@ -74,17 +71,13 @@ real ERP__Normal::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& ar
   }
 }
 shared_ptr<VentureValue> ERP__Normal::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
-  real average;
-  real sigma;
   if (arguments.size() == 2) {
     VentureReal::CheckMyData(arguments[0].get());
-    average = arguments[0]->GetReal();
+    real average = arguments[0]->GetReal();
     VentureSmoothedCount::CheckMyData(arguments[1].get());
-    sigma = arguments[1]->GetReal();
+    real sigma = arguments[1]->GetReal();
     double random_value =
-           gsl_ran_gaussian(random_generator,
-                            sigma) +
-             average;
+           gsl_ran_gaussian(random_generator, sigma) + average;
     return shared_ptr<VentureReal>(new VentureReal(random_value));
   } else {
     throw std::runtime_error("Wrong number of arguments.");
@@ -92,15 +85,12 @@ shared_ptr<VentureValue> ERP__Normal::Sampler(vector< shared_ptr<VentureValue> >
 }
 string ERP__Normal::GetName() { return "ERP__Normal"; }
 
-real ERP__Beta::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
-                                shared_ptr<VentureValue> sampled_value) {
-  real alpha;
-  real beta;
+real ERP__Beta::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<VentureValue> sampled_value) {
   if (arguments.size() == 2) {
     VentureSmoothedCount::CheckMyData(arguments[0].get());
-    alpha = arguments[0]->GetReal();
+    real alpha = arguments[0]->GetReal();
     VentureSmoothedCount::CheckMyData(arguments[1].get());
-    beta = arguments[1]->GetReal();
+    real beta = arguments[1]->GetReal();
     //double likelihood =
     //       gsl_ran_beta_pdf(ToVentureType<VentureReal>(sampled_value)->GetReal(),
     //                        alpha,
@@ -113,17 +103,12 @@ real ERP__Beta::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& argu
   }
 }
 shared_ptr<VentureValue> ERP__Beta::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
-  real alpha;
-  real beta;
   if (arguments.size() == 2) {
     VentureSmoothedCount::CheckMyData(arguments[0].get());
-    alpha = arguments[0]->GetReal();
+    real alpha = arguments[0]->GetReal();
     VentureSmoothedCount::CheckMyData(arguments[1].get());
-    beta = arguments[1]->GetReal();
-    double random_value =
-           gsl_ran_beta(random_generator,
-                        alpha,
-                        beta);
+    real beta = arguments[1]->GetReal();
+    double random_value = gsl_ran_beta(random_generator, alpha, beta);
     return shared_ptr<VentureReal>(new VentureReal(random_value));
   } else {
     throw std::runtime_error("Wrong number of arguments.");
@@ -131,12 +116,10 @@ shared_ptr<VentureValue> ERP__Beta::Sampler(vector< shared_ptr<VentureValue> >& 
 }
 string ERP__Beta::GetName() { return "ERP__Beta"; }
 
-real ERP__Poisson::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
-                                shared_ptr<VentureValue> sampled_value) {
-  real lambda;
+real ERP__Poisson::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<VentureValue> sampled_value) {
   if (arguments.size() == 1) {
     VentureSmoothedCount::CheckMyData(arguments[0].get());
-    lambda = arguments[0]->GetReal();
+    real lambda = arguments[0]->GetReal();
     //double likelihood =
     //       gsl_ran_poisson_pdf(ToVentureType<VentureCount>(sampled_value)->GetInteger(),
     //                         lambda);
@@ -148,13 +131,10 @@ real ERP__Poisson::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& a
   }
 }
 shared_ptr<VentureValue> ERP__Poisson::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
-  real lambda;
   if (arguments.size() == 1) {
     VentureSmoothedCount::CheckMyData(arguments[0].get());
-    lambda = arguments[0]->GetReal();
-    int random_value =
-           gsl_ran_poisson(random_generator,
-                         lambda);
+    real lambda = arguments[0]->GetReal();
+    int random_value = gsl_ran_poisson(random_generator, lambda);
     return shared_ptr<VentureCount>(new VentureCount(random_value));
   } else {
     throw std::runtime_error("Wrong number of arguments.");
@@ -162,15 +142,12 @@ shared_ptr<VentureValue> ERP__Poisson::Sampler(vector< shared_ptr<VentureValue> 
 }
 string ERP__Poisson::GetName() { return "ERP__Poisson"; }
 
-real ERP__Gamma::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
-                                shared_ptr<VentureValue> sampled_value) {
-  real alpha;
-  real beta;
+real ERP__Gamma::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<VentureValue> sampled_value) {
   if (arguments.size() == 2) {
     VentureSmoothedCount::CheckMyData(arguments[0].get());
-    alpha = arguments[0]->GetReal();
+    real alpha = arguments[0]->GetReal();
     VentureSmoothedCount::CheckMyData(arguments[1].get());
-    beta = arguments[1]->GetReal();
+    real beta = arguments[1]->GetReal();
     //double likelihood =
     //       gsl_ran_gamma_pdf(ToVentureType<VentureReal>(sampled_value)->GetReal(),
     //                         alpha,
@@ -183,17 +160,13 @@ real ERP__Gamma::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arg
   }
 }
 shared_ptr<VentureValue> ERP__Gamma::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
-  real alpha;
-  real beta;
   if (arguments.size() == 2) {
     VentureSmoothedCount::CheckMyData(arguments[0].get());
-    alpha = arguments[0]->GetReal();
+    real alpha = arguments[0]->GetReal();
     VentureSmoothedCount::CheckMyData(arguments[1].get());
-    beta = arguments[1]->GetReal();
+    real beta = arguments[1]->GetReal();
     double random_value =
-           gsl_ran_gamma(random_generator,
-                         alpha,
-                         1.0 / beta);
+           gsl_ran_gamma(random_generator, alpha, 1.0 / beta);
     return shared_ptr<VentureReal>(new VentureReal(random_value));
   } else {
     throw std::runtime_error("Wrong number of arguments.");
@@ -201,15 +174,12 @@ shared_ptr<VentureValue> ERP__Gamma::Sampler(vector< shared_ptr<VentureValue> >&
 }
 string ERP__Gamma::GetName() { return "ERP__Gamma"; }
 
-real ERP__InverseGamma::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
-                                shared_ptr<VentureValue> sampled_value) {
-  real alpha;
-  real beta;
+real ERP__InverseGamma::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<VentureValue> sampled_value) {
   if (arguments.size() == 2) {
     VentureSmoothedCount::CheckMyData(arguments[0].get());
-    alpha = arguments[0]->GetReal();
+    real alpha = arguments[0]->GetReal();
     VentureSmoothedCount::CheckMyData(arguments[1].get());
-    beta = arguments[1]->GetReal();
+    real beta = arguments[1]->GetReal();
     //double likelihood =
     //       gsl_ran_gamma_pdf(1.0 / ToVentureType<VentureReal>(sampled_value)->GetReal(),
     //                         alpha,
@@ -222,13 +192,11 @@ real ERP__InverseGamma::GetSampledLoglikelihood(vector< shared_ptr<VentureValue>
   }
 }
 shared_ptr<VentureValue> ERP__InverseGamma::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
-  real alpha;
-  real beta;
   if (arguments.size() == 2) {
     VentureSmoothedCount::CheckMyData(arguments[0].get());
-    alpha = arguments[0]->GetReal();
+    real alpha = arguments[0]->GetReal();
     VentureSmoothedCount::CheckMyData(arguments[1].get());
-    beta = arguments[1]->GetReal();
+    real beta = arguments[1]->GetReal();
     double random_value =
            gsl_ran_gamma(random_generator,
                          alpha,
@@ -240,12 +208,10 @@ shared_ptr<VentureValue> ERP__InverseGamma::Sampler(vector< shared_ptr<VentureVa
 }
 string ERP__InverseGamma::GetName() { return "ERP__InverseGamma"; }
 
-real ERP__ChiSquared::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
-                                shared_ptr<VentureValue> sampled_value) {
-  real nu;
+real ERP__ChiSquared::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<VentureValue> sampled_value) {
   if (arguments.size() == 1) {
     VentureSmoothedCount::CheckMyData(arguments[0].get());
-    nu = arguments[0]->GetReal();
+    real nu = arguments[0]->GetReal();
     //double likelihood =
     //       gsl_ran_chisq_pdf(ToVentureType<VentureReal>(sampled_value)->GetReal(),
     //                         nu);
@@ -257,10 +223,9 @@ real ERP__ChiSquared::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >
   }
 }
 shared_ptr<VentureValue> ERP__ChiSquared::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
-  real nu;
   if (arguments.size() == 1) {
     VentureSmoothedCount::CheckMyData(arguments[0].get());
-    nu = arguments[0]->GetReal();
+    real nu = arguments[0]->GetReal();
     double random_value =
            gsl_ran_chisq(random_generator,
                          nu);
@@ -271,12 +236,10 @@ shared_ptr<VentureValue> ERP__ChiSquared::Sampler(vector< shared_ptr<VentureValu
 }
 string ERP__ChiSquared::GetName() { return "ERP__ChiSquared"; }
 
-real ERP__InverseChiSquared::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
-                                shared_ptr<VentureValue> sampled_value) {
-  real nu;
+real ERP__InverseChiSquared::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<VentureValue> sampled_value) {
   if (arguments.size() == 1) {
     VentureSmoothedCount::CheckMyData(arguments[0].get());
-    nu = arguments[0]->GetReal();
+    real nu = arguments[0]->GetReal();
     //double likelihood =
     //       gsl_ran_chisq_pdf(1.0 / ToVentureType<VentureReal>(sampled_value)->GetReal(),
     //                         nu);
@@ -288,10 +251,9 @@ real ERP__InverseChiSquared::GetSampledLoglikelihood(vector< shared_ptr<VentureV
   }
 }
 shared_ptr<VentureValue> ERP__InverseChiSquared::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
-  real nu;
   if (arguments.size() == 1) {
     VentureSmoothedCount::CheckMyData(arguments[0].get());
-    nu = arguments[0]->GetReal();
+    real nu = arguments[0]->GetReal();
     double random_value =
            gsl_ran_chisq(random_generator,
                          nu);
@@ -305,25 +267,26 @@ string ERP__InverseChiSquared::GetName() { return "ERP__InverseChiSquared"; }
 real ERP__SymmetricDirichlet::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
                                 shared_ptr<VentureValue> sampled_value) {
   if (arguments.size() == 2) {
-    double* arguments_for_gsl = new double[arguments[1]->GetInteger()];
-    double* returned_values = new double[arguments[1]->GetInteger()];
-    double sum = 0.0;
-    assert(arguments[1]->GetInteger() == ToVentureType<VentureSimplexPoint>(sampled_value)->data.size());
-    VentureSmoothedCount::CheckMyData(arguments[0].get());
-    for (size_t index = 0; index < arguments[1]->GetInteger(); index++) {
-      arguments_for_gsl[index] = arguments[0]->GetReal();
-      if (index + 1 != arguments[1]->GetInteger()) {
-        returned_values[index] = ToVentureType<VentureSimplexPoint>(sampled_value)->data[index];
-        sum += returned_values[index];
-      } else {
-        returned_values[index] = 1.0 - sum;
-      }
-    }
-
-    real likelihood = gsl_ran_dirichlet_pdf(arguments[1]->GetInteger(), arguments_for_gsl, returned_values);
+    VentureCount::CheckMyData(arguments[1].get());
+    int dim = arguments[1]->GetInteger();
+    vector<real>& sampled_data = ToVentureType<VentureSimplexPoint>(sampled_value)->data;
+    assert(dim == sampled_data.size());
     
-    delete [] arguments_for_gsl;
-    delete [] returned_values;
+    double arguments_for_gsl[dim];
+    double returned_values[dim];
+    VentureSmoothedCount::CheckMyData(arguments[0].get());
+    double alpha = arguments[0]->GetReal();
+    
+    double sum = 0.0;
+    for (size_t index = 0; index < dim-1; index++) {
+      arguments_for_gsl[index] = alpha;
+      returned_values[index] = sampled_data[index];
+      sum += returned_values[index];
+    }
+    arguments_for_gsl[dim-1] = alpha;
+    returned_values[dim-1] = 1.0 - sum;
+
+    real likelihood = gsl_ran_dirichlet_pdf(dim, arguments_for_gsl, returned_values);
 
     return log(likelihood);
   } else {
@@ -332,23 +295,20 @@ real ERP__SymmetricDirichlet::GetSampledLoglikelihood(vector< shared_ptr<Venture
 }
 shared_ptr<VentureValue> ERP__SymmetricDirichlet::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
   if (arguments.size() == 2) {
-    double* arguments_for_gsl = new double[arguments[1]->GetInteger()];
-    double* returned_values = new double[arguments[1]->GetInteger()];
+    VentureCount::CheckMyData(arguments[1].get());
+    int dim = arguments[1]->GetInteger();
+    double arguments_for_gsl[dim];
+    double returned_values[dim];
     VentureSmoothedCount::CheckMyData(arguments[0].get());
-    for (size_t index = 0; index < arguments[1]->GetInteger(); index++) {
-      arguments_for_gsl[index] = arguments[0]->GetReal();
+    real alpha = arguments[0]->GetReal();
+    for (size_t index = 0; index < dim; index++) {
+      arguments_for_gsl[index] = alpha;
     }
 
-    gsl_ran_dirichlet(random_generator, arguments[1]->GetInteger(), arguments_for_gsl, returned_values);
+    gsl_ran_dirichlet(random_generator, dim, arguments_for_gsl, returned_values);
     
-    vector<real> returned_value_as_vector(arguments[1]->GetInteger()); // Not very efficient.
-    for (size_t index = 0; index < arguments[1]->GetInteger(); index++) {
-      returned_value_as_vector[index] = returned_values[index];
-    }
+    vector<real> returned_value_as_vector(returned_values, returned_values + dim);
     
-    delete [] arguments_for_gsl;
-    delete [] returned_values;
-
     return shared_ptr<VentureSimplexPoint>(new VentureSimplexPoint(returned_value_as_vector));
   } else {
     throw std::runtime_error("Wrong number of arguments.");
@@ -356,28 +316,26 @@ shared_ptr<VentureValue> ERP__SymmetricDirichlet::Sampler(vector< shared_ptr<Ven
 }
 string ERP__SymmetricDirichlet::GetName() { return "ERP__SymmetricDirichlet"; }
 
-real ERP__Dirichlet::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
-                                shared_ptr<VentureValue> sampled_value) {
-  if (arguments.size() >= 2) {
-    double* arguments_for_gsl = new double[arguments.size()];
-    double* returned_values = new double[arguments.size()];
+real ERP__Dirichlet::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<VentureValue> sampled_value) {
+  int dim = arguments.size();
+  if (dim >= 2) {
+    vector<real>& sample_data = ToVentureType<VentureSimplexPoint>(sampled_value)->data;
+    assert(dim == sample_data.size());
+    double arguments_for_gsl[dim];
+    double returned_values[dim];
+
     double sum = 0.0;
-    assert(arguments.size() == ToVentureType<VentureSimplexPoint>(sampled_value)->data.size());
-    for (size_t index = 0; index < arguments.size(); index++) {
+    for (size_t index = 0; index < dim-1; index++) {
       VentureSmoothedCount::CheckMyData(arguments[index].get());
       arguments_for_gsl[index] = arguments[index]->GetReal();
-      if (index + 1 != arguments.size()) {
-        returned_values[index] = ToVentureType<VentureSimplexPoint>(sampled_value)->data[index];
-        sum += returned_values[index];
-      } else {
-        returned_values[index] = 1.0 - sum;
-      }
+      returned_values[index] = sample_data[index];
+      sum += returned_values[index];
     }
+    VentureSmoothedCount::CheckMyData(arguments[dim-1].get());
+    arguments_for_gsl[dim-1] = arguments[dim-1]->GetReal();
+    returned_values[dim-1] = 1.0 - sum;
 
     real likelihood = gsl_ran_dirichlet_pdf(arguments.size(), arguments_for_gsl, returned_values);
-    
-    delete [] arguments_for_gsl;
-    delete [] returned_values;
 
     return log(likelihood);
   } else {
@@ -385,23 +343,18 @@ real ERP__Dirichlet::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >&
   }
 }
 shared_ptr<VentureValue> ERP__Dirichlet::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
-  if (arguments.size() >= 2) {
-    double* arguments_for_gsl = new double[arguments.size()];
-    double* returned_values = new double[arguments.size()];
-    for (size_t index = 0; index < arguments.size(); index++) {
+  int dim = arguments.size();
+  if (dim >= 2) {
+    double arguments_for_gsl[dim];
+    double returned_values[dim];
+    for (size_t index = 0; index < dim; index++) {
       VentureSmoothedCount::CheckMyData(arguments[index].get());
       arguments_for_gsl[index] = arguments[index]->GetReal();
     }
 
-    gsl_ran_dirichlet(random_generator, arguments.size(), arguments_for_gsl, returned_values);
+    gsl_ran_dirichlet(random_generator, dim, arguments_for_gsl, returned_values);
     
-    vector<real> returned_value_as_vector(arguments.size()); // Not very efficient.
-    for (size_t index = 0; index < arguments.size(); index++) {
-      returned_value_as_vector[index] = returned_values[index];
-    }
-    
-    delete [] arguments_for_gsl;
-    delete [] returned_values;
+    vector<real> returned_value_as_vector(returned_values, returned_values + dim);
 
     return shared_ptr<VentureSimplexPoint>(new VentureSimplexPoint(returned_value_as_vector));
   } else {
