@@ -268,7 +268,7 @@ real ERP__SymmetricDirichlet::GetSampledLoglikelihood(vector< shared_ptr<Venture
                                 shared_ptr<VentureValue> sampled_value) {
   if (arguments.size() == 2) {
     VentureCount::CheckMyData(arguments[1].get());
-    int dim = arguments[1]->GetInteger();
+    size_t dim = arguments[1]->GetInteger();
     vector<real>& sampled_data = ToVentureType<VentureSimplexPoint>(sampled_value)->data;
     assert(dim == sampled_data.size());
     
@@ -276,15 +276,11 @@ real ERP__SymmetricDirichlet::GetSampledLoglikelihood(vector< shared_ptr<Venture
     double returned_values[dim];
     VentureSmoothedCount::CheckMyData(arguments[0].get());
     double alpha = arguments[0]->GetReal();
-    
-    double sum = 0.0;
-    for (size_t index = 0; index < dim-1; index++) {
+
+    for (size_t index = 0; index < dim; index++) {
       arguments_for_gsl[index] = alpha;
       returned_values[index] = sampled_data[index];
-      sum += returned_values[index];
     }
-    arguments_for_gsl[dim-1] = alpha;
-    returned_values[dim-1] = 1.0 - sum;
 
     real likelihood = gsl_ran_dirichlet_pdf(dim, arguments_for_gsl, returned_values);
 
@@ -296,7 +292,7 @@ real ERP__SymmetricDirichlet::GetSampledLoglikelihood(vector< shared_ptr<Venture
 shared_ptr<VentureValue> ERP__SymmetricDirichlet::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
   if (arguments.size() == 2) {
     VentureCount::CheckMyData(arguments[1].get());
-    int dim = arguments[1]->GetInteger();
+    size_t dim = arguments[1]->GetInteger();
     double arguments_for_gsl[dim];
     double returned_values[dim];
     VentureSmoothedCount::CheckMyData(arguments[0].get());
@@ -317,25 +313,20 @@ shared_ptr<VentureValue> ERP__SymmetricDirichlet::Sampler(vector< shared_ptr<Ven
 string ERP__SymmetricDirichlet::GetName() { return "ERP__SymmetricDirichlet"; }
 
 real ERP__Dirichlet::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<VentureValue> sampled_value) {
-  int dim = arguments.size();
+  size_t dim = arguments.size();
   if (dim >= 2) {
     vector<real>& sample_data = ToVentureType<VentureSimplexPoint>(sampled_value)->data;
     assert(dim == sample_data.size());
     double arguments_for_gsl[dim];
     double returned_values[dim];
 
-    double sum = 0.0;
-    for (size_t index = 0; index < dim-1; index++) {
+    for (size_t index = 0; index < dim; index++) {
       VentureSmoothedCount::CheckMyData(arguments[index].get());
       arguments_for_gsl[index] = arguments[index]->GetReal();
       returned_values[index] = sample_data[index];
-      sum += returned_values[index];
     }
-    VentureSmoothedCount::CheckMyData(arguments[dim-1].get());
-    arguments_for_gsl[dim-1] = arguments[dim-1]->GetReal();
-    returned_values[dim-1] = 1.0 - sum;
 
-    real likelihood = gsl_ran_dirichlet_pdf(arguments.size(), arguments_for_gsl, returned_values);
+    real likelihood = gsl_ran_dirichlet_pdf(dim, arguments_for_gsl, returned_values);
 
     return log(likelihood);
   } else {
@@ -343,7 +334,7 @@ real ERP__Dirichlet::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >&
   }
 }
 shared_ptr<VentureValue> ERP__Dirichlet::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
-  int dim = arguments.size();
+  size_t dim = arguments.size();
   if (dim >= 2) {
     double arguments_for_gsl[dim];
     double returned_values[dim];
@@ -363,24 +354,16 @@ shared_ptr<VentureValue> ERP__Dirichlet::Sampler(vector< shared_ptr<VentureValue
 }
 string ERP__Dirichlet::GetName() { return "ERP__Dirichlet"; }
 
-real ERP__CategoricalSP::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
-                                shared_ptr<VentureValue> sampled_value) { // inline?
+real ERP__CategoricalSP::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<VentureValue> sampled_value) { // inline?
   if (arguments.size() != 1) {
     throw std::runtime_error("Wrong number of arguments.");
   }
   shared_ptr<VentureSimplexPoint> simplex_point = ToVentureType<VentureSimplexPoint>(arguments[0]);
-  if (sampled_value->GetInteger() < 0 || sampled_value->GetInteger() >= simplex_point->data.size() + 1) {
+  size_t index = sampled_value->GetInteger();
+  if (index < 0 || index >= simplex_point->data.size()) {//throw exception?
     return log(0.0);
   } else {
-    if (sampled_value->GetInteger() == simplex_point->data.size()) {
-      double sum = 0.0;
-      for (size_t index = 0; index < simplex_point->data.size(); index++) {
-        sum += simplex_point->data[index];
-      }
-      return log(1.0 - sum);
-    } else {
-      return log(simplex_point->data[sampled_value->GetInteger()]);
-    }
+    return log(simplex_point->data[index]);
   }
 }
 shared_ptr<VentureValue> ERP__CategoricalSP::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
@@ -398,7 +381,8 @@ shared_ptr<VentureValue> ERP__CategoricalSP::Sampler(vector< shared_ptr<VentureV
       return shared_ptr<VentureAtom>(new VentureAtom(index));
     }
   }
-  return shared_ptr<VentureAtom>(new VentureAtom(simplex_point->data.size()));
+  
+  throw std::runtime_error("Probabilities don't sum to 1.");
 }
 string ERP__CategoricalSP::GetName() { return "ERP__CategoricalSP"; }
 
@@ -414,8 +398,7 @@ real ERP__UniformDiscrete::GetSampledLoglikelihood(vector< shared_ptr<VentureVal
     right_bound = arguments[1]->GetInteger(); // Should be GetInteger! Just for the curve fitting!
     if (ToVentureType<VentureCount>(sampled_value)->GetInteger() >= left_bound &&
       ToVentureType<VentureCount>(sampled_value)->GetInteger() <= right_bound) {
-      return log(1.0 / (1 + right_bound -
-              left_bound));
+      return log(1.0 / (1.0 + right_bound - left_bound));
     } else {
       return log(0.0);
     }
@@ -432,9 +415,7 @@ shared_ptr<VentureValue> ERP__UniformDiscrete::Sampler(vector< shared_ptr<Ventur
     left_bound = arguments[0]->GetInteger(); // Should be GetInteger! Just for the curve fitting!
     VentureCount::CheckMyData(arguments[1].get()); // Should be on! Just for the curve fitting!
     right_bound = arguments[1]->GetInteger(); // Should be GetInteger! Just for the curve fitting!
-    int random_value =
-           UniformDiscrete(left_bound,
-                           right_bound);
+    int random_value = UniformDiscrete(left_bound, right_bound);
     return shared_ptr<VentureCount>(new VentureCount(random_value));
   } else {
     throw std::runtime_error("Wrong number of arguments.");
@@ -454,8 +435,7 @@ real ERP__UniformContinuous::GetSampledLoglikelihood(vector< shared_ptr<VentureV
     right_bound = arguments[1]->GetReal();
     if (ToVentureType<VentureReal>(sampled_value)->GetReal() >= left_bound &&
       ToVentureType<VentureReal>(sampled_value)->GetReal() <= right_bound) {
-      return log(1.0 / (right_bound -
-              left_bound));
+      return log(1.0 / (right_bound - left_bound));
     } else {
       return log(0.0);
     }

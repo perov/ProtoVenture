@@ -63,10 +63,7 @@ VentureSimplexPoint::VentureSimplexPoint(vector<real>& input_data)
     if (input_data[index] < 0.0) { // Add acceptable epsilon error?
       throw std::runtime_error("VentureSimplexPoint element should be non-negative.");
     }
-    if (index + 1 != input_data.size())
-    {
-      data.push_back(input_data[index]);
-    }
+    data.push_back(input_data[index]);
     sum += input_data[index];
   }
   if (fabs(sum - 1.0) > comparison_epsilon) {
