@@ -26,8 +26,8 @@ void VentureAtom::CheckMyData(VentureValue* venture_value) {
   }
 }
 void VentureSimplexPoint::CheckMyData(VentureValue* venture_value) {
-  if (venture_value->GetReal() < 0) {
-    throw std::runtime_error("VentureSimplexPoint should be non-negative.");
+  if (venture_value->GetType() == SIMPLEXPOINT) {
+    throw std::runtime_error("VentureSimplexPoint should be represented only by itself.");
   }
 }
 void VentureSmoothedCount::CheckMyData(VentureValue* venture_value) {
@@ -191,14 +191,15 @@ string VentureReal::GetString() { return boost::lexical_cast<string>(data); }
 string VentureAtom::GetString() { return boost::lexical_cast<string>(data); }
 string VentureProbability::GetString() { return boost::lexical_cast<string>(data); }
 string VentureSimplexPoint::GetString() {
-  double sum = 0.0;
   string output = "sp[";
   for (size_t index = 0; index < data.size(); index++)
   {
-    output += boost::lexical_cast<string>(data[index]) + ";";
-    sum += data[index];
+    if (index > 0) {
+      output += ",";
+    }
+    output += boost::lexical_cast<string>(data[index]);
   }
-  output += boost::lexical_cast<string>(1 - sum) + "]";
+  output += "]";
   return output;
 }
 string VentureSmoothedCount::GetString() { return boost::lexical_cast<string>(data); }
@@ -227,13 +228,10 @@ PyObject* VentureReal::GetAsPythonObject() { return Py_BuildValue("d", this->dat
 PyObject* VentureAtom::GetAsPythonObject() { return Py_BuildValue("i", this->data); }
 PyObject* VentureProbability::GetAsPythonObject() { return Py_BuildValue("d", this->data); }
 PyObject* VentureSimplexPoint::GetAsPythonObject() {
-  double sum = 0.0;
-  PyObject* returning_tuple = PyTuple_New(data.size() + 1);
+  PyObject* returning_tuple = PyTuple_New(data.size());
   for (size_t index = 0; index < data.size(); index++) {
     PyTuple_SetItem(returning_tuple, index, Py_BuildValue("d", data[index]));
-    sum += data[index];
   }
-  PyTuple_SetItem(returning_tuple, data.size(), Py_BuildValue("d", 1.0 - sum));
   return returning_tuple;
 }
 PyObject* VentureSmoothedCount::GetAsPythonObject() { return Py_BuildValue("d", this->data); }
@@ -319,7 +317,7 @@ bool VentureAtom::CompareByValue(shared_ptr<VentureValue> another) {
   return (this->data == ToVentureType<VentureAtom>(another)->data);
 }
 bool VentureSimplexPoint::CompareByValue(shared_ptr<VentureValue> another) {
-  return (this->data == ToVentureType<VentureSimplexPoint>(another)->data);
+  return (this->data == ToVentureType<VentureSimplexPoint>(another)->data); // FIXME: is it enough? Check for other Venture data types.
 }
 bool VentureSmoothedCount::CompareByValue(shared_ptr<VentureValue> another) {
   return (this->data == ToVentureType<VentureSmoothedCount>(another)->data);

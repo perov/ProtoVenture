@@ -268,21 +268,24 @@ real ERP__SymmetricDirichlet::GetSampledLoglikelihood(vector< shared_ptr<Venture
                                 shared_ptr<VentureValue> sampled_value) {
   if (arguments.size() == 2) {
     VentureCount::CheckMyData(arguments[1].get());
-    size_t dim = arguments[1]->GetInteger();
-    vector<real>& sampled_data = ToVentureType<VentureSimplexPoint>(sampled_value)->data;
-    assert(dim == sampled_data.size());
+    size_t dimensionality = arguments[1]->GetInteger();
+    vector<real>& sampled_simplex_point = ToVentureType<VentureSimplexPoint>(sampled_value)->data;
+    assert(dimensionality == sampled_simplex_point.size());
     
-    double arguments_for_gsl[dim];
-    double returned_values[dim];
+    double* arguments_for_gsl = new double[dimensionality];
+    double* returned_values = new double[dimensionality];
     VentureSmoothedCount::CheckMyData(arguments[0].get());
     double alpha = arguments[0]->GetReal();
 
-    for (size_t index = 0; index < dim; index++) {
+    for (size_t index = 0; index < dimensionality; index++) {
       arguments_for_gsl[index] = alpha;
-      returned_values[index] = sampled_data[index];
+      returned_values[index] = sampled_simplex_point[index];
     }
 
-    real likelihood = gsl_ran_dirichlet_pdf(dim, arguments_for_gsl, returned_values);
+    real likelihood = gsl_ran_dirichlet_pdf(dimensionality, arguments_for_gsl, returned_values);
+    
+    delete [] arguments_for_gsl;
+    delete [] returned_values;
 
     return log(likelihood);
   } else {
@@ -292,18 +295,21 @@ real ERP__SymmetricDirichlet::GetSampledLoglikelihood(vector< shared_ptr<Venture
 shared_ptr<VentureValue> ERP__SymmetricDirichlet::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
   if (arguments.size() == 2) {
     VentureCount::CheckMyData(arguments[1].get());
-    size_t dim = arguments[1]->GetInteger();
-    double arguments_for_gsl[dim];
-    double returned_values[dim];
+    size_t dimensionality = arguments[1]->GetInteger();
+    double* arguments_for_gsl = new double[dimensionality];
+    double* returned_values = new double[dimensionality];
     VentureSmoothedCount::CheckMyData(arguments[0].get());
     real alpha = arguments[0]->GetReal();
-    for (size_t index = 0; index < dim; index++) {
+    for (size_t index = 0; index < dimensionality; index++) {
       arguments_for_gsl[index] = alpha;
     }
 
-    gsl_ran_dirichlet(random_generator, dim, arguments_for_gsl, returned_values);
+    gsl_ran_dirichlet(random_generator, dimensionality, arguments_for_gsl, returned_values);
     
-    vector<real> returned_value_as_vector(returned_values, returned_values + dim);
+    vector<real> returned_value_as_vector(returned_values, returned_values + dimensionality);
+    
+    delete [] arguments_for_gsl;
+    delete [] returned_values;
     
     return shared_ptr<VentureSimplexPoint>(new VentureSimplexPoint(returned_value_as_vector));
   } else {
@@ -313,20 +319,23 @@ shared_ptr<VentureValue> ERP__SymmetricDirichlet::Sampler(vector< shared_ptr<Ven
 string ERP__SymmetricDirichlet::GetName() { return "ERP__SymmetricDirichlet"; }
 
 real ERP__Dirichlet::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<VentureValue> sampled_value) {
-  size_t dim = arguments.size();
-  if (dim >= 2) {
-    vector<real>& sample_data = ToVentureType<VentureSimplexPoint>(sampled_value)->data;
-    assert(dim == sample_data.size());
-    double arguments_for_gsl[dim];
-    double returned_values[dim];
+  size_t dimensionality = arguments.size();
+  if (dimensionality >= 2) {
+    vector<real>& sampled_simplex_point = ToVentureType<VentureSimplexPoint>(sampled_value)->data;
+    assert(dimensionality == sampled_simplex_point.size());
+    double* arguments_for_gsl = new double[dimensionality];
+    double* returned_values = new double[dimensionality];
 
-    for (size_t index = 0; index < dim; index++) {
+    for (size_t index = 0; index < dimensionality; index++) {
       VentureSmoothedCount::CheckMyData(arguments[index].get());
       arguments_for_gsl[index] = arguments[index]->GetReal();
-      returned_values[index] = sample_data[index];
+      returned_values[index] = sampled_simplex_point[index];
     }
 
-    real likelihood = gsl_ran_dirichlet_pdf(dim, arguments_for_gsl, returned_values);
+    real likelihood = gsl_ran_dirichlet_pdf(dimensionality, arguments_for_gsl, returned_values);
+    
+    delete [] arguments_for_gsl;
+    delete [] returned_values;
 
     return log(likelihood);
   } else {
@@ -334,18 +343,21 @@ real ERP__Dirichlet::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >&
   }
 }
 shared_ptr<VentureValue> ERP__Dirichlet::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
-  size_t dim = arguments.size();
-  if (dim >= 2) {
-    double arguments_for_gsl[dim];
-    double returned_values[dim];
-    for (size_t index = 0; index < dim; index++) {
+  size_t dimensionality = arguments.size();
+  if (dimensionality >= 2) {
+    double* arguments_for_gsl = new double[dimensionality];
+    double* returned_values = new double[dimensionality];
+    for (size_t index = 0; index < dimensionality; index++) {
       VentureSmoothedCount::CheckMyData(arguments[index].get());
       arguments_for_gsl[index] = arguments[index]->GetReal();
     }
 
-    gsl_ran_dirichlet(random_generator, dim, arguments_for_gsl, returned_values);
+    gsl_ran_dirichlet(random_generator, dimensionality, arguments_for_gsl, returned_values);
     
-    vector<real> returned_value_as_vector(returned_values, returned_values + dim);
+    vector<real> returned_value_as_vector(returned_values, returned_values + dimensionality);
+    
+    delete [] arguments_for_gsl;
+    delete [] returned_values;
 
     return shared_ptr<VentureSimplexPoint>(new VentureSimplexPoint(returned_value_as_vector));
   } else {
@@ -360,7 +372,20 @@ real ERP__CategoricalSP::GetSampledLoglikelihood(vector< shared_ptr<VentureValue
   }
   shared_ptr<VentureSimplexPoint> simplex_point = ToVentureType<VentureSimplexPoint>(arguments[0]);
   size_t index = sampled_value->GetInteger();
-  if (index < 0 || index >= simplex_point->data.size()) {//throw exception?
+  if (index < 0 || index >= simplex_point->data.size()) {
+    /*
+    We do not throw exception here, because this Venture code should be valid:
+
+    ASSUME size (uniform-discrete 1 10)
+    ASSUME my-simplex-point (create-simplex-point-uniformly size)
+    ASSUME my-variable (categorical-sp my-simplex-point)
+
+    Let's imagine:
+    1) size was 10, and my-variable was 10,
+    2) then during the step of MH inference we repropose size to be 5,
+    3) engine rescores the (categorical-sp ...) with old and new my-simplex-point,
+       and P(new) should be equal to 0, because my-variable is equal to 10.
+    */
     return log(0.0);
   } else {
     return log(simplex_point->data[index]);
@@ -382,7 +407,11 @@ shared_ptr<VentureValue> ERP__CategoricalSP::Sampler(vector< shared_ptr<VentureV
     }
   }
   
-  throw std::runtime_error("Probabilities don't sum to 1.");
+  throw std::runtime_error("Probabilities do not sum to 1.0 (you should not see this error :) ).");
+  // This should not happen, because SimplexPoint should has preverified the invariant
+  // that sum is equal to 1.0.
+  // If somebody has this exception, something strange happens,
+  // and user should know that it is very strange.
 }
 string ERP__CategoricalSP::GetName() { return "ERP__CategoricalSP"; }
 
