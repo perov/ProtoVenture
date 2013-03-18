@@ -16,4 +16,6 @@ sudo port install boost
 
 # Something below can be required:
 1) sudo ln -s /usr/llvm-gcc-4.2/bin/llvm-gcc-4.2 /usr/bin/gcc-4.2
-2) Copy flask (after "$ sudo easy_install flask") from /Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/site-packages to /Library/Python/2.7/site-packages ?
+2) Copy flask (after "$ sudo easy_install flask") from
+   /Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/site-packages
+   to /Library/Python/2.7/site-packages ?
