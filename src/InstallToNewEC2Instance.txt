@@ -1,4 +1,3 @@
-
 # Packages
 sudo easy_install pip
 sudo pip install flask requests
@@ -11,6 +10,10 @@ tar --bzip2 -xf boost_1_52_0.tar.bz2
 cd boost_1_52_0
 sudo ./bootstrap.sh --with-libraries=thread,system
 sudo ./b2 install
+sudo ln -s /usr/local/lib/libboost_system.so /usr/local/lib/libboost_system-mt.so
+sudo ln -s /usr/local/lib/libboost_system.a /usr/local/lib/libboost_system-mt.a
+sudo ln -s /usr/local/lib/libboost_thread.so /usr/local/lib/libboost_thread-mt.so
+sudo ln -s /usr/local/lib/libboost_thread.a /usr/local/lib/libboost_thread-mt.a
 cd ..
 
 # GSL
