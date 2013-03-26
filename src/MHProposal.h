@@ -9,13 +9,15 @@
 #include "Utilities.h"
 
 struct MHProposalResults {
-  MHProposalResults(real logscore_PNew) // Should be in the MHProposal.h?
-    : logscore_PNew(logscore_PNew)
+  MHProposalResults(real logscore_PNew, real logscore_POld) // Should be in the MHProposal.h?
+    : logscore_PNew(logscore_PNew),
+      logscore_POld(logscore_POld)
   {
   
   }
 
   real logscore_PNew;
+  real logscore_POld;
 };
 
 enum MHDecision { MH_DECLINED, MH_APPROVED };

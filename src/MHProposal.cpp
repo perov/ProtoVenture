@@ -256,6 +256,11 @@ void FinalizeProposal
 (MHDecision mh_decision,
  shared_ptr<ReevaluationParameters>& reevaluation_parameters)
 {
+  if (reevaluation_parameters->proposing_value_for_this_proposal != shared_ptr<VentureValue>()) {
+    if (reevaluation_parameters->deleting_random_choices.size() != 1 || reevaluation_parameters->creating_random_choices.size() != 1) {
+      // throw std::runtime_error("Enumeration does not support changing of the random choices set.");
+    }
+  }
   if (mh_decision == MH_APPROVED) {
     // Order matters!
     // If firstly we remove, then incorporate:
@@ -443,7 +448,7 @@ MHProposalResults MakeMHProposal
   
   size_t number_of_random_choices = GetSizeOfRandomChoices();
   if (number_of_random_choices == 0) {
-    return MHProposalResults(0.0); // There is no random choices in the trace.
+    return MHProposalResults(0.0, 0.0); // There is no random choices in the trace.
   }
 
   shared_ptr<NodeXRPApplication> random_choice;
@@ -453,11 +458,11 @@ MHProposalResults MakeMHProposal
     // int random_choice_id = UniformDiscrete(0, number_of_random_choices - 1);
     // std::advance(iterator, random_choice_id);
     random_choice = GetRandomRandomChoice(); // FIXME: Should be NodeEvaluation?
-
-    //if (random_choice->xrp->xrp->CouldBeEnumerated()) {
-    //  Enumerate(random_choice);
-    //  return MHProposalResults(0.0);
-    //}
+    
+    if (global_environment->variables.count("use-enumeration") == 1 && random_choice->xrp->xrp->CouldBeEnumerated()) {
+      Enumerate(random_choice);
+      return MHProposalResults(0.0, 0.0);
+    }
   } else {
     random_choice = principal_node;
   }
@@ -550,7 +555,7 @@ MHProposalResults MakeMHProposal
 
   FinalizeProposal(mh_decision, reevaluation_parameters);
 
-  return MHProposalResults(P_new);
+  return MHProposalResults(P_new, P_old);
 }
 
 // Returns pair<logP_constraint, logP_unconstraint>
@@ -644,24 +649,26 @@ void Enumerate(shared_ptr<NodeXRPApplication> principal_node) {
   map<shared_ptr<VentureValue>, real> logprobabilities;
   map<shared_ptr<VentureValue>, shared_ptr< map<string, shared_ptr<VentureValue> > > > random_databases;
 
-  assert(returning_set.empty() != true);
+  assert(returning_set.empty() == false);
 
   while (returning_set.empty() == false) {
     shared_ptr<VentureValue> proposing_value = *(returning_set.begin());
     returning_set.erase(proposing_value);
     random_databases[proposing_value] = shared_ptr< map<string, shared_ptr<VentureValue> > >(new map<string, shared_ptr<VentureValue> >());
     MHProposalResults mh_proposal_results = MakeMHProposal(principal_node, proposing_value, random_databases[proposing_value], false);
-    logprobabilities[proposing_value] = mh_proposal_results.logscore_PNew;
+    logprobabilities[proposing_value] = mh_proposal_results.logscore_PNew - mh_proposal_results.logscore_POld;
   }
 
   /*
-  real max_exp = logprobabilities.begin()->second, sum = 0.0;
+  real max_exp = logprobabilities.begin()->second;
+  real sum = 0.0;
   for (map<shared_ptr<VentureValue>, real>::const_iterator iterator = logprobabilities.begin();
        iterator != logprobabilities.end();
        iterator++)
   {
-    if (iterator->second > max_exp)
+    if (iterator->second > max_exp) {
       max_exp = iterator->second;
+    }
   }
   for (map<shared_ptr<VentureValue>, real>::const_iterator iterator = logprobabilities.begin();
        iterator != logprobabilities.end();
@@ -678,7 +685,16 @@ void Enumerate(shared_ptr<NodeXRPApplication> principal_node) {
   {
     iterator->second -= sum;
     log_accumulated += ;
-  }*/
+  }
+  */
+  
+  real sum = 0.0;
+  for (map<shared_ptr<VentureValue>, real>::const_iterator iterator = logprobabilities.begin();
+       iterator != logprobabilities.end();
+       iterator++)
+  {
+    sum += exp(iterator->second);
+  }
   real random_value = gsl_ran_flat(random_generator, 0, 1);
   real accumulated = 0.0;
   map<shared_ptr<VentureValue>, real>::iterator iterator_to_the_new_value;
@@ -686,7 +702,7 @@ void Enumerate(shared_ptr<NodeXRPApplication> principal_node) {
        iterator != logprobabilities.end();
        iterator++)
   {
-    accumulated += exp(iterator->second);
+    accumulated += exp(iterator->second) / sum;
     iterator_to_the_new_value = iterator;
     if (accumulated > random_value) { break; }
   }
