@@ -90,6 +90,13 @@ public:
   virtual string GetName();
 };
 
+/** Constructs a VentureSimplexPoint **/
+class Primitive__SimplexPoint : public Primitive {
+  virtual shared_ptr<VentureValue> Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config);
+public:
+  virtual string GetName();
+};
+
 class Primitive__List : public Primitive {
   virtual shared_ptr<VentureValue> Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config);
 public:
@@ -197,10 +204,6 @@ class Primitive__IntegerEqual : public Primitive { // With epsilon.
 public:
   virtual string GetName();
 };
-
-
-
-
 
 class Primitive__IntegerModulo : public Primitive { // With epsilon.
   virtual shared_ptr<VentureValue> Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config);

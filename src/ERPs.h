@@ -150,6 +150,7 @@ public:
   virtual string GetName();
 };
 
+/*
 class ERP__CategoricalSP : public ERP {
   virtual real GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
                                  shared_ptr<VentureValue> sampled_value);
@@ -158,6 +159,7 @@ class ERP__CategoricalSP : public ERP {
 public:
   virtual string GetName();
 };
+*/
 
 class ERP__ConditionERP : public ERP {
   virtual real GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,

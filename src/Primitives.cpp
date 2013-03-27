@@ -159,15 +159,22 @@ shared_ptr<VentureValue> Primitive__RealEqual::Sampler(vector< shared_ptr<Ventur
     throw std::runtime_error("Wrong number of arguments.");
   }
 
-  bool result;
-  if (fabs(arguments[0]->GetReal() - arguments[1]->GetReal()) < comparison_epsilon) {
-    result = true;
-  } else {
-    result = false;
-  }
+  bool result = fabs(arguments[0]->GetReal() - arguments[1]->GetReal()) < comparison_epsilon;
   return shared_ptr<VentureBoolean>(new VentureBoolean(result));
 }
 string Primitive__RealEqual::GetName() { return "Primitive__RealEqual"; }
+
+shared_ptr<VentureValue> Primitive__SimplexPoint::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+  size_t dimension = arguments.size();
+  vector<real> weights(dimension);
+    
+  for(size_t index = 0; index < dimension; index++) {
+    weights[index] = arguments[index]->GetReal();
+  }
+  
+  return shared_ptr<VentureSimplexPoint>(new VentureSimplexPoint(weights));
+}
+string Primitive__SimplexPoint::GetName() {return "Primitive__SimplexPoint";}
 
 shared_ptr<VentureValue> Primitive__List::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
   if (arguments.size() == 0) {
@@ -372,9 +379,6 @@ shared_ptr<VentureValue> Primitive__IntegerEqual::Sampler(vector< shared_ptr<Ven
 }
 string Primitive__IntegerEqual::GetName() { return "Primitive__IntegerEqual"; }
 
-
-
-
 shared_ptr<VentureValue> Primitive__IntegerModulo::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
   if (arguments.size() != 2) {
     throw std::runtime_error("Wrong number of arguments.");
@@ -386,3 +390,4 @@ shared_ptr<VentureValue> Primitive__IntegerModulo::Sampler(vector< shared_ptr<Ve
   return result;
 }
 string Primitive__IntegerModulo::GetName() { return "Primitive__IntegerModulo"; }
+

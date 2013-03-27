@@ -366,7 +366,8 @@ shared_ptr<VentureValue> ERP__Dirichlet::Sampler(vector< shared_ptr<VentureValue
 }
 string ERP__Dirichlet::GetName() { return "ERP__Dirichlet"; }
 
-real ERP__CategoricalSP::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<VentureValue> sampled_value) { // inline?
+//formerly CategoricalSP
+real ERP__Categorical::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<VentureValue> sampled_value) { // inline?
   if (arguments.size() != 1) {
     throw std::runtime_error("Wrong number of arguments.");
   }
@@ -391,7 +392,7 @@ real ERP__CategoricalSP::GetSampledLoglikelihood(vector< shared_ptr<VentureValue
     return log(simplex_point->data[index]);
   }
 }
-shared_ptr<VentureValue> ERP__CategoricalSP::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+shared_ptr<VentureValue> ERP__Categorical::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
   if (arguments.size() != 1) {
     throw std::runtime_error("Wrong number of arguments.");
   }
@@ -413,7 +414,7 @@ shared_ptr<VentureValue> ERP__CategoricalSP::Sampler(vector< shared_ptr<VentureV
   // If somebody has this exception, something strange happens,
   // and user should know that it is very strange.
 }
-string ERP__CategoricalSP::GetName() { return "ERP__CategoricalSP"; }
+string ERP__Categorical::GetName() { return "ERP__Categorical"; }
 
 real ERP__UniformDiscrete::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
                                  shared_ptr<VentureValue> sampled_value) {
@@ -533,6 +534,7 @@ shared_ptr<VentureValue> ERP__NoisyNegate::Sampler(vector< shared_ptr<VentureVal
 }
 string ERP__NoisyNegate::GetName() { return "ERP__NoisyNegate"; }
 
+/*
 real ERP__Categorical::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
                                 shared_ptr<VentureValue> sampled_value) { // inline?
   if (arguments.size() != 1) {
@@ -597,6 +599,7 @@ shared_ptr<VentureValue> ERP__Categorical::Sampler(vector< shared_ptr<VentureVal
   }
 }
 string ERP__Categorical::GetName() { return "ERP__Categorical"; }
+*/
 
 real ERP__ConditionERP::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
                                                 shared_ptr<VentureValue> sampled_value) { // inline?

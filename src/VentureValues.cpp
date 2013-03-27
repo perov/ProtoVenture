@@ -49,44 +49,52 @@ VentureReal::VentureReal(const real data) : data(data) {}
 VentureProbability::VentureProbability(const real data) : data(data) {
   this->CheckMyData(this);
 }
-VentureSimplexPoint::VentureSimplexPoint(vector<real>& input_data)
+VentureSimplexPoint::VentureSimplexPoint(vector<real>& input_data) {
   // : data(SOMEFUNCTION(data)) -- it should be implemented in this way? 
-{
   // this->CheckMyData(this); // Blank. // FIXME!
-  if (input_data.size() <= 1) {
-    throw std::runtime_error("VentureSimplexPoint should be at least two-dimensional.");
+  size_t dimension = input_data.size();
+  if (dimension == 0) {
+    throw std::runtime_error("VentureSimplexPoint should be at least one-dimensional.");
   }
-  double sum = 0.0;
-  // Change the data size preliminary?
-  for (size_t index = 0; index < input_data.size(); index++)
-  {
-    if (input_data[index] < 0.0) { // Add acceptable epsilon error?
+
+  data.reserve(dimension);
+  real sum = 0.0;
+
+  for (size_t index = 0; index < dimension; index++) {
+    real weight = input_data[index];
+    if (weight < 0.0) { // Add acceptable epsilon error?
       throw std::runtime_error("VentureSimplexPoint element should be non-negative.");
     }
-    data.push_back(input_data[index]);
-    sum += input_data[index];
+    data.push_back(weight);
+    sum += weight;
   }
   if (fabs(sum - 1.0) > comparison_epsilon) {
     throw std::runtime_error("Sum of VentureSimplexPoint elements should be equal to 1.0.");
   }
 }
+
 VentureAtom::VentureAtom(const int data) : data(data) {
   this->CheckMyData(this);
 }
+
 VentureSmoothedCount::VentureSmoothedCount(const real data) : data(data) {
   this->CheckMyData(this);
 }
 VentureNil::VentureNil() : VentureList(shared_ptr<VentureValue>()) {}
+
 VentureList::VentureList(shared_ptr<VentureValue> car)
   : car(car), cdr(NIL_INSTANCE) {}
+
 VentureXRP::VentureXRP(shared_ptr<XRP> xrp)
   : xrp(xrp) {}
+
 VentureSymbol::VentureSymbol(const string& symbol) : symbol(symbol) {
   this->CheckMyData(this); // Blank.
   if (legal_SYMBOL_name(symbol) == false) {
     throw std::runtime_error(("Incorrect symbol: " + symbol + ".").c_str());
   }
 }
+
 VentureLambda::VentureLambda(shared_ptr<VentureList> formal_arguments,
               shared_ptr<NodeEvaluation> expressions,
               shared_ptr<NodeEnvironment> scope_environment)
