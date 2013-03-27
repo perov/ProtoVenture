@@ -144,6 +144,8 @@ XRP::RescorerResampler(vector< shared_ptr<VentureValue> >& old_arguments,
     if (this->IsRandomChoice() &&
           evaluation_config.reevaluation_config_ptr != shared_ptr<ReevaluationParameters>() &&
           evaluation_config.reevaluation_config_ptr->proposing_value_for_this_proposal != shared_ptr<VentureValue>()) {
+      new_sample = evaluation_config.reevaluation_config_ptr->proposing_value_for_this_proposal;
+      /*
       if (evaluation_config.reevaluation_config_ptr->forcing_not_collecting == false) {
         new_sample = Sampler(new_arguments, caller, evaluation_config);
         assert(evaluation_config.reevaluation_config_ptr->random_database->count(caller->node_key) == 0);
@@ -152,6 +154,7 @@ XRP::RescorerResampler(vector< shared_ptr<VentureValue> >& old_arguments,
         assert(evaluation_config.reevaluation_config_ptr->random_database->count(caller->node_key) == 1);
         new_sample = (*(evaluation_config.reevaluation_config_ptr->random_database))[caller->node_key];
       }
+      */
     } else {
       new_sample = Sampler(new_arguments, caller, evaluation_config);
     }
