@@ -134,7 +134,8 @@ XRP::RescorerResampler(vector< shared_ptr<VentureValue> >& old_arguments,
                                   // Added Jan/5/2013: Especially when we now do not cancel by default?
   }
   
-  assert(!CouldBeRescored() || !(GetSampledLoglikelihood(new_arguments, caller->my_sampled_value) == log(0.0)));
+  // Delete it?
+  // assert(!CouldBeRescored() || !(GetSampledLoglikelihood(new_arguments, caller->my_sampled_value) == log(0.0)));
 
   if (forced_resampling || !CouldBeRescored()
         || (GetSampledLoglikelihood(new_arguments, caller->my_sampled_value) == log(0.0))

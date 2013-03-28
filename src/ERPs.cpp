@@ -84,6 +84,9 @@ shared_ptr<VentureValue> ERP__Normal::Sampler(vector< shared_ptr<VentureValue> >
   }
 }
 string ERP__Normal::GetName() { return "ERP__Normal"; }
+bool ERP__Normal::CouldBeSliceSampled() {
+  return true;
+}
 
 real ERP__Beta::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<VentureValue> sampled_value) {
   if (arguments.size() == 2) {
