@@ -280,6 +280,7 @@ size_t ExecuteDirectiveWithRejectionSampling
 }
 
 void BindStandardElementsToGlobalEnvironment() {
+  // Deprecated, should be deleted:
   BindToEnvironment(global_environment,
                     shared_ptr<VentureSymbol>(new VentureSymbol("compare-images")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new ERP__CompareImages()))));
@@ -293,8 +294,7 @@ void BindStandardElementsToGlobalEnvironment() {
                     shared_ptr<VentureSymbol>(new VentureSymbol("sample-from-set")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new XRP__SampleFromSet()))));
 
-  // XRPs with internal state
-
+  // Makers of XRPs with internal state.
   BindToEnvironment(global_environment,
                     shared_ptr<VentureSymbol>(new VentureSymbol("CRP/make")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new XRP__CRPmaker()))));
@@ -312,8 +312,7 @@ void BindStandardElementsToGlobalEnvironment() {
                                                                                         // FIXME: add check that there are 2 arguments!
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new XRP__DirichletMultinomial_maker()))));
 
-  // Elementary Random Procedures
-
+  // Elementary random procedures.
   BindToEnvironment(global_environment,
                     shared_ptr<VentureSymbol>(new VentureSymbol("flip")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new ERP__Flip()))));
@@ -367,11 +366,6 @@ void BindStandardElementsToGlobalEnvironment() {
   BindToEnvironment(global_environment,
                     shared_ptr<VentureSymbol>(new VentureSymbol("dirichlet")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new ERP__Dirichlet()))));
-/*
-  BindToEnvironment(global_environment,
-                    shared_ptr<VentureSymbol>(new VentureSymbol("categorical-sp")), // Make just via the std::string?
-                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new ERP__CategoricalSP()))));
-*/
   BindToEnvironment(global_environment,
                     shared_ptr<VentureSymbol>(new VentureSymbol("+")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__RealPlus()))));
@@ -482,11 +476,7 @@ void BindStandardElementsToGlobalEnvironment() {
                     shared_ptr<VentureSymbol>(new VentureSymbol("mod")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__IntegerModulo()))));
   
-  //more complex types
-  
-  BindToEnvironment(global_environment,
-                    shared_ptr<VentureSymbol>(new VentureSymbol("simplex-point")), // Make just via the std::string?
-                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__SimplexPoint()))));
+  // List and related procedures (should become deprecated soon, when we introduce new basic data type to Venture).
   BindToEnvironment(global_environment,
                     shared_ptr<VentureSymbol>(new VentureSymbol("list")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__List()))));
@@ -505,7 +495,11 @@ void BindStandardElementsToGlobalEnvironment() {
   BindToEnvironment(global_environment,
                     shared_ptr<VentureSymbol>(new VentureSymbol("nth")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__Nth()))));
-
+  
+  // Types casting.
+  BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol("simplex-point")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__SimplexPoint()))));
 }
 
 

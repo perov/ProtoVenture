@@ -50,16 +50,15 @@ VentureProbability::VentureProbability(const real data) : data(data) {
   this->CheckMyData(this);
 }
 VentureSimplexPoint::VentureSimplexPoint(vector<real>& input_data) {
-  // : data(SOMEFUNCTION(data)) -- it should be implemented in this way? 
+  // : data(SOMEFUNCTION(data)) -- it should be implemented in this way?
   // this->CheckMyData(this); // Blank. // FIXME!
   size_t dimension = input_data.size();
   if (dimension == 0) {
     throw std::runtime_error("VentureSimplexPoint should be at least one-dimensional.");
   }
-
   data.reserve(dimension);
-  real sum = 0.0;
 
+  real sum = 0.0;
   for (size_t index = 0; index < dimension; index++) {
     real weight = input_data[index];
     if (weight < 0.0) { // Add acceptable epsilon error?

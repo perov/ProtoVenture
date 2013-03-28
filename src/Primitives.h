@@ -90,7 +90,7 @@ public:
   virtual string GetName();
 };
 
-/** Constructs a VentureSimplexPoint **/
+// Constructs a VentureSimplexPoint, arguments should support GetReal().
 class Primitive__SimplexPoint : public Primitive {
   virtual shared_ptr<VentureValue> Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config);
 public:
