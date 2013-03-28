@@ -17,7 +17,18 @@ real Primitive::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& argu
 bool Primitive::IsRandomChoice() { return false; }
 bool Primitive::CouldBeRescored() { return false; }
 string Primitive::GetName() { return "PrimitiveClass"; }
+
+
+shared_ptr<VentureValue> Primitive__BooleanNot::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+  if(arguments.size() != 1) {
+    throw std::runtime_error("Wrong number of arguments.");
+  }
   
+  bool result = StandardPredicate(arguments[0]);
+  return shared_ptr<VentureValue>(new VentureBoolean(!result));
+}
+string Primitive__BooleanNot::GetName() { return "Primitive__BooleanNot"; }
+
 shared_ptr<VentureValue> Primitive__RealPlus::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
   shared_ptr<VentureReal> result = shared_ptr<VentureReal>(new VentureReal(0.0));
   for (size_t index = 0; index < arguments.size(); index++) {
