@@ -257,8 +257,11 @@ void FinalizeProposal
  shared_ptr<ReevaluationParameters>& reevaluation_parameters)
 {
   if (reevaluation_parameters->proposing_value_for_this_proposal != shared_ptr<VentureValue>()) {
-    if (reevaluation_parameters->deleting_random_choices.size() != 1 || reevaluation_parameters->creating_random_choices.size() != 1) {
-      // throw std::runtime_error("Enumeration does not support changing of the random choices set.");
+    if ((static_cast<int>(reevaluation_parameters->deleting_random_choices.size()) - reevaluation_parameters->creating_random_choices.size()) != 0) {
+      // throw std::runtime_error("Enumeration and slice sampling does not support changing of the random choices set.");
+      cout << "Enumeration and slice sampling does not support changing of the random choices set. Rejecting." << endl;
+      mh_decision = MH_DECLINED;
+      // This is not the best way to check it, because the check would be passed if number of random choices was not changed.
     }
   }
   if (mh_decision == MH_APPROVED) {

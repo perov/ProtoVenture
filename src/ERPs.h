@@ -37,6 +37,7 @@ class ERP__Normal : public ERP {
   virtual real GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
                                  shared_ptr<VentureValue> sampled_value);
   virtual shared_ptr<VentureValue> Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config);
+  virtual bool CouldBeSliceSampled();
 
 public:
   virtual string GetName();
