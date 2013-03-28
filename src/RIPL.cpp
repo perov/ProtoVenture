@@ -293,6 +293,8 @@ void BindStandardElementsToGlobalEnvironment() {
                     shared_ptr<VentureSymbol>(new VentureSymbol("sample-from-set")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new XRP__SampleFromSet()))));
 
+  // XRPs with internal state
+
   BindToEnvironment(global_environment,
                     shared_ptr<VentureSymbol>(new VentureSymbol("CRP/make")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new XRP__CRPmaker()))));
@@ -310,6 +312,7 @@ void BindStandardElementsToGlobalEnvironment() {
                                                                                         // FIXME: add check that there are 2 arguments!
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new XRP__DirichletMultinomial_maker()))));
 
+  // Elementary Random Procedures
 
   BindToEnvironment(global_environment,
                     shared_ptr<VentureSymbol>(new VentureSymbol("flip")), // Make just via the std::string?
@@ -364,28 +367,11 @@ void BindStandardElementsToGlobalEnvironment() {
   BindToEnvironment(global_environment,
                     shared_ptr<VentureSymbol>(new VentureSymbol("dirichlet")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new ERP__Dirichlet()))));
+/*
   BindToEnvironment(global_environment,
                     shared_ptr<VentureSymbol>(new VentureSymbol("categorical-sp")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new ERP__CategoricalSP()))));
-  
-  BindToEnvironment(global_environment,
-                    shared_ptr<VentureSymbol>(new VentureSymbol("list")), // Make just via the std::string?
-                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__List()))));
-  BindToEnvironment(global_environment,
-                    shared_ptr<VentureSymbol>(new VentureSymbol("first")), // Make just via the std::string?
-                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__First()))));
-  BindToEnvironment(global_environment,
-                    shared_ptr<VentureSymbol>(new VentureSymbol("rest")), // Make just via the std::string?
-                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__Rest()))));
-  BindToEnvironment(global_environment,
-                    shared_ptr<VentureSymbol>(new VentureSymbol("length")), // Make just via the std::string?
-                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__Length()))));
-  BindToEnvironment(global_environment,
-                    shared_ptr<VentureSymbol>(new VentureSymbol("empty?")), // Make just via the std::string?
-                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__EmptyQUESTIONMARK()))));
-  BindToEnvironment(global_environment,
-                    shared_ptr<VentureSymbol>(new VentureSymbol("nth")), // Make just via the std::string?
-                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__Nth()))));
+*/
   BindToEnvironment(global_environment,
                     shared_ptr<VentureSymbol>(new VentureSymbol("+")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__RealPlus()))));
@@ -495,6 +481,31 @@ void BindStandardElementsToGlobalEnvironment() {
   BindToEnvironment(global_environment,
                     shared_ptr<VentureSymbol>(new VentureSymbol("mod")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__IntegerModulo()))));
+  
+  //more complex types
+  
+  BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol("simplex-point")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__SimplexPoint()))));
+  BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol("list")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__List()))));
+  BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol("first")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__First()))));
+  BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol("rest")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__Rest()))));
+  BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol("length")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__Length()))));
+  BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol("empty?")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__EmptyQUESTIONMARK()))));
+  BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol("nth")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__Nth()))));
+
 }
 
 
