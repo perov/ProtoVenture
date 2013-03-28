@@ -116,6 +116,7 @@ public:
   virtual bool CouldBeRescored();
   virtual string GetName();
   virtual bool CouldBeEnumerated();
+  virtual bool CouldBeSliceSampled();
   virtual set< shared_ptr<VentureValue> > EnumeratingSupport();
 
 public: // Should be private?

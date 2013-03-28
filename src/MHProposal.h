@@ -71,5 +71,6 @@ pair<real, real> AbsorbBranchProbability(shared_ptr<Node> first_node, shared_ptr
 void UnabsorbBranchProbability(shared_ptr<Node> first_node, shared_ptr<ReevaluationParameters> reevaluation_parameters);
 
 void Enumerate(shared_ptr<NodeXRPApplication> principal_node);
+void SliceSample(shared_ptr<NodeXRPApplication> principal_node);
 
 #endif

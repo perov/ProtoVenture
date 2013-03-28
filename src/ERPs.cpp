@@ -491,6 +491,9 @@ shared_ptr<VentureValue> ERP__UniformContinuous::Sampler(vector< shared_ptr<Vent
   }
 }
 string ERP__UniformContinuous::GetName() { return "ERP__UniformContinuous"; }
+bool ERP__UniformContinuous::CouldBeSliceSampled() {
+  return true;
+}
 
 real ERP__NoisyNegate::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
                                 shared_ptr<VentureValue> sampled_value) { // inline?

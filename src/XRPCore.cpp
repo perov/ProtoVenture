@@ -145,6 +145,9 @@ XRP::RescorerResampler(vector< shared_ptr<VentureValue> >& old_arguments,
           evaluation_config.reevaluation_config_ptr != shared_ptr<ReevaluationParameters>() &&
           evaluation_config.reevaluation_config_ptr->proposing_value_for_this_proposal != shared_ptr<VentureValue>()) {
       new_sample = evaluation_config.reevaluation_config_ptr->proposing_value_for_this_proposal;
+      if (GetSampledLoglikelihood(new_arguments, new_sample) == log(0.0)) {
+        reevaluation_parameters->__unsatisfied_constraint = true;
+      }
       /*
       if (evaluation_config.reevaluation_config_ptr->forcing_not_collecting == false) {
         new_sample = Sampler(new_arguments, caller, evaluation_config);
@@ -226,6 +229,10 @@ bool XRP::CouldBeRescored() { return false; }
 string XRP::GetName() { return "XRPClass"; }
 
 bool XRP::CouldBeEnumerated() {
+  return false;
+}
+
+bool XRP::CouldBeSliceSampled() {
   return false;
 }
 

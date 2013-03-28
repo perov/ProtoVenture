@@ -460,8 +460,16 @@ MHProposalResults MakeMHProposal
     random_choice = GetRandomRandomChoice(); // FIXME: Should be NodeEvaluation?
     
     if (global_environment->variables.count("use-enumeration") == 1 && random_choice->xrp->xrp->CouldBeEnumerated()) {
-      Enumerate(random_choice);
-      return MHProposalResults(0.0, 0.0);
+      if (global_environment->variables["use-enumeration"]->value->GetReal() >= gsl_ran_flat(random_generator, 0, 1)) {
+        Enumerate(random_choice);
+        return MHProposalResults(0.0, 0.0);
+      }
+    }
+    if (global_environment->variables.count("use-slice-sampling") == 1 && random_choice->xrp->xrp->CouldBeSliceSampled()) {
+      if (global_environment->variables["use-slice-sampling"]->value->GetReal() >= gsl_ran_flat(random_generator, 0, 1)) {
+        SliceSample(random_choice);
+        return MHProposalResults(0.0, 0.0);
+      }
     }
   } else {
     random_choice = principal_node;
@@ -520,7 +528,7 @@ MHProposalResults MakeMHProposal
   MHDecision mh_decision;
   
   if (reevaluation_parameters->__unsatisfied_constraint == true) {
-    cout << "Rejection sampling happens" << endl;
+    // cout << "Rejection sampling happens" << endl;
   }
 
   if (principal_node != shared_ptr<NodeXRPApplication>()) {
@@ -644,19 +652,30 @@ void UnabsorbBranchProbability(shared_ptr<Node> first_node, shared_ptr<Reevaluat
   }
 }
 
+shared_ptr< map<string, shared_ptr<VentureValue> > > GetEmptyRandomDatabase() {
+  return shared_ptr< map<string, shared_ptr<VentureValue> > >(new map<string, shared_ptr<VentureValue> >());
+}
+
+real GetLogPForEnvelope
+  (shared_ptr<NodeXRPApplication> principal_node,
+   shared_ptr<VentureValue> proposing_value)
+{
+  MHProposalResults mh_proposal_results = MakeMHProposal(principal_node, proposing_value, GetEmptyRandomDatabase(), false);
+  return mh_proposal_results.logscore_PNew - mh_proposal_results.logscore_POld;
+}
+
 void Enumerate(shared_ptr<NodeXRPApplication> principal_node) {
   set< shared_ptr<VentureValue> > returning_set = principal_node->xrp->xrp->EnumeratingSupport();
   map<shared_ptr<VentureValue>, real> logprobabilities;
-  map<shared_ptr<VentureValue>, shared_ptr< map<string, shared_ptr<VentureValue> > > > random_databases;
+  // map<shared_ptr<VentureValue>, shared_ptr< map<string, shared_ptr<VentureValue> > > > random_databases;
 
   assert(returning_set.empty() == false);
 
   while (returning_set.empty() == false) {
     shared_ptr<VentureValue> proposing_value = *(returning_set.begin());
     returning_set.erase(proposing_value);
-    random_databases[proposing_value] = shared_ptr< map<string, shared_ptr<VentureValue> > >(new map<string, shared_ptr<VentureValue> >());
-    MHProposalResults mh_proposal_results = MakeMHProposal(principal_node, proposing_value, random_databases[proposing_value], false);
-    logprobabilities[proposing_value] = mh_proposal_results.logscore_PNew - mh_proposal_results.logscore_POld;
+    // random_databases[proposing_value] = shared_ptr< map<string, shared_ptr<VentureValue> > >(new map<string, shared_ptr<VentureValue> >());
+    logprobabilities[proposing_value] = GetLogPForEnvelope(principal_node, proposing_value);
   }
 
   /*
@@ -709,6 +728,40 @@ void Enumerate(shared_ptr<NodeXRPApplication> principal_node) {
  
   {
     shared_ptr<VentureValue> proposing_value = iterator_to_the_new_value->first;
-    MakeMHProposal(principal_node, proposing_value, random_databases[proposing_value], true);
+    MakeMHProposal(principal_node, proposing_value, GetEmptyRandomDatabase(), true);
+  }
+}
+
+void SliceSample(shared_ptr<NodeXRPApplication> principal_node) {
+  // The algorithm is described here:
+  // http://www.inference.phy.cam.ac.uk/itprnn/book.pdf
+  // (page 375).
+
+  real x_current = principal_node->my_sampled_value->GetReal();
+  real current_logP = 0.0; // Because P*(x) = NC * P(x), where normalizing constant N is that P*(x_current) = 1.
+  real vertical_coordinate = log(gsl_ran_flat(random_generator, 0, 1));
+  real r = gsl_ran_flat(random_generator, 0, 1);
+  real w = 0.1;
+  real x_l = x_current - r * w;
+  real x_r = x_current + (1 - r) * w;
+  while (GetLogPForEnvelope(principal_node, shared_ptr<VentureReal>(new VentureReal(x_l))) > current_logP) {
+    x_l -= w;
+  }
+  while (GetLogPForEnvelope(principal_node, shared_ptr<VentureReal>(new VentureReal(x_r))) > current_logP) {
+    x_r += w;
+  }
+
+  real x_new;
+  while (true) {
+    x_new = gsl_ran_flat(random_generator, x_l, x_r);
+    if (GetLogPForEnvelope(principal_node, shared_ptr<VentureReal>(new VentureReal(x_new))) > vertical_coordinate) {
+      MakeMHProposal(principal_node, shared_ptr<VentureReal>(new VentureReal(x_new)), GetEmptyRandomDatabase(), true);
+      return;
+    }
+    if (x_new > x_current) {
+      x_r = x_new;
+    } else {
+      x_l = x_new;
+    }
   }
 }
