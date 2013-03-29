@@ -1,4 +1,3 @@
-
 #include "HeaderPre.h"
 #include "Header.h"
 #include "RIPL.h"
@@ -411,6 +410,9 @@ void BindStandardElementsToGlobalEnvironment() {
   BindToEnvironment(global_environment,
                     shared_ptr<VentureSymbol>(new VentureSymbol("equal")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__Equal()))));
+  BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol("not")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__BooleanNot()))));  
 
   // For reals (repeating)
 

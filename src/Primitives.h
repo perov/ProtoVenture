@@ -18,6 +18,12 @@ public:
   virtual string GetName();
 };
 
+class Primitive__BooleanNot : public Primitive {
+  virtual shared_ptr<VentureValue> Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config);
+public:
+  virtual string GetName();
+};
+
 class Primitive__RealPlus : public Primitive {
   virtual shared_ptr<VentureValue> Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config);
 public:
