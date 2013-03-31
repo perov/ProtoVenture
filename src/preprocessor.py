@@ -42,11 +42,11 @@ def resugarDummyLambda(location, exprPreprocessor):
     return location
   
   index = location[0]
-  if index == 0: # application of lambda -> body of expr
+  if index == 0: # application of lambda -> body of expression
     return []
-  elif index == 1: # 'lambda'
+  elif index == 1: # 'lambda' -> body of expression
     return []
-  elif index == 2: # '()'
+  elif index == 2: # '()' -> body of expression
     return []
   elif index == 3: # actual expression
     return exprPreprocessor.resugar(location[1:])
@@ -89,79 +89,43 @@ class IfPreprocessor(ListPreprocessor):
     elif index == 4: # alternative
       return [4] + resugarDummyLambda(location[2:], self.alternative)
 
-class AndPreprocessor:
+class AndPreprocessor(IfPreprocessor):
   def __init__(self, venture_input):
     if len(venture_input) != 3:
       raise SyntaxError("'and' should have 2 arguments.")
     
-    self.expr1 = preprocess(venture_input[1])
-    self.expr2 = preprocess(venture_input[2])
-  
-  def desugar(self):
-    lambda_for_expr2 = ["lambda", [], self.expr2.desugar()]
-    lambda_for_false = ["lambda", [], "b<false>"]
-    
-    return [["condition-ERP", self.expr1.desugar(), lambda_for_expr2, lambda_for_false]]
+    self.predicate = preprocess(venture_input[1])
+    self.consequent = preprocess(venture_input[2])
+    self.alternative = LiteralPreprocessor("b<false>")
   
   def resugar(self, location):
+    location = IfPreprocessor.resugar(self, location)
     if len(location) == 0:
       return location
     
-    if len(location) == 1:
-      if location[0] == 0: # outer application -> application of 'and'
-        return [0]
-      elif location[0] == 1: # body of (condition-ERP ...) -> body of 'and'
-        return []
-      raise ResugarError("Invalid location.")
+    if location[0] == 4: # 'false' -> 'and'
+      location[0] = 1
     
-    index = location[1]
-    if index == 0: # application of (condition-ERP ...) -> application of 'and'
-      return [0]
-    elif index == 1: # 'condition-ERP' -> 'and'
-      return [1]
-    elif index == 2: # expr1
-      return [2] + self.expr1.desugar(location[2:])
-    elif index == 3: # expr2
-      return [3] + resugarDummyLambda(location[2:], self.expr2)
-    elif index == 4: # false -> 'and'
-      return [1]
+    return location
 
-class OrPreprocessor:
+class OrPreprocessor(IfPreprocessor):
   def __init__(self, venture_input):
     if len(venture_input) != 3:
       raise SyntaxError("'or' should have 2 arguments.")
     
-    self.expr1 = preprocess(venture_input[1])
-    self.expr2 = preprocess(venture_input[2])
-  
-  def desugar(self):
-    lambda_for_expr2 = ["lambda", [], self.expr2.desugar()]
-    lambda_for_true = ["lambda", [], "b<true>"]
-    
-    return [["condition-ERP", self.expr1.desugar(), lambda_for_true, lambda_for_expr2]]
+    self.predicate = preprocess(venture_input[1])
+    self.consequent = LiteralPreprocessor("b<true>")
+    self.alternative = preprocess(venture_input[2])
   
   def resugar(self, location):
+    location = IfPreprocessor.resugar(self, location)
     if len(location) == 0:
       return location
     
-    if len(location) == 1:
-      if location[0] == 0: # outer application -> application of 'or'
-        return [0]
-      elif location[0] == 1: # body of (condition-ERP ...) -> body of 'or'
-        return []
-      raise ResugarError("Invalid location.")
+    if location[0] == 3: # 'true' -> 'or'
+      location[0] = 1
     
-    index = location[1]
-    if index == 0: # application of (condition-ERP ...) -> application of 'or'
-      return [0]
-    elif index == 1: # 'condition-ERP' -> 'or'
-      return [1]
-    elif index == 2: # expr1
-      return [2] + self.expr1.desugar(location[2:])
-    elif index == 3: # true -> 'or'
-      return [1]
-    elif index == 4: # expr2
-      return [3] + resugarDummyLambda(location[2:], self.expr2)
+    return location
 
 class ResugarError(Exception):
   def __init__(self, msg):
