@@ -80,8 +80,8 @@ def process_sugars(venture_input):
 # (if predicate consequent alternative) is sugar for
 # ( (condition-ERP predicate (lambda () consequent) (lambda () alternative)) )
 def process_if(venture_input):
-  if len(venture_input) == 3:
-    venture_input[3] = False
+  #if len(venture_input) == 3:
+  #  venture_input[3] = False
     
   if len(venture_input) == 4:
     predicate = venture_input[1]
@@ -91,31 +91,21 @@ def process_if(venture_input):
     lambda_for_alternative = ["lambda", [], alternative]
     return [ ["condition-ERP", predicate, lambda_for_consequent, lambda_for_alternative] ]
   else:
-    raise SyntaxError("'if' should have 3 or 4 arguments.")
+    raise SyntaxError("'if' should have 3 arguments.")
 
-# "and" is implemented almost as in Clojure (FIXME: and is how in Scheme?)
 def process_and(venture_input):
-  if len(venture_input) == 1:
-    return True
-  elif len(venture_input) == 2:
-    return venture_input[1]
-  else:
-    current_element = venture_input.pop(1)
-    return process_if(["if", current_element, process_and(venture_input), False])
+  if len(venture_input) != 3:
+    raise SyntaxError("'and' should have 2 arguments.")
+  return process_if(["if", venture_input[1], venture_input[2], False])
 
-# "or" is implemented almost as in Clojure (FIXME: and is how in Scheme?)
 def process_or(venture_input):
-  if len(venture_input) == 1:
-    return False
-  elif len(venture_input) == 2:
-    return venture_input[1]
-  else:
-    current_element = venture_input.pop(1)
-    return process_if(["if", current_element, True, process_or(venture_input)])
+  if len(venture_input) != 3:
+    raise SyntaxError("'or' should have 2 arguments.")
+  return process_if(["if", venture_input[1], True, venture_input[2]])
 
 def process_let(venture_input):
   if len(venture_input) != 3:
-    raise SyntaxError("'let' should have 3 arguments.")
+    raise SyntaxError("'let' should have 2 arguments.")
   
   bindings = venture_input[1]
   if type(bindings) != list:
