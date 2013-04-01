@@ -209,7 +209,7 @@ XRP::XRP() {}
 shared_ptr<VentureValue> XRP::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
   throw std::runtime_error("It should not happen.");
 } // Should be just ";"?
-void XRP::Unsampler(vector< shared_ptr<VentureValue> >& old_arguments, weak_ptr<NodeXRPApplication> caller) {
+void XRP::Unsampler(vector< shared_ptr<VentureValue> >& old_arguments, weak_ptr<NodeXRPApplication> caller, shared_ptr<VentureValue> sampled_value) {
   // By default it is blank function.
 }
 real XRP::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,

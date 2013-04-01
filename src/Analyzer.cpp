@@ -454,7 +454,8 @@ void NodeXRPApplication::DeleteNode() {
 
   this->xrp->xrp->
     Remove(old_arguments, this->my_sampled_value);
-  this->xrp->xrp->Unsampler(old_arguments, this->weak_ptr_to_me);
+  
+  this->xrp->xrp->Unsampler(old_arguments, this->weak_ptr_to_me, this->my_sampled_value);
 
   if (this->xrp->xrp->IsRandomChoice() == true) {
     DeleteRandomChoices(this->weak_ptr_to_me, this->location_in_random_choices);

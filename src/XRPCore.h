@@ -103,7 +103,7 @@ public:
   shared_ptr<VentureValue> Sample(vector< shared_ptr<VentureValue> >&, // FIXME: why not virtual?
                                   shared_ptr<NodeXRPApplication>,
                                   EvaluationConfig& evaluation_config);
-  virtual void Unsampler(vector< shared_ptr<VentureValue> >& old_arguments, weak_ptr<NodeXRPApplication> caller); // Unsampler or sampler?
+ virtual void Unsampler(vector< shared_ptr<VentureValue> >& old_arguments, weak_ptr<NodeXRPApplication> caller, shared_ptr<VentureValue> sampled_value); // Unsampler or sampler?
   shared_ptr<RescorerResamplerResult>
   RescorerResampler(vector< shared_ptr<VentureValue> >& old_arguments,
                     vector< shared_ptr<VentureValue> >& new_arguments,
