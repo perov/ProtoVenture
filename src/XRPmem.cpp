@@ -87,7 +87,7 @@ shared_ptr<VentureValue> XRP__memoized_procedure::Sampler(vector< shared_ptr<Ven
   return GetBranchValue(mem_table_element.application_caller_node);
 }
 
-void XRP__memoized_procedure::Unsampler(vector< shared_ptr<VentureValue> >& old_arguments, weak_ptr<NodeXRPApplication> caller) {
+void XRP__memoized_procedure::Unsampler(vector< shared_ptr<VentureValue> >& old_arguments, weak_ptr<NodeXRPApplication> caller, shared_ptr<VentureValue> sampled_value) {
   string mem_table_key =
     XRP__memoized_procedure__MakeMapKeyFromArguments(old_arguments);
   if (this->mem_table.count(mem_table_key) == 0) {

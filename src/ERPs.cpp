@@ -1,4 +1,3 @@
-
 #include "HeaderPre.h"
 #include "ERPs.h"
 
@@ -607,3 +606,40 @@ shared_ptr<VentureValue> ERP__CompareImages::Sampler(vector< shared_ptr<VentureV
 bool ERP__CompareImages::IsRandomChoice() { return true; }
 bool ERP__CompareImages::CouldBeRescored() { return true; }
 string ERP__CompareImages::GetName() { return "ERP__CompareImages"; }
+
+real ERP__GetLetterId::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
+                                 shared_ptr<VentureValue> sampled_value) {
+  int left_bound = 1;
+  int right_bound = 26;
+  if (arguments.size() == 0) {
+    if (ToVentureType<VentureCount>(sampled_value)->GetInteger() >= left_bound &&
+      ToVentureType<VentureCount>(sampled_value)->GetInteger() <= right_bound) {
+      return log(1.0 / (1.0 + right_bound - left_bound));
+    } else {
+      return log(0.0);
+    }
+  } else {
+    throw std::runtime_error("Wrong number of arguments.");
+  }
+}
+shared_ptr<VentureValue> ERP__GetLetterId::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+  int left_bound = 1;
+  int right_bound = 26;
+  if (arguments.size() == 0) {
+    int random_value = UniformDiscrete(left_bound, right_bound);
+    return shared_ptr<VentureCount>(new VentureCount(random_value));
+  } else {
+    throw std::runtime_error("Wrong number of arguments.");
+  }
+}
+string ERP__GetLetterId::GetName() { return "ERP__GetLetterId"; }
+bool ERP__GetLetterId::CouldBeEnumerated() {
+  return true;
+}
+set< shared_ptr<VentureValue> > ERP__GetLetterId::EnumeratingSupport() { // FIXME: pass the *result* by reference, not by value.
+  set< shared_ptr<VentureValue> > returning_set;
+  for (size_t index = 1; index <= 26; index++) {
+    returning_set.insert(shared_ptr<VentureCount>(new VentureCount(index)));
+  }
+  return returning_set;
+}

@@ -1,6 +1,8 @@
 #include "HeaderPre.h"
 #include "Header.h"
 #include "RIPL.h"
+#include "ExternalXRPInterface.h"
+
 
 // Should be called DirectiveEntry!
 directive_entry::directive_entry(string directice_as_string,
@@ -279,6 +281,11 @@ size_t ExecuteDirectiveWithRejectionSampling
 }
 
 void BindStandardElementsToGlobalEnvironment() {
+
+  BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol("load-remote-xrp")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__LoadRemoteXRP()))));
+
   // Deprecated, should be deleted:
   BindToEnvironment(global_environment,
                     shared_ptr<VentureSymbol>(new VentureSymbol("compare-images")), // Make just via the std::string?
@@ -502,6 +509,10 @@ void BindStandardElementsToGlobalEnvironment() {
   BindToEnvironment(global_environment,
                     shared_ptr<VentureSymbol>(new VentureSymbol("simplex-point")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__SimplexPoint()))));
+                    
+  BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol("get-letter-id")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__GetLetterID()))));
 }
 
 

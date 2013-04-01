@@ -1,4 +1,3 @@
-
 #ifndef VENTURE___ERPS_H
 #define VENTURE___ERPS_H
 
@@ -172,6 +171,17 @@ public:
   virtual bool IsRandomChoice();
   virtual bool CouldBeRescored();
   virtual string GetName();
+};
+
+class ERP__GetLetterId : public ERP {
+  virtual real GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
+                                 shared_ptr<VentureValue> sampled_value);
+  virtual shared_ptr<VentureValue> Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config);
+
+public:
+  virtual string GetName();
+  virtual bool CouldBeEnumerated();
+  virtual set< shared_ptr<VentureValue> > EnumeratingSupport();
 };
 
 #endif
