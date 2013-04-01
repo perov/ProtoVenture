@@ -27,14 +27,12 @@ class ListPreprocessor:
     self.args = map(preprocess, venture_input)
   
   def desugar(self):
-    #return [preprocessor.desugar() for preprocessor in self.args]
-    return map(lambda preprocessor: preprocessor.desugar(), self.args)
+    return map(callDesugar, self.args)
   
   def resugar(self, location):
     if len(location) == 0:
       return location
     return [location[0]] + self.args[location[0]-1].resugar(location[1:])
-
 
 # resugar a dummy lambda expression
 def resugarDummyLambda(location, exprPreprocessor):
@@ -89,17 +87,19 @@ class IfPreprocessor(ListPreprocessor):
     elif index == 4: # alternative
       return [4] + resugarDummyLambda(location[2:], self.alternative)
 
-class AndPreprocessor(IfPreprocessor):
+class AndPreprocessor:
   def __init__(self, venture_input):
     if len(venture_input) != 3:
       raise SyntaxError("'and' should have 2 arguments.")
     
-    self.predicate = preprocess(venture_input[1])
-    self.consequent = preprocess(venture_input[2])
-    self.alternative = LiteralPreprocessor("b<false>")
+    venture_input.insert(3, "b<false>")
+    self.ifPreprocessor = IfPreprocessor(venture_input)
+  
+  def desugar(self):
+    return self.ifPreprocessor.desugar()
   
   def resugar(self, location):
-    location = IfPreprocessor.resugar(self, location)
+    location = self.ifPreprocessor.resugar(location)
     if len(location) == 0:
       return location
     
@@ -108,39 +108,113 @@ class AndPreprocessor(IfPreprocessor):
     
     return location
 
-class OrPreprocessor(IfPreprocessor):
+class OrPreprocessor:
   def __init__(self, venture_input):
     if len(venture_input) != 3:
       raise SyntaxError("'or' should have 2 arguments.")
     
-    self.predicate = preprocess(venture_input[1])
-    self.consequent = LiteralPreprocessor("b<true>")
-    self.alternative = preprocess(venture_input[2])
+    venture_input.insert(2, "b<true>")
+    self.ifPreprocessor = IfPreprocessor(venture_input)
+  
+  def desugar(self):
+    return self.ifPreprocessor.desugar()
   
   def resugar(self, location):
-    location = IfPreprocessor.resugar(self, location)
+    location = self.ifPreprocessor.resugar(location)
     if len(location) == 0:
       return location
     
     if location[0] == 3: # 'true' -> 'or'
       location[0] = 1
+    elif location[0] == 4: # alternative -> second argument of 'or'
+      location[0] = 2
     
     return location
+
+class LetPreprocessor:
+  def __init__(self, venture_input):
+    if len(venture_input) != 3:
+      raise SyntaxError("'let' should have 2 arguments.")
+    
+    bindings = venture_input[1]
+    if type(bindings) != list:
+      raise SyntaxError("'let' bindings should be a list")
+    
+    variables = []
+    definitions = []
+    for assignment in bindings:
+      if type(assignment) != list:
+        raise SyntaxError("'let' assignment should be a list")
+      if len(assignment) != 2:
+        raise SyntaxError("'let' assignment should have 2 arguments.")
+      variables.append(preprocess(assignment[0]))
+      definitions.append(preprocess(assignment[1]))
+    
+    self.variables = variables
+    self.definitions = definitions
+    
+    self.expression = preprocess(venture_input[2])
+  
+  def desugar(self):
+    variables = map(callDesugar, self.variables)
+    expression = self.expression.desugar()
+    definitions = map(callDesugar, self.definitions)
+    
+    return [["lambda", variables, expression]] + definitions
+  
+  def resugar(self, location):
+    if len(location) == 0:
+      return location
+    
+    if location[0] == 0: # outer application -> application of let
+      return [0]
+    elif location[0] == 1:
+      if len(location) == 1: # body of lambda -> body of let
+        return []
+      
+      if location[1] == 0: # application of lambda -> application of let
+        return [0]
+      elif location[1] == 1: # 'lambda' -> 'let'
+        return [1]
+      elif location[1] == 2:
+        if len(location) == 2: # body of lambda arguments -> body of assignments
+          return [2]
+        
+        # actual location of a variable
+        index = location[2]
+        return [2, index, 1] + self.variables[index-1].resugar(location[3:])
+      
+      elif location[1] == 3: # expression
+        return [3] + self.expression.resugar(location[2:])
+        
+    else: # definitions
+      index = location[0]-2
+      return [2, index+1, 2] + self.definitions[index].resugar(location[1:])
+
+# dictionary of sugars
+sugars = {'if' : IfPreprocessor, 'and' : AndPreprocessor, 'or' : OrPreprocessor, 'let' : LetPreprocessor}
+
+# call desugar on a preprocessor
+callDesugar = lambda preprocessor: preprocessor.desugar()
 
 class ResugarError(Exception):
   def __init__(self, msg):
     self.msg = msg
 
-# dictionary of sugars
-sugars = {'if' : IfPreprocessor, 'and' : AndPreprocessor, 'or' : OrPreprocessor}
-
-if __name__ == '__main__':
-  from lisp_parser import parse
-  #venture_input = parse("(if a b c)")
+def testIf():
   venture_input = ['if', 'a', ['and', 'b', 'c'], ['or', 'd', 'e']]
   preprocessor = preprocess(venture_input)
   print preprocessor.desugar()
-  location = [1, 3, 3, 1, 3, 2]
+  location = [1, 4, 3, 1, 4, 3]
   print preprocessor.resugar(location)
-  
+
+def testLet():
+  venture_input = ['let', [['a', 'A'], ['b', 'B']], 'c']
+  preprocessor = preprocess(venture_input)
+  print preprocessor.desugar()
+  location = [3]
+  print preprocessor.resugar(location)
+
+if __name__ == '__main__':
+  testLet()
 
