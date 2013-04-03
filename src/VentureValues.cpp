@@ -137,27 +137,22 @@ VentureProbability::~VentureProbability() {}
 VentureAtom::~VentureAtom() {}
 
 VentureExternalXRPObject::~VentureExternalXRPObject() {
+  this->CheckMyData(this);
   if (this->socket == NULL) {
     return;
   }
+  
   string message = boost::lexical_cast<string>("DeleteXRPID:") + boost::lexical_cast<string>(this->data); 
   zmq_msg_t request;
   zmq_msg_init_size (&request, message.length());
   memcpy (zmq_msg_data (&request), message.c_str(), message.length());
   zmq_msg_send (&request, this->socket, 0);
   zmq_msg_close (&request);
-
+  
   //Wait for a '0', which indicates success 
   zmq_msg_t reply;
   zmq_msg_init (&reply);
-  int size = zmq_msg_recv (&reply, this->socket, 0);
-  char *string = (char *) malloc (size + 1);
-  memcpy (string, zmq_msg_data (&reply), size);
-  string [size] = 0;
-  int ret = atoi((char *)string);
-  if (ret != 0) {
-    throw std::runtime_error("Error in VentureExternalXRPObject object destructor!\n");
-  }
+  zmq_msg_recv (&reply, this->socket, 0);
   zmq_msg_close (&reply);
 }
 

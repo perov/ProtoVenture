@@ -101,10 +101,14 @@ shared_ptr<VentureValue> Primitive__LoadRemoteXRP::Sampler(vector< shared_ptr<Ve
 string Primitive__LoadRemoteXRP::GetName() { return "Primitive__LoadRemoteXRP"; }
 
 void Primitive__LoadRemoteXRP::Unsampler(vector< shared_ptr<VentureValue> >& old_arguments, weak_ptr<NodeXRPApplication> caller, shared_ptr<VentureValue> sampled_value) {
+  if (dynamic_pointer_cast<XRP__TemplateForExtendedXRP>(dynamic_pointer_cast<VentureXRP>(sampled_value)->xrp)->socket == NULL) {
+    return;
+  }
   printf("Clearing ZMQ socket\n");
   cout << dynamic_pointer_cast<XRP__TemplateForExtendedXRP>(dynamic_pointer_cast<VentureXRP>(sampled_value)->xrp)->socket << endl;  
   int ret = zmq_close(dynamic_pointer_cast<XRP__TemplateForExtendedXRP>(dynamic_pointer_cast<VentureXRP>(sampled_value)->xrp)->socket);
   if (ret != 0) throw std::runtime_error("[Primitive__LoadRemoteXRP::Unsampler] ZMQ socket close was not succesful");
+  dynamic_pointer_cast<XRP__TemplateForExtendedXRP>(dynamic_pointer_cast<VentureXRP>(sampled_value)->xrp)->socket = NULL; 
 }
 
 

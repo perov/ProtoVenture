@@ -12,7 +12,7 @@ DEPENDS = ${OBJECTS:.o=.d}
 EXEC = venture
 
 ${EXEC} : ${OBJECTS}
-	${CXX} ${OBJECTS} -o ${EXEC} -lpython${python_version_include} -lzmq -lgsl -lgslcblas -lpthread -lboost_thread -lboost_system
+	${CXX} ${OBJECTS} -g -o ${EXEC} -lpython${python_version_include} -lzmq -lgsl -lgslcblas -lpthread -lboost_thread-mt -lboost_system-mt
 
 %.o:%.cpp
 	${CXX} -MM -MF $*.d $*.cpp
