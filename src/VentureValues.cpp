@@ -137,6 +137,9 @@ VentureProbability::~VentureProbability() {}
 VentureAtom::~VentureAtom() {}
 
 VentureExternalXRPObject::~VentureExternalXRPObject() {
+  if (this->socket == NULL) {
+    return;
+  }
   string message = boost::lexical_cast<string>("DeleteXRPID:") + boost::lexical_cast<string>(this->data); 
   zmq_msg_t request;
   zmq_msg_init_size (&request, message.length());
