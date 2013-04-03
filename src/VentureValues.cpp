@@ -25,6 +25,13 @@ void VentureAtom::CheckMyData(VentureValue* venture_value) {
     throw std::runtime_error("VentureAtom should be non-negative.");
   }
 }
+
+void VentureExternalXRPObject::CheckMyData(VentureValue* venture_value) {
+  if (venture_value->GetInteger() < 0) {
+    throw std::runtime_error("VentureExternalXRPObject should be non-negative.");
+  }
+}
+
 void VentureSimplexPoint::CheckMyData(VentureValue* venture_value) {
   if (venture_value->GetType() == SIMPLEXPOINT) {
     throw std::runtime_error("VentureSimplexPoint should be represented only by itself.");
@@ -76,6 +83,11 @@ VentureAtom::VentureAtom(const int data) : data(data) {
   this->CheckMyData(this);
 }
 
+VentureExternalXRPObject::VentureExternalXRPObject(const int data, void *socket) : data(data), socket(socket) {
+  this->CheckMyData(this);
+  this->socket = socket;
+}
+
 VentureSmoothedCount::VentureSmoothedCount(const real data) : data(data) {
   this->CheckMyData(this);
 }
@@ -123,6 +135,29 @@ VentureCount::~VentureCount() {}
 VentureReal::~VentureReal() {}
 VentureProbability::~VentureProbability() {}
 VentureAtom::~VentureAtom() {}
+
+VentureExternalXRPObject::~VentureExternalXRPObject() {
+  string message = boost::lexical_cast<string>("DeleteXRPID:") + boost::lexical_cast<string>(this->data); 
+  zmq_msg_t request;
+  zmq_msg_init_size (&request, message.length());
+  memcpy (zmq_msg_data (&request), message.c_str(), message.length());
+  zmq_msg_send (&request, this->socket, 0);
+  zmq_msg_close (&request);
+
+  //Wait for a '0', which indicates success 
+  zmq_msg_t reply;
+  zmq_msg_init (&reply);
+  int size = zmq_msg_recv (&reply, this->socket, 0);
+  char *string = (char *) malloc (size + 1);
+  memcpy (string, zmq_msg_data (&reply), size);
+  string [size] = 0;
+  int ret = atoi((char *)string);
+  if (ret != 0) {
+    throw std::runtime_error("Error in VentureExternalXRPObject object destructor!\n");
+  }
+  zmq_msg_close (&reply);
+}
+
 VentureSimplexPoint::~VentureSimplexPoint() {}
 VentureSmoothedCount::~VentureSmoothedCount() {}
 VentureList::~VentureList() {}
@@ -138,6 +173,7 @@ VentureDataTypes VentureCount::GetType() { return COUNT; }
 VentureDataTypes VentureReal::GetType() { return REAL; }
 VentureDataTypes VentureProbability::GetType() { return PROBABILITY; }
 VentureDataTypes VentureAtom::GetType() { return ATOM; }
+VentureDataTypes VentureExternalXRPObject::GetType() { return EXTERNALXRP; }
 VentureDataTypes VentureSimplexPoint::GetType() { return SIMPLEXPOINT; }
 VentureDataTypes VentureSmoothedCount::GetType() { return SMOOTHEDCOUNT; }
 VentureDataTypes VentureList::GetType() { return LIST; }
@@ -162,6 +198,9 @@ real VentureProbability::GetReal() {
 real VentureAtom::GetReal() {
   return data;
 }
+real VentureExternalXRPObject::GetReal(){
+  return data;
+}
 real VentureSmoothedCount::GetReal() {
   return data;
 }
@@ -183,6 +222,9 @@ int VentureCount::GetInteger() {
 int VentureAtom::GetInteger() {
   return data;
 }
+int VentureExternalXRPObject::GetInteger() {
+  return data;
+}
 
 // *** GetString ***
 string VentureValue::GetString() { return "UNDEFINED"; }
@@ -196,6 +238,7 @@ string VentureBoolean::GetString() {
 string VentureCount::GetString() { return boost::lexical_cast<string>(data); }
 string VentureReal::GetString() { return boost::lexical_cast<string>(data); }
 string VentureAtom::GetString() { return boost::lexical_cast<string>(data); }
+string VentureExternalXRPObject::GetString() {return boost::lexical_cast<string>(data);}
 string VentureProbability::GetString() { return boost::lexical_cast<string>(data); }
 string VentureSimplexPoint::GetString() {
   string output = "sp[";
@@ -233,6 +276,7 @@ PyObject* VentureBoolean::GetAsPythonObject() { if (this->data) { Py_INCREF(Py_T
 PyObject* VentureCount::GetAsPythonObject() { return Py_BuildValue("i", this->data); }
 PyObject* VentureReal::GetAsPythonObject() { return Py_BuildValue("d", this->data); }
 PyObject* VentureAtom::GetAsPythonObject() { return Py_BuildValue("i", this->data); }
+PyObject* VentureExternalXRPObject::GetAsPythonObject() { return Py_BuildValue("i", this->data); }
 PyObject* VentureProbability::GetAsPythonObject() { return Py_BuildValue("d", this->data); }
 PyObject* VentureSimplexPoint::GetAsPythonObject() {
   PyObject* returning_tuple = PyTuple_New(data.size());
@@ -291,6 +335,7 @@ shared_ptr<T> ToVentureType(shared_ptr<VentureValue> value) {
 
 void __BlankFunction1() { // Why without this function the g++ (Unix) with -O2 returns that it cannot find them?
   ToVentureType<VentureAtom>(shared_ptr<VentureValue>());
+  ToVentureType<VentureExternalXRPObject>(shared_ptr<VentureValue>());
   ToVentureType<VentureLambda>(shared_ptr<VentureValue>());
   ToVentureType<VentureSymbol>(shared_ptr<VentureValue>());
   ToVentureType<VentureReal>(shared_ptr<VentureValue>());
@@ -322,6 +367,9 @@ bool VentureProbability::CompareByValue(shared_ptr<VentureValue> another) {
 }
 bool VentureAtom::CompareByValue(shared_ptr<VentureValue> another) {
   return (this->data == ToVentureType<VentureAtom>(another)->data);
+}
+bool VentureExternalXRPObject::CompareByValue(shared_ptr<VentureValue> another) {
+  return (this->data == ToVentureType<VentureExternalXRPObject>(another)->data);
 }
 bool VentureSimplexPoint::CompareByValue(shared_ptr<VentureValue> another) {
   return (this->data == ToVentureType<VentureSimplexPoint>(another)->data); // FIXME: is it enough? Check for other Venture data types.

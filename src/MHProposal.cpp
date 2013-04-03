@@ -348,10 +348,12 @@ void FinalizeProposal
         }
         
         if (mh_decision == MH_APPROVED) {
+          //cout << "Accepted" << endl;
           ////Debug// cout << "IT__DeleteOld: " << dynamic_pointer_cast<NodeApplicationCaller>(current_node)->application_node << endl;
           //Q_NewToOld += GatherBranch__QNewToOld(dynamic_pointer_cast<NodeApplicationCaller>(current_node)->application_node, MH_ACTION__EMPTY_STATUS);
           //DeleteBranch(dynamic_pointer_cast<NodeApplicationCaller>(current_node)->application_node, true);
         } else {
+          //cout << "Rejected" << endl;
           ////Debug// cout << "IT__DeleteNew: " << dynamic_pointer_cast<NodeApplicationCaller>(current_node)->new_application_node << endl;
           //set< shared_ptr<NodeXRPApplication> > useless_set;
           //P_new += GatherBranch__PNew(dynamic_pointer_cast<NodeApplicationCaller>(current_node)->new_application_node, MH_ACTION__EMPTY_STATUS, useless_set);
@@ -526,6 +528,8 @@ MHProposalResults MakeMHProposal
   //if (dynamic_pointer_cast<NodeDirectivePredict>(GetLastDirectiveNode()->earlier_evaluation_nodes)->my_new_value != shared_ptr<VentureValue>()) {
   //  tmp_tmp2 = dynamic_pointer_cast<NodeDirectivePredict>(GetLastDirectiveNode()->earlier_evaluation_nodes)->my_new_value->GetReal();
   //}
+
+  //cout << P_new << " " << P_old << " " << Q_NewToOld << " " << Q_OldToNew << endl;
 
   to_compare += scores_part;
   MHDecision mh_decision;

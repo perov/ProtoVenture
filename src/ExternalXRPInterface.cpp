@@ -123,7 +123,7 @@ shared_ptr<VentureValue> XRP__TemplateForExtendedXRP::Sampler(vector< shared_ptr
   zmq_msg_init_size (&request, message.length());
   memcpy (zmq_msg_data (&request), message.c_str(), message.length());
   zmq_msg_send (&request, this->socket, 0);
-    zmq_msg_close (&request);
+  zmq_msg_close (&request);
 
   char *getreply = recvZMQmsg(this->socket);
   int external_object_pointer = atoi((char *)getreply);
@@ -138,7 +138,8 @@ shared_ptr<VentureValue> XRP__TemplateForExtendedXRP::Sampler(vector< shared_ptr
   else {
     //printf("---------RENDER/LOADIMAGE-----------%d\n",external_object_pointer);
     //printf("-=-=-=-=-=-=-=-=-=-=-=-\n" );
-    return shared_ptr<VentureAtom>(new VentureAtom(external_object_pointer));
+    //return shared_ptr<VentureAtom>(new VentureAtom(external_object_pointer));
+    return shared_ptr<VentureExternalXRPObject>(new VentureExternalXRPObject(external_object_pointer, this->socket));
   }
 }
 
