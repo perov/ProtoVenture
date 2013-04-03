@@ -510,9 +510,9 @@ void BindStandardElementsToGlobalEnvironment() {
                     shared_ptr<VentureSymbol>(new VentureSymbol("simplex-point")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__SimplexPoint()))));
                     
-  BindToEnvironment(global_environment,
+  /*BindToEnvironment(global_environment,
                     shared_ptr<VentureSymbol>(new VentureSymbol("get-letter-id")), // Make just via the std::string?
-                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__GetLetterID()))));
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__GetLetterID()))));*/
 }
 
 
