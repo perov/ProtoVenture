@@ -32,6 +32,12 @@ PyMethodDef MethodsForPythons[] = {
      "... Write description ..."},
     {"logscore", ForPython__logscore, METH_VARARGS,
      "... Write description ..."},
+    {"get_seed", ForPython__get_seed, METH_VARARGS,
+     "... Write description ..."},
+    {"set_seed", ForPython__set_seed, METH_VARARGS,
+     "... Write description ..."},
+    {"get_entropy_info", ForPython__get_entropy_info, METH_VARARGS,
+     "... Write description ..."},
 #ifdef _VENTURE_USE_GOOGLE_PROFILER
     {"_start_profiler", ForPython___start_profiler, METH_VARARGS,
      "... Write description ..."},
@@ -432,6 +438,57 @@ ForPython__logscore(PyObject *self, PyObject *args) // FIXME: deprecated?
 
   //cout << "Finishing to deal with OBSERVE" << endl;
   return Py_BuildValue("d", logscore); // FIXME: something wiser.
+} catch(handling_python_error&) { return NULL; } catch(std::runtime_error& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }
+
+PyObject*
+ForPython__get_seed(PyObject *self, PyObject *args)
+{ try {
+  PauseInference();
+  if(!PyArg_ParseTuple(args, ":get_seed")) {
+    PyErr_SetString(PyExc_TypeError, "get_seed: wrong arguments.");
+    return NULL; // ReturnInferenceIfNecessary(); ?
+  }
+  PyObject* returning_python_object = Py_BuildValue("i", static_cast<int>(VENTURE_GLOBAL__current_random_seed));
+  ReturnInferenceIfNecessary();
+  return returning_python_object;
+} catch(handling_python_error&) { return NULL; } catch(std::runtime_error& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }
+
+PyObject*
+ForPython__set_seed(PyObject *self, PyObject *args)
+{ try {
+  PauseInference();
+  int random_seed;
+  if(!PyArg_ParseTuple(args, "i:set_seed", &random_seed)) {
+    PyErr_SetString(PyExc_TypeError, "set_seed: wrong arguments.");
+    return NULL; // ReturnInferenceIfNecessary(); ?
+  }
+  
+  if (random_seed <= 0) {
+    PyErr_SetString(PyExc_TypeError, "set_seed: seed should be positive.");
+    return NULL; // ReturnInferenceIfNecessary(); ?
+  }
+    
+  gsl_rng_free(random_generator);
+  random_generator = gsl_rng_alloc(gsl_rng_mt19937);
+  gsl_rng_set(random_generator, random_seed);
+  VENTURE_GLOBAL__current_random_seed = random_seed;
+  
+  ReturnInferenceIfNecessary();
+  Py_INCREF(Py_None);
+  return Py_None;
+} catch(handling_python_error&) { return NULL; } catch(std::runtime_error& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }
+
+PyObject*
+ForPython__get_entropy_info(PyObject *self, PyObject *args)
+{ try {
+  PauseInference();
+  if(!PyArg_ParseTuple(args, ":get_entropy_info")) {
+    PyErr_SetString(PyExc_TypeError, "get_entropy_info: wrong arguments.");
+    return NULL; // ReturnInferenceIfNecessary(); ?
+  }
+  PyObject* returning_python_object = Py_BuildValue("{si}", "unconstrained_random_choices", static_cast<int>(random_choices.size()));
+  ReturnInferenceIfNecessary();
+  return returning_python_object;
 } catch(handling_python_error&) { return NULL; } catch(std::runtime_error& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }
 
 #ifdef _VENTURE_USE_GOOGLE_PROFILER

@@ -523,7 +523,22 @@ def infer():
 def special_exception_handler(error):
   print "Error: " + str(error)
   return get_response("Your query has invoked an error:\n" + str(error)), 500
-  
+
+@app.route('/get_seed', methods=['GET'])
+def get_seed():
+  random_seed = venture_engine.get_seed()
+  return get_response(json.dumps(random_seed))
+
+@app.route('/set_seed', methods=['POST'])
+def set_seed():
+  venture_engine.set_seed(int(request.form['random_seed'])) # FIXME: Why it is not an integer by default?
+  return get_response(json.dumps({"okay": True}))
+
+@app.route('/get_entropy_info', methods=['GET'])
+def get_entropy_info():
+  entropy_info = venture_engine.get_entropy_info()
+  return get_response(json.dumps(entropy_info))
+
 # try:
 app.config['DEBUG'] = False
 app.config['TESTING'] = False

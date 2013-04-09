@@ -1,4 +1,5 @@
 import requests
+import pdb # Question from Yura: for what do we need it?
 try: # See for details: http://stackoverflow.com/questions/791561/python-2-5-json-module
     import json
 except ImportError:
@@ -39,9 +40,15 @@ class RemoteRIPL():
   def __init__(self, uri):
     self.uri = uri
 
-  def seed(self, seedval): # Random seed. To be developed.
-    payload = {"seed": json.dumps(seedval)}
-    r = requests.post(self.uri + '/seed', data=payload)
+  def get_seed(self):
+    r = requests.get(self.uri + '/get_seed')
+    CheckStatus(r)
+    random_seed = json.loads(r.content)
+    return random_seed
+
+  def set_seed(self, random_seed):
+    payload = {"random_seed": json.dumps(random_seed)}
+    r = requests.post(self.uri + '/set_seed', data=payload)
     CheckStatus(r)
 
   def assume(self, name_str, expr_lst):
@@ -174,11 +181,11 @@ class RemoteRIPL():
     # return total
     raise Exception("not implemented")
       
-  def entropy(self):
-    r = requests.get(self.uri + '/entropy')
+  def get_entropy_info(self):
+    r = requests.get(self.uri + '/get_entropy_info')
     CheckStatus(r)
     contents = json.loads(r.content)
-    return contents # Now just returns the dictionary with the key 'random_choices'.
+    return contents # Now just returns the dictionary with the key 'unconstrained_random_choices'.
                     # In the future more keys are going to be added.
       
   def start_cont_infer(self, threadsNumber = 1): # Start continuous inference.
@@ -196,35 +203,6 @@ class RemoteRIPL():
     contents = json.loads(r.content)
     return contents
 
-  def load(self, generative_model_string): # Jay Baxter, March 04 2013.
-    import lisp_parser
-    parse = lisp_parser.parse
-    import re
-    """Convert a Church generative model string into a sequence of Venture directives."""
-    lines = re.findall(r'\[(.*?)\]', generative_model_string, re.DOTALL)
-    for line in lines:
-      arguments = line.split(" ", 1)
-      directive_name = arguments[0].lower()
-      if (directive_name == "assume"):
-        name_and_expression = arguments[1].split(" ", 1)
-        self.assume(name_and_expression[0], parse(name_and_expression[1]))
-      elif (directive_name == "predict"):
-        name_and_expression = arguments[1].split(" ", 1)
-        self.predict(parse(arguments[1]))
-      elif (directive_name == "observe"):
-        expression_and_literal_value = arguments[1].rsplit(" ", 1)
-        self.observe(parse(expression_and_literal_value[0]), expression_and_literal_value[1])
-      elif (directive_name == "infer"):
-        self.infer(int(arguments[1]))
-      elif (directive_name == "forget"):
-        self.forget(int(arguments[1]))
-      elif (directive_name == "report"):
-        self.report_value(int(arguments[1]))
-      elif (directive_name == "clear"):
-        self.clear()
-      else:
-        raise Exception("Unknown directive")
-    
 def directives_to_string(directives): # Change 8: added new utility.
   info = []
   info_element = [] # Better through info_element.append(...)?

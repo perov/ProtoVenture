@@ -24,6 +24,7 @@ int difference_of_CRPs_operations;
 
 shared_ptr<VentureList> const NIL_INSTANCE = shared_ptr<VentureList>(new VentureNil());
 gsl_rng* random_generator = 0;
+int VENTURE_GLOBAL__current_random_seed;
 set< weak_ptr<NodeXRPApplication> > random_choices;
 vector< set< weak_ptr<NodeXRPApplication> >::iterator > random_choices_vector;
 size_t DIRECTIVE_COUNTER = 0;
@@ -50,6 +51,7 @@ void InitGSL() {
   }
   cout << "Current seed: " << seed << endl;
   gsl_rng_set(random_generator, seed);
+  VENTURE_GLOBAL__current_random_seed = seed;
 }
   
 PyMODINIT_FUNC initventure_engine(void) {
@@ -124,12 +126,12 @@ int main(int argc, char *argv[])
 //  PyRun_SimpleString("execfile(\"C:/Users/Yura Perov/workspace/VentureAlpha/src/RESTPython.py\")");
 //#else
   PyRun_SimpleString("import os.path");
-  PyRun_SimpleString((string("if os.path.exists(\"/usr/venture/RESTPython.py\"):\n") +
-                             "  execfile(\"/usr/venture/RESTPython.py\")\n" +
+  PyRun_SimpleString((string("if os.path.exists(\"RESTPython.py\"):\n") +
+                             "  execfile(\"RESTPython.py\")\n" +
                              "elif os.path.exists(\"C:/Users/Yura Perov/workspace/VentureAlpha/src/RESTPython.py\"):\n" +
                              "  execfile(\"C:/Users/Yura Perov/workspace/VentureAlpha/src/RESTPython.py\")\n" +
-                             "elif os.path.exists(\"RESTPython.py\"):\n" +
-                             "  execfile(\"RESTPython.py\")\n" +
+                             "elif os.path.exists(\"/usr/venture/RESTPython.py\"):\n" +
+                             "  execfile(\"/usr/venture/RESTPython.py\")\n" +
                              "else:\n" +
                              "  print(\"Cannot find RESTPython.py!\")\n" +
                              "").c_str());

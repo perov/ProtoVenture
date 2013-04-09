@@ -15,6 +15,8 @@
 #include "Primitives.h"
 #include "PythonProxy.h"
 
+extern int VENTURE_GLOBAL__current_random_seed;
+
 class handling_python_error : std::runtime_error {
 public:
   handling_python_error();
@@ -64,6 +66,15 @@ ForPython__draw_graph_to_file(PyObject *self, PyObject *args);
 
 PyObject*
 ForPython__logscore(PyObject *self, PyObject *args);
+
+PyObject*
+ForPython__get_seed(PyObject *self, PyObject *args);
+
+PyObject*
+ForPython__set_seed(PyObject *self, PyObject *args);
+
+PyObject*
+ForPython__get_entropy_info(PyObject *self, PyObject *args);
 
 #ifdef _VENTURE_USE_GOOGLE_PROFILER
 PyObject*
