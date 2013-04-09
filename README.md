@@ -2,10 +2,11 @@ Venture
 =======
 
 Compilation options:
-1) make -j 5
-2) make withzmq=true enablegdb=true -j 5
+* make -j 5
+* make withzmq=true enablegdb=true -j 5
 
-"-j" runs object compilation in parallel.
+(For your information: "-j" runs object compilation in parallel.
+ You can vary this parameter (e.g., depending on number of cores on your computer).)
 
 If you previously compiled without flags "withzmq=true enablegdb=true", you should remake:
 "make -B withzmq=true enablegdb=true -j 5" (unconditionally make all targets)
