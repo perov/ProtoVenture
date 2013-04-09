@@ -1,3 +1,9 @@
+//
+// This file is here only for convenience.
+//
+// The last version of the file (C++ binding for 0MQ) could be found here:
+// https://github.com/zeromq/cppzmq
+//
 /*
     Copyright (c) 2009-2011 250bpm s.r.o.
     Copyright (c) 2011 Botond Ballo

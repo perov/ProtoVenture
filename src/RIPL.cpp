@@ -1,7 +1,10 @@
 #include "HeaderPre.h"
 #include "Header.h"
 #include "RIPL.h"
+
+#ifdef VENTURE__FLAG__COMPILE_WITH_ZMQ
 #include "ExternalXRPInterface.h"
+#endif
 
 
 // Should be called DirectiveEntry!
@@ -282,9 +285,11 @@ size_t ExecuteDirectiveWithRejectionSampling
 
 void BindStandardElementsToGlobalEnvironment() {
 
+#ifdef VENTURE__FLAG__COMPILE_WITH_ZMQ
   BindToEnvironment(global_environment,
                     shared_ptr<VentureSymbol>(new VentureSymbol("load-remote-xrp")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__LoadRemoteXRP()))));
+#endif
 
   // Deprecated, should be deleted:
   BindToEnvironment(global_environment,

@@ -4,7 +4,15 @@
 
 #include "Header.h"
 
-enum VentureDataTypes { UNDEFINED_TYPE, BOOLEAN, COUNT, REAL, PROBABILITY, ATOM, SIMPLEXPOINT, SMOOTHEDCOUNT, NIL, LIST, SYMBOL, LAMBDA, XRP_REFERENCE, NODE, ZMQ, EXTERNALXRP };
+enum VentureDataTypes
+{
+  UNDEFINED_TYPE, BOOLEAN, COUNT, REAL, PROBABILITY, ATOM, SIMPLEXPOINT, SMOOTHEDCOUNT, NIL, LIST, SYMBOL, LAMBDA, XRP_REFERENCE, NODE
+
+#ifdef VENTURE__FLAG__COMPILE_WITH_ZMQ
+  , ZMQ, EXTERNALXRP
+#endif
+
+};
 
 struct VentureValue : public boost::enable_shared_from_this<VentureValue> {
   VentureValue();
@@ -80,24 +88,6 @@ struct VentureProbability : public VentureValue {
   ~VentureProbability();
 
   real data;
-};
-
-
-struct VentureExternalXRPObject : public VentureValue {
-  VentureExternalXRPObject(const int, void *);
-  static void CheckMyData(VentureValue* venture_value);
-  // Question: where would be the type transformation happen?
-  //           Before this function, it seems?
-  virtual VentureDataTypes GetType();
-  virtual bool CompareByValue(shared_ptr<VentureValue>);
-  virtual string GetString();
-  virtual real GetReal();
-  virtual int GetInteger();
-  virtual PyObject* GetAsPythonObject();
-  ~VentureExternalXRPObject();
-
-  int data;
-  void *socket;
 };
 
 struct VentureAtom : public VentureValue {
@@ -235,5 +225,24 @@ void AddToList(shared_ptr<VentureList>, shared_ptr<VentureValue>);
 size_t GetSize(shared_ptr<VentureList> list);
 
 bool StandardPredicate(shared_ptr<VentureValue>);
+
+#ifdef VENTURE__FLAG__COMPILE_WITH_ZMQ
+  struct VentureExternalXRPObject : public VentureValue {
+    VentureExternalXRPObject(const int, void *);
+    static void CheckMyData(VentureValue* venture_value);
+    // Question: where would be the type transformation happen?
+    //           Before this function, it seems?
+    virtual VentureDataTypes GetType();
+    virtual bool CompareByValue(shared_ptr<VentureValue>);
+    virtual string GetString();
+    virtual real GetReal();
+    virtual int GetInteger();
+    virtual PyObject* GetAsPythonObject();
+    ~VentureExternalXRPObject();
+
+    int data;
+    void *socket;
+  };
+#endif
 
 #endif

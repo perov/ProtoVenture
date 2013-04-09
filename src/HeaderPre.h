@@ -22,8 +22,11 @@
 #include "boost/lexical_cast.hpp"
 #include "boost/algorithm/string.hpp"
 #include "boost/enable_shared_from_this.hpp"
-#include "zmq.hpp"
+
+#ifdef VENTURE__FLAG__COMPILE_WITH_ZMQ
+#include "cppzmq/zmq.hpp"
 #include <zmq.h>
+#endif
 
 #ifdef _MSC_VER
   // Memory leaks control, see here: http://msdn.microsoft.com/en-us/library/x98tx3cf(v=vs.100).aspx
@@ -50,9 +53,11 @@ using std::cout;
 using std::cin;
 using std::endl;
 
+#ifdef VENTURE__FLAG__COMPILE_WITH_ZMQ
 using zmq::message_t;
 using zmq::context_t;
 using zmq::socket_t;
+#endif
 
 typedef double real;
 const real REAL_MINUS_INFINITY = std::numeric_limits<double>::min();
