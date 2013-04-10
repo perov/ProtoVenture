@@ -52,6 +52,39 @@ shared_ptr<VentureValue> ERP__Flip::Sampler(vector< shared_ptr<VentureValue> >& 
 }
 string ERP__Flip::GetName() { return "ERP__Flip"; }
 
+real ERP__Binomial::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
+                                shared_ptr<VentureValue> sampled_value) { // inline?
+  real weight;
+  unsigned int number;
+  unsigned int successes ;
+  if (arguments.size() == 2) {
+	VentureCount::CheckMyData(arguments[0].get());
+	number = arguments[0]->GetInteger();
+	VentureProbability::CheckMyData(arguments[1].get());
+    weight = arguments[1]->GetReal();
+  } else {
+    throw std::runtime_error("Wrong number of arguments.");
+  }
+  successes = sampled_value->GetInteger();
+  return gsl_sf_lngamma(number + 1) - (gsl_sf_lngamma(number - successes + 1) + gsl_sf_lngamma(successes + 1)) + log(weight) * successes + log(1 - weight) * (number - successes) ;
+}
+shared_ptr<VentureValue> ERP__Binomial::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+  real weight;
+  unsigned int number;
+  if (arguments.size() == 2) {
+	VentureCount::CheckMyData(arguments[0].get());
+	number = arguments[0]->GetInteger();
+	VentureProbability::CheckMyData(arguments[1].get());
+	weight = arguments[1]->GetReal();
+  } else {
+	throw std::runtime_error("Wrong number of arguments.");
+  }
+22
+  return shared_ptr<VentureCount>(new VentureCount(gsl_ran_binomial(random_generator, weight, number)));
+}
+string ERP__Binomial::GetName() { return "ERP__Binomial"; }
+
+
 real ERP__Normal::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<VentureValue> sampled_value) {
   if (arguments.size() == 2) {
     VentureReal::CheckMyData(arguments[0].get());

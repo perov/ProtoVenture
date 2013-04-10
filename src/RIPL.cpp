@@ -330,6 +330,9 @@ void BindStandardElementsToGlobalEnvironment() {
   BindToEnvironment(global_environment,
                     shared_ptr<VentureSymbol>(new VentureSymbol("bernoulli")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new ERP__Flip()))));
+  BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol("binomial")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new ERP__Binomial()))));
   // WARNING: Deprecated:
   BindToEnvironment(global_environment,
                     shared_ptr<VentureSymbol>(new VentureSymbol("noise-negate")), // Make just via the std::string?
