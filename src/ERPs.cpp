@@ -97,7 +97,7 @@ real ERP__Normal::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& ar
     //                              average,
     //                            sigma);
     //return log(likelihood);
-    real sampled_value_real = ToVentureType<VentureReal>(sampled_value)->GetReal();
+    real sampled_value_real = sampled_value->GetReal();
     return NormalDistributionLogLikelihood(sampled_value_real, average, sigma);
   } else {
     throw std::runtime_error("Wrong number of arguments.");
@@ -132,7 +132,7 @@ real ERP__Beta::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& argu
     //                        alpha,
     //                        beta);
     //return log(likelihood);
-    real sampled_value_real = ToVentureType<VentureReal>(sampled_value)->GetReal();
+    real sampled_value_real = sampled_value->GetReal();
     return BetaDistributionLogLikelihood(sampled_value_real, alpha, beta);
   } else {
     throw std::runtime_error("Wrong number of arguments.");
@@ -160,7 +160,7 @@ real ERP__Poisson::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& a
     //       gsl_ran_poisson_pdf(ToVentureType<VentureCount>(sampled_value)->GetInteger(),
     //                         lambda);
     //return log(likelihood);
-    int sampled_value_count = ToVentureType<VentureCount>(sampled_value)->GetInteger();
+    int sampled_value_count = sampled_value->GetInteger();
     return PoissonDistributionLogLikelihood(sampled_value_count, lambda);
   } else {
     throw std::runtime_error("Wrong number of arguments.");
@@ -189,7 +189,7 @@ real ERP__Gamma::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arg
     //                         alpha,
     //                         1.0 / beta);
     //return log(likelihood);
-    real sampled_value_real = ToVentureType<VentureReal>(sampled_value)->GetReal();
+    real sampled_value_real = sampled_value->GetReal();
     return GammaDistributionLogLikelihood(sampled_value_real, alpha, beta);
   } else {
     throw std::runtime_error("Wrong number of arguments.");
@@ -221,7 +221,7 @@ real ERP__InverseGamma::GetSampledLoglikelihood(vector< shared_ptr<VentureValue>
     //                         alpha,
     //                         1.0 / beta);
     //return log(likelihood);
-    real sampled_value_real = ToVentureType<VentureReal>(sampled_value)->GetReal();
+    real sampled_value_real = sampled_value->GetReal();
     return InverseGammaDistributionLogLikelihood(sampled_value_real, alpha, beta);
   } else {
     throw std::runtime_error("Wrong number of arguments.");
@@ -252,7 +252,7 @@ real ERP__ChiSquared::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >
     //       gsl_ran_chisq_pdf(ToVentureType<VentureReal>(sampled_value)->GetReal(),
     //                         nu);
     //return log(likelihood);
-    real sampled_value_real = ToVentureType<VentureReal>(sampled_value)->GetReal();
+    real sampled_value_real = sampled_value->GetReal();
     return ChiSquaredDistributionLogLikelihood(sampled_value_real, nu);
   } else {
     throw std::runtime_error("Wrong number of arguments.");
@@ -280,7 +280,7 @@ real ERP__InverseChiSquared::GetSampledLoglikelihood(vector< shared_ptr<VentureV
     //       gsl_ran_chisq_pdf(1.0 / ToVentureType<VentureReal>(sampled_value)->GetReal(),
     //                         nu);
     //return log(likelihood);
-    real sampled_value_real = ToVentureType<VentureReal>(sampled_value)->GetReal();
+    real sampled_value_real = sampled_value->GetReal();
     return InverseChiSquaredDistributionLogLikelihood(sampled_value_real, nu);
   } else {
     throw std::runtime_error("Wrong number of arguments.");
@@ -461,8 +461,8 @@ real ERP__UniformDiscrete::GetSampledLoglikelihood(vector< shared_ptr<VentureVal
     left_bound = arguments[0]->GetInteger(); // Should be GetInteger! Just for the curve fitting!
     VentureCount::CheckMyData(arguments[1].get()); // Should be on! Just for the curve fitting!
     right_bound = arguments[1]->GetInteger(); // Should be GetInteger! Just for the curve fitting!
-    if (ToVentureType<VentureCount>(sampled_value)->GetInteger() >= left_bound &&
-      ToVentureType<VentureCount>(sampled_value)->GetInteger() <= right_bound) {
+    if (sampled_value->GetInteger() >= left_bound &&
+      sampled_value->GetInteger() <= right_bound) {
       return log(1.0 / (1.0 + right_bound - left_bound));
     } else {
       return log(0.0);
@@ -498,8 +498,8 @@ real ERP__UniformContinuous::GetSampledLoglikelihood(vector< shared_ptr<VentureV
     left_bound = arguments[0]->GetReal();
     VentureReal::CheckMyData(arguments[1].get());
     right_bound = arguments[1]->GetReal();
-    if (ToVentureType<VentureReal>(sampled_value)->GetReal() >= left_bound &&
-      ToVentureType<VentureReal>(sampled_value)->GetReal() <= right_bound) {
+    if (sampled_value->GetReal() >= left_bound &&
+      sampled_value->GetReal() <= right_bound) {
       return log(1.0 / (right_bound - left_bound));
     } else {
       return log(0.0);

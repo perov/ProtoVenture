@@ -28,6 +28,10 @@ bool ConvertPythonObjectToVentureValue
   (PyObject* python_object,
    shared_ptr<VentureValue>* pointer_to_shared_pointer);
 
+bool ConvertPythonObjectToVentureValue_internal
+  (PyObject* python_object,
+   shared_ptr<VentureValue>* pointer_to_shared_pointer);
+   
 PyObject*
 ForPython__report_value(PyObject *self, PyObject *args);
 

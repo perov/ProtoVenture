@@ -67,28 +67,80 @@ bool ConvertPythonObjectToVentureValue
   (PyObject* python_object,
    shared_ptr<VentureValue>* pointer_to_shared_pointer)
 {
-  PyObject *suger_processing__main_module__name;
-  PyObject *suger_processing__main_module;
+  PyObject *suger_processing__lisp_parser_module__name;
+  PyObject *suger_processing__lisp_parser_module;
   PyObject *suger_processing__process_sugars;
   PyObject *suger_processing__process_sugars__arguments;
   
-  suger_processing__main_module__name = PyString_FromString("__main__");
-  if (suger_processing__main_module__name == NULL) {
-    throw std::runtime_error("Strange, cannot create the string '__main__'.");
+  suger_processing__lisp_parser_module__name = PyString_FromString("venture.lisp_parser");
+  if (suger_processing__lisp_parser_module__name == NULL) {
+    throw std::runtime_error("Strange, cannot create the string 'venture.lisp_parser'.");
   }
-  suger_processing__main_module = PyImport_Import(suger_processing__main_module__name);
-  Py_DECREF(suger_processing__main_module__name);
-  if (suger_processing__main_module__name == NULL) {
-    throw std::runtime_error("Strange, cannot find the module '__main__'.");
+  suger_processing__lisp_parser_module = PyImport_Import(suger_processing__lisp_parser_module__name);
+  Py_DECREF(suger_processing__lisp_parser_module__name);
+  if (suger_processing__lisp_parser_module__name == NULL) {
+    throw std::runtime_error("Strange, cannot find the module 'venture.lisp_parser'.");
   }
-  suger_processing__process_sugars = PyObject_GetAttrString(suger_processing__main_module, "process_sugars");
-  Py_DECREF(suger_processing__main_module);
-  if (suger_processing__main_module__name == NULL) {
-    throw std::runtime_error("For some reason the function 'process_sugars' is not defined.");
+  suger_processing__process_sugars = PyObject_GetAttrString(suger_processing__lisp_parser_module, "read");
+  Py_DECREF(suger_processing__lisp_parser_module);
+  if (suger_processing__lisp_parser_module__name == NULL) {
+    throw std::runtime_error("For some reason the function 'venture.lisp_parser.read' is not defined.");
   }
   suger_processing__process_sugars__arguments = PyTuple_Pack(1, python_object);
-  if (suger_processing__main_module__name == NULL) {
-    throw std::runtime_error("Cannot execute the function 'python_object' with the provided argument.");
+  if (suger_processing__lisp_parser_module__name == NULL) {
+    throw std::runtime_error("Cannot execute the function 'venture.lisp_parser.read' with the provided argument.");
+  }
+
+  PyObject* python_object_changed = PyObject_CallObject(suger_processing__process_sugars, suger_processing__process_sugars__arguments);
+  Py_DECREF(suger_processing__process_sugars);
+  Py_DECREF(suger_processing__process_sugars__arguments);
+  if (python_object_changed == NULL) {
+    // Assuming that Python raised some error.
+    // Pass this error further.
+    throw handling_python_error();
+    /* Old code to delete:
+      PyObject* error_string__as_Python_object = PyObject_Str(PyExc_Exception);
+      if (error_string__as_Python_object == NULL) {
+        throw std::runtime_error("The function 'venture.lisp_parser.read' has raised an error (or was not evaluated for some other reason). Cannot get the error message.");
+      }
+      const char* error_string = PyString_AsString(error_string__as_Python_object);
+      Py_DECREF(error_string__as_Python_object);
+      throw std::runtime_error("The function 'venture.lisp_parser.read' has raised an error (or was not evaluated for some other reason). The error message: " + string(error_string));
+    */
+  }
+
+  ConvertPythonObjectToVentureValue_internal(python_object_changed, pointer_to_shared_pointer);
+  
+  Py_DECREF(python_object_changed);
+  return true;
+}
+
+bool ConvertPythonObjectToVentureValue_internal
+  (PyObject* python_object,
+   shared_ptr<VentureValue>* pointer_to_shared_pointer)
+{
+  PyObject *suger_processing__sugars_processor_module__name;
+  PyObject *suger_processing__sugars_processor_module;
+  PyObject *suger_processing__process_sugars;
+  PyObject *suger_processing__process_sugars__arguments;
+  
+  suger_processing__sugars_processor_module__name = PyString_FromString("venture.sugars_processor");
+  if (suger_processing__sugars_processor_module__name == NULL) {
+    throw std::runtime_error("Strange, cannot create the string 'venture.sugars_processor'.");
+  }
+  suger_processing__sugars_processor_module = PyImport_Import(suger_processing__sugars_processor_module__name);
+  Py_DECREF(suger_processing__sugars_processor_module__name);
+  if (suger_processing__sugars_processor_module__name == NULL) {
+    throw std::runtime_error("Strange, cannot find the module 'venture.sugars_processor'.");
+  }
+  suger_processing__process_sugars = PyObject_GetAttrString(suger_processing__sugars_processor_module, "process_sugars");
+  Py_DECREF(suger_processing__sugars_processor_module);
+  if (suger_processing__sugars_processor_module__name == NULL) {
+    throw std::runtime_error("For some reason the function 'venture.sugars_processor.process_sugars' is not defined.");
+  }
+  suger_processing__process_sugars__arguments = PyTuple_Pack(1, python_object);
+  if (suger_processing__sugars_processor_module__name == NULL) {
+    throw std::runtime_error("Cannot execute the function 'venture.sugars_processor.process_sugars' with the provided argument.");
   }
 
   python_object = PyObject_CallObject(suger_processing__process_sugars, suger_processing__process_sugars__arguments);
@@ -101,11 +153,11 @@ bool ConvertPythonObjectToVentureValue
     /* Old code to delete:
       PyObject* error_string__as_Python_object = PyObject_Str(PyExc_Exception);
       if (error_string__as_Python_object == NULL) {
-        throw std::runtime_error("The function 'python_object' has raised an error (or was not evaluated for some other reason). Cannot get the error message.");
+        throw std::runtime_error("The function 'venture.sugars_processor.process_sugars' has raised an error (or was not evaluated for some other reason). Cannot get the error message.");
       }
       const char* error_string = PyString_AsString(error_string__as_Python_object);
       Py_DECREF(error_string__as_Python_object);
-      throw std::runtime_error("The function 'python_object' has raised an error (or was not evaluated for some other reason). The error message: " + string(error_string));
+      throw std::runtime_error("The function 'venture.sugars_processor.process_sugars' has raised an error (or was not evaluated for some other reason). The error message: " + string(error_string));
     */
   }
 

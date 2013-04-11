@@ -54,12 +54,13 @@ void InitGSL() {
   VENTURE_GLOBAL__current_random_seed = seed;
 }
   
-PyMODINIT_FUNC initventure_engine(void) {
+PyMODINIT_FUNC init_engine(void) {
   InitGSL();
   InitRIPL();
-  PyRun_SimpleString("import os.path"); // FIXME: absolute path.
-  PyRun_SimpleString("from sugars_processor import *");
-  Py_InitModule("engine", MethodsForPythons);
+  // PyRun_SimpleString("import os.path"); // FIXME: absolute path.
+  // PyRun_SimpleString("from venture.sugars_processor import process_sugars");
+  PyRun_SimpleString("import venture.sugars_processor");
+  Py_InitModule("_engine", MethodsForPythons);
 }
 
 int main(int argc, char *argv[])

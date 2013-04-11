@@ -14,7 +14,7 @@ venture_extra_compile_args = ['-O2']
 # venture_libraries += ['profiler']
 # venture_extra_compile_args += ['-D_VENTURE_USE_GOOGLE_PROFILER']
 
-module1 = Extension('venture.engine',
+module1 = Extension('_engine',
                     define_macros = [('MAJOR_VERSION', '1'),
                                      ('MINOR_VERSION', '0')],
                     # include_dirs = ['/usr/include/python' + str(sys.version_info[0]) + '.' + str(sys.version_info[1])],
@@ -24,7 +24,7 @@ module1 = Extension('venture.engine',
                     sources = ['Utilities.cpp', 'VentureValues.cpp', 'VentureParser.cpp', 'Primitives.cpp', 'Evaluator.cpp', 'Main.cpp', 'XRPCore.cpp', 'XRPmem.cpp', 'XRPs.cpp', 'RIPL.cpp', 'Analyzer.cpp', 'ERPs.cpp', 'MHProposal.cpp', 'PythonProxy.cpp'])
 #-lpython2.6 -lgsl -lgslcblas
 
-setup (name = 'Venture engine',
+setup (name = 'venture',
        version = '1.0',
        description = 'Testing',
        author = 'MIT Probabilistic Computing Project',
@@ -33,5 +33,6 @@ setup (name = 'Venture engine',
        long_description = '''
 TBA.
 ''',
+       ext_package = "venture",
        ext_modules = [module1],
-       py_modules = ["venture.client", "venture.sugars_processor", "venture.rest_server", "venture.lisp_parser"])
+       py_modules = ["venture.client", "venture.sugars_processor", "venture.rest_server", "venture.lisp_parser", "venture.engine", "venture.utils"])
