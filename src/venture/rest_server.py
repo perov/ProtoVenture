@@ -26,6 +26,8 @@ def get_response(string):
     return resp
     
 def start_venture_server(specified_port):
+  import venture._engine as venture_engine
+
   global app
   app = flask.Flask(__name__)
 

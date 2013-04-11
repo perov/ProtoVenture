@@ -1,3 +1,6 @@
+
+import venture.utils
+
 import requests
 import pdb # Question from Yura: for what do we need it?
 try: # See for details: http://stackoverflow.com/questions/791561/python-2-5-json-module
@@ -202,6 +205,15 @@ class RemoteRIPL():
     CheckStatus(r)
     contents = json.loads(r.content)
     return contents
+
+  def load(self, generative_model_string):
+    return venture.utils.load_to_RIPL(self, generative_model_string)
+
+  def sample(self, expression):
+    return venture.utils.sample(self, expression)
+
+  def force(self, expression):
+    return venture.utils.force(self, expression)
 
 def directives_to_string(directives): # Change 8: added new utility.
   info = []
