@@ -138,7 +138,7 @@ XRP::RescorerResampler(vector< shared_ptr<VentureValue> >& old_arguments,
   // assert(!CouldBeRescored() || !(GetSampledLoglikelihood(new_arguments, caller->my_sampled_value) == log(0.0)));
 
   if (forced_resampling || !CouldBeRescored()
-        || (GetSampledLoglikelihood(new_arguments, caller->my_sampled_value) == log(0.0))
+        // || (GetSampledLoglikelihood(new_arguments, caller->my_sampled_value) == log(0.0))
         ) { // Resampling.
 
     shared_ptr<VentureValue> new_sample;

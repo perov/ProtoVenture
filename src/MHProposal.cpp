@@ -187,6 +187,9 @@ void PropagateNewValue
   stack<OmitPattern>& omit_patterns = reevaluation_parameters->omit_patterns;
 
   while (reevaluation_queue.size() != 0) {
+    if (reevaluation_parameters->__log_p_new == log(0.0)) {
+      reevaluation_parameters->__unsatisfied_constraint = true;
+    }
     if (reevaluation_parameters->__unsatisfied_constraint == true) {
       return;
     }
