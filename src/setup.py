@@ -14,7 +14,7 @@ venture_extra_compile_args = ['-O2']
 # venture_libraries += ['profiler']
 # venture_extra_compile_args += ['-D_VENTURE_USE_GOOGLE_PROFILER']
 
-module1 = Extension('venture_engine',
+module1 = Extension('venture.engine',
                     define_macros = [('MAJOR_VERSION', '1'),
                                      ('MINOR_VERSION', '0')],
                     # include_dirs = ['/usr/include/python' + str(sys.version_info[0]) + '.' + str(sys.version_info[1])],
@@ -33,4 +33,5 @@ setup (name = 'Venture engine',
        long_description = '''
 TBA.
 ''',
-       ext_modules = [module1])
+       ext_modules = [module1],
+       py_modules = ["venture.client", "venture.sugars_processor", "venture.rest_server", "venture.lisp_parser"])

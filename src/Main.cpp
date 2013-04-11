@@ -58,16 +58,8 @@ PyMODINIT_FUNC initventure_engine(void) {
   InitGSL();
   InitRIPL();
   PyRun_SimpleString("import os.path"); // FIXME: absolute path.
-  PyRun_SimpleString((string("if os.path.exists(\"/home/picloud/venture/__PythonModule.py\"):\n") +
-                             "  execfile(\"/home/picloud/venture/__PythonModule.py\")\n" +
-                             "elif os.path.exists(\"/home/ec2-user/venture/__PythonModule.py\"):\n" +
-                             "  execfile(\"/home/ec2-user/venture/__PythonModule.py\")\n" +
-                             "elif os.path.exists(\"/home/ec2-user/Venture/src/__PythonModule.py\"):\n" +
-                             "  execfile(\"/home/ec2-user/Venture/src/__PythonModule.py\")\n" +
-                             "else:\n" +
-                             "  print(\"Cannot find __PythonModule.py!\")\n" +
-                             "").c_str());
-  Py_InitModule("venture_engine", MethodsForPythons);
+  PyRun_SimpleString("from sugars_processor import *");
+  Py_InitModule("venture.engine", MethodsForPythons);
 }
 
 int main(int argc, char *argv[])
@@ -105,8 +97,8 @@ int main(int argc, char *argv[])
   InitGSL();
   InitRIPL();
   
-  cout << "See why: Or just NULL? does not work!" << endl;
-  cout << "Notice: There should not be the 'NIL' type! Only the 'LIST' type!" << endl;
+  // cout << "See why: Or just NULL? does not work!" << endl;
+  // cout << "Notice: There should not be the 'NIL' type! Only the 'LIST' type!" << endl;
   
   int port = 8082;
   cout << argv[0] << endl;
@@ -116,7 +108,7 @@ int main(int argc, char *argv[])
 
   Py_SetProgramName(argv[0]); // Optional but recommended.
   Py_Initialize();
-  Py_InitModule("venture_engine", MethodsForPythons);
+  Py_InitModule("venture.engine", MethodsForPythons);
 
   // PyRun_SimpleFile(...) does not work in Release configuration (works in debug).
   // Read here: http://docs.python.org/2/faq/windows.html#pyrun-simplefile-crashes-on-windows-but-not-on-unix-why
