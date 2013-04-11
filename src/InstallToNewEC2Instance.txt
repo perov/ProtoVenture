@@ -1,8 +1,24 @@
 # Packages
-sudo easy_install pip
-sudo pip install flask requests
-sudo yum -y install gcc-c++
-sudo yum -y install make git python-devel
+sudo apt-get install python-setuptools
+sudo easy_install flask requests
+sudo apt-get install gcc g++ make git
+sudo apt-get install python-dev
+sudo apt-get install libgsl0-dev
+sudo apt-get install libboost-thread-dev libboost-system-dev
+
+sudo yum install python-setuptools
+sudo easy_install flask requests
+sudo yum install gcc gcc-c++ make git
+sudo yum install python-devel
+sudo yum install gsl-devel
+sudo yum install boost-system boost-thread
+sudo yum install boost boost-devel
+
+# Try boost_system and boost_thread without "-mt"
+
+ImportError: No module named engine
+
+Check with Jonathan Malmaud error (that it is not just "7 smth.")
 
 # Boost
 wget http://downloads.sourceforge.net/project/boost/boost/1.52.0/boost_1_52_0.tar.bz2
