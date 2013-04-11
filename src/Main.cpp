@@ -59,7 +59,7 @@ PyMODINIT_FUNC initventure_engine(void) {
   InitRIPL();
   PyRun_SimpleString("import os.path"); // FIXME: absolute path.
   PyRun_SimpleString("from sugars_processor import *");
-  Py_InitModule("venture.engine", MethodsForPythons);
+  Py_InitModule("engine", MethodsForPythons);
 }
 
 int main(int argc, char *argv[])
