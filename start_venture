@@ -3,7 +3,7 @@
 import sys
 
 if len(sys.argv) <= 1:
-  port = 8080 # Default.
+  port = 8082 # Default.
 else:
   port = int(sys.argv[1])
 
