@@ -17,7 +17,7 @@ venture_extra_compile_args = ['-O2']
 module1 = Extension('venture_engine',
                     define_macros = [('MAJOR_VERSION', '1'),
                                      ('MINOR_VERSION', '0')],
-                    include_dirs = ['/usr/include/python' + str(sys.version_info[0]) + '.' + str(sys.version_info[1])],
+                    # include_dirs = ['/usr/include/python' + str(sys.version_info[0]) + '.' + str(sys.version_info[1])],
                     libraries = venture_libraries,
                     extra_compile_args = venture_extra_compile_args,
                     #library_dirs = ['/usr/local/lib'],
