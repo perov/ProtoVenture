@@ -6,7 +6,7 @@ from flask import request
 from flask import make_response
 
 # Why it disables the output for the flask?
-if disable_REST_server_server is True:
+if disable_REST_server_logger is True:
   import logging
   flask_log = logging.getLogger("werkzeug")
   flask_log.setLevel(logging.DEBUG) # For some reason WARNING and ERROR! still prints requests to the console.
