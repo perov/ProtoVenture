@@ -1,4 +1,3 @@
-
 import venture.utils
 
 import requests
@@ -40,8 +39,8 @@ class RemoteRIPL():
   """
   uri --- the URI of the REST RIPL server to connect to
   """
-  def __init__(self, uri):
-    self.uri = uri
+  def __init__(self, host, port):
+    self.uri = "http://" + host + ":" + str(port)
 
   def get_seed(self):
     r = requests.get(self.uri + '/get_seed')
