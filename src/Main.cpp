@@ -109,7 +109,7 @@ int main(int argc, char *argv[])
 
   Py_SetProgramName(argv[0]); // Optional but recommended.
   Py_Initialize();
-  Py_InitModule("venture.engine", MethodsForPythons);
+  Py_InitModule("venture_engine", MethodsForPythons);
 
   // PyRun_SimpleFile(...) does not work in Release configuration (works in debug).
   // Read here: http://docs.python.org/2/faq/windows.html#pyrun-simplefile-crashes-on-windows-but-not-on-unix-why

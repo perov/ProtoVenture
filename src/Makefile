@@ -27,7 +27,7 @@ endif
 OBJECTS = $(patsubst %.cpp,%.o,$(CPP_SOURCE_FILES))
 
 DEPENDS = ${OBJECTS:.o=.d}
-EXEC = venture
+EXEC = venture_binary
 
 ${EXEC} : ${OBJECTS}
 	${CXX} ${OBJECTS} ${GDB_DEBUG} -o ${EXEC} -lpython${python_version_include} ${ADDITION_LIBRARIES} -lgsl -lgslcblas -lpthread -lboost_thread-mt -lboost_system-mt
