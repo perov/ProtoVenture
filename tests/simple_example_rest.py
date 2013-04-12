@@ -1,8 +1,7 @@
-
 import venture.client
 
 Port = 8082
-MyRIPL = venture.client.RemoteRIPL("http://127.0.0.1:" + str(Port))
+MyRIPL = venture.client.RemoteRIPL("127.0.0.1", Port)
 
 # Tricky coin
 generative_model = """
