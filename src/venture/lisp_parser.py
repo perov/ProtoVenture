@@ -2,10 +2,12 @@
 # Originally from here (with small corrections): http://norvig.com/lispy.html
 
 def read(s):
-    "Read a Venture expression from a string, an integer or a float."
+    "Read a Venture expression from a string, an integer, a float or a boolean."
     if type(s) == int:
         return s
     elif type(s) == float:
+        return s
+    elif type(s) == bool:
         return s
     elif type(s) == list:
         return s

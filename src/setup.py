@@ -22,7 +22,7 @@ def user_input(question):
 def check_for_library(library_name):
   # Found here: http://www.cac.cornell.edu/wiki/index.php?title=Python_Distutils_Tips#How_to_find_if_a_library_exists
   test_compiler = distutils.ccompiler.new_compiler(force=1)
-  test_compiler.add_library('boost_system')
+  test_compiler.add_library(library_name)
   return test_compiler.has_function('rand', libraries=[]) # "rand" is just an arbitrary function, nothing special.
   
 boost_system_library_name = ""
@@ -50,7 +50,8 @@ else:
 venture_libraries = ['gsl', 'gslcblas', 'pthread', boost_system_library_name, boost_thread_library_name] # 'profiler'
 venture_extra_compile_args = [] # ['-O2']
 
-if os.name == 'mac':
+import platform
+if platform.mac_ver()[0] != '':
   print "*** Notice: It seems you are using Mac. Adding the flag '-mmacosx-version-min=10.7'"
   venture_extra_compile_args += ['-mmacosx-version-min=10.7']
   
