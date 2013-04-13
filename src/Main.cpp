@@ -57,13 +57,12 @@ void InitGSL() {
 void ShowAnnouncement() {
   cout << endl;
   cout << "***********************************************************************" << endl;
-  cout << " Venture is currently pre-alpha software. There are likely to be" << endl;
-  cout << " critical bugs and many optimizations remain to be done before we" << endl;
-  cout << " are ready for a public release (which will be accompanied by" << endl;
-  cout << " a benchmark suite certifying the asymptotic cost of inference)." << endl;
-  cout << " Please contact us before reporting any results derived from Venture." << endl;
-  cout << endl;
-  cout << " Venture license info: http://venture.csail.mit.edu/license_info.html" << endl;
+  cout << " TESTING AGREEMENT: This is a pre-alpha, testing binary of Venture," << endl;
+  cout << " to be used only with express written permission for specific," << endl;
+  cout << " pre-agreed purposes; permission can be obtained from Vikash" << endl;
+  cout << " Mansinghka (vkm@mit.edu) or Joshua Tenenbaum (jbt@mit.edu)." << endl;
+  cout << " Publication of results obtained using Venture is also not" << endl;
+  cout << " permitted without written permission." << endl;
   cout << "***********************************************************************" << endl << endl;
 }
 
