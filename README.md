@@ -15,7 +15,7 @@ $  withzmq=true enablegdb=true make -B -j 5 # (unconditionally make all targets)
 or just
 ```
 $ make clean
-$  withzmq=true enablegdb=true make -j 5
+$ withzmq=true enablegdb=true make -j 5
 ```
 
 Venture license information: http://venture.csail.mit.edu/license_info.html"
