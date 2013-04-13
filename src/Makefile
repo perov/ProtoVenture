@@ -1,3 +1,4 @@
+
 CXX = g++
 
 python_version_full := $(wordlist 2,4,$(subst ., ,$(shell python --version 2>&1)))
@@ -9,16 +10,17 @@ python_version_include := ${python_version_major}.${python_version_minor}
 CXXFLAGS = -c -O2 -I/usr/include/python${python_version_include}
 CPP_SOURCE_FILES = $(wildcard *.cpp)
 
-# "make withzmq=true" adds external XRP support.
-ifneq (,$(findstring withzmq,$(MAKEFLAGS)))
+# "withzmq=true make" adds external XRP support.
+ifneq ($(withzmq),)
   ADDITION_LIBRARIES = -lzmq
+  CXX := $(CXX) -DVENTURE__FLAG__COMPILE_WITH_ZMQ
 else
   ADDITION_LIBRARIES = 
   CPP_SOURCE_FILES := $(filter-out %ExternalXRPInterface.cpp, $(CPP_SOURCE_FILES))
 endif
 
-# "make enablegdb=true" adds -g flag for "g++" (enables GDB).
-ifneq (,$(findstring enablegdb,$(MAKEFLAGS)))
+# "enablegdb=true make" adds -g flag for "g++" (enables GDB).
+ifneq ($(enablegdb),)
   GDB_DEBUG = -g
 else
   GDB_DEBUG = 
