@@ -643,8 +643,8 @@ string ERP__CompareImages::GetName() { return "ERP__CompareImages"; }
 
 real ERP__GetLetterId::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
                                  shared_ptr<VentureValue> sampled_value) {
-  int left_bound = 1;
-  int right_bound = 26;
+  int left_bound = 0;
+  int right_bound = 4;
   if (arguments.size() == 0) {
     if (ToVentureType<VentureCount>(sampled_value)->GetInteger() >= left_bound &&
       ToVentureType<VentureCount>(sampled_value)->GetInteger() <= right_bound) {
@@ -657,8 +657,8 @@ real ERP__GetLetterId::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> 
   }
 }
 shared_ptr<VentureValue> ERP__GetLetterId::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
-  int left_bound = 1;
-  int right_bound = 26;
+  int left_bound = 0;
+  int right_bound = 4;
   if (arguments.size() == 0) {
     int random_value = UniformDiscrete(left_bound, right_bound);
     return shared_ptr<VentureCount>(new VentureCount(random_value));
@@ -672,7 +672,7 @@ bool ERP__GetLetterId::CouldBeEnumerated() {
 }
 set< shared_ptr<VentureValue> > ERP__GetLetterId::EnumeratingSupport() { // FIXME: pass the *result* by reference, not by value.
   set< shared_ptr<VentureValue> > returning_set;
-  for (size_t index = 1; index <= 26; index++) {
+  for (size_t index = 0; index <= 4; index++) {
     returning_set.insert(shared_ptr<VentureCount>(new VentureCount(index)));
   }
   return returning_set;

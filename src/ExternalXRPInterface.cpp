@@ -48,7 +48,27 @@ shared_ptr<VentureValue> Primitive__LoadRemoteXRP::Sampler(vector< shared_ptr<Ve
   //Now server will send a bunch of data
   bool is_scorable, is_random_choice;
   int id_of_this_xrp;
+  char *getreply;
 
+  string message = string("LoadRemoteXRP:") + boost::lexical_cast<std::string>(xrp_name) + string(":id");
+  sendZMQmsg(message,requester,request);
+  getreply = recvZMQmsg(requester);
+  id_of_this_xrp = atoi((char *)getreply);
+  printf("%d\n",id_of_this_xrp);
+
+  message = string("LoadRemoteXRP:") + boost::lexical_cast<std::string>(xrp_name)+ string(":scorable");
+  sendZMQmsg(message,requester,request);
+  getreply = recvZMQmsg(requester);
+  is_scorable = atoi((char *)getreply);
+  printf("%d\n",is_scorable);
+
+  message = string("LoadRemoteXRP:") + boost::lexical_cast<std::string>(xrp_name)+ string(":rand");
+  sendZMQmsg(message,requester,request);
+  getreply = recvZMQmsg(requester);
+  is_random_choice = atoi((char *)getreply);
+  printf("%d\n",is_random_choice);
+
+/*
   zmq_msg_t reply;
   zmq_msg_init (&reply);
 
@@ -77,13 +97,12 @@ shared_ptr<VentureValue> Primitive__LoadRemoteXRP::Sampler(vector< shared_ptr<Ve
   is_random_choice = atoi((const char *)zmq_msg_data(&reply));
   printf("%d\n",is_random_choice);
 
-
   zmq_msg_close (&reply);
-
+*/
 
   message = string("LoadRemoteXRP:") + boost::lexical_cast<std::string>(xrp_name)+ string(":name");
   sendZMQmsg(message,requester,request);
-  char *getreply = recvZMQmsg(requester);
+  getreply = recvZMQmsg(requester);
   string name ((char *)getreply);
   printf("%s\n",name.c_str());
 
