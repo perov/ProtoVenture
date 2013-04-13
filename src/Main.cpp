@@ -53,8 +53,22 @@ void InitGSL() {
   gsl_rng_set(random_generator, seed);
   VENTURE_GLOBAL__current_random_seed = seed;
 }
-  
+
+void ShowAnnouncement() {
+  cout << endl;
+  cout << "***********************************************************************" << endl;
+  cout << " Venture is currently pre-alpha software. There are likely to be" << endl;
+  cout << " critical bugs and many optimizations remain to be done before we" << endl;
+  cout << " are ready for a public release (which will be accompanied by" << endl;
+  cout << " a benchmark suite certifying the asymptotic cost of inference)." << endl;
+  cout << " Please contact us before reporting any results derived from Venture." << endl;
+  cout << endl;
+  cout << " Venture license info: http://venture.csail.mit.edu/license_info.html" << endl;
+  cout << "***********************************************************************" << endl << endl;
+}
+
 PyMODINIT_FUNC init_engine(void) {
+  ShowAnnouncement();
   InitGSL();
   InitRIPL();
   // PyRun_SimpleString("import os.path"); // FIXME: absolute path.
@@ -65,8 +79,14 @@ PyMODINIT_FUNC init_engine(void) {
 
 int main(int argc, char *argv[])
 {
+  ShowAnnouncement();
 #ifdef _MSC_VER
   _CrtSetDbgFlag ( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
+#endif
+#ifndef NDEBUG
+  cout << "Venture is compiled with compiler debug flag" << endl;
+#else
+  cout << "Venture is compiled without compiler debug flag" << endl;
 #endif
 
   /*

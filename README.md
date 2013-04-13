@@ -17,3 +17,5 @@ or just
 $ make clean
 $ make withzmq=true enablegdb=true -j 5
 ```
+
+Venture license information: http://venture.csail.mit.edu/license_info.html"

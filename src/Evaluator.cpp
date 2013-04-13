@@ -233,6 +233,7 @@ ConstrainingResult ConstrainBranch(shared_ptr<NodeEvaluation> toppest_branch_nod
         return CONSTRAININGRESULT_CANNOT_CONSTRAIN; // The already forced value is not the value we want. Rejecting.
       } else {
         if (!node2->xrp->xrp->CouldBeRescored()) {
+          reevaluation_parameters->__unsatisfied_constraint = true;
           return CONSTRAININGRESULT_CANNOT_CONSTRAIN;
         }
         vector< shared_ptr<VentureValue> > got_arguments = GetArgumentsFromEnvironment(node2->environment, // Not efficient?

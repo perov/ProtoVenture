@@ -56,7 +56,10 @@ socket._socket
 
 print "Hello"
 
-from venture.sugars_processor import *
+import os
+print os.getcwd()
+sys.path.append(os.getcwd() + "/venture")
+from sugars_processor import *
 
 import venture_engine
 
