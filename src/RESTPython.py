@@ -56,15 +56,8 @@ socket._socket
 
 print "Hello"
 
-import os
-print os.getcwd()
-sys.path.append(os.getcwd() + "/venture")
-import sugars_processor
-import lisp_parser
-import imp
-venture = imp.new_module("venture")
-venture.sugars_processor = sugars_processor
-venture.lisp_parser = lisp_parser
+import venture.lisp_parser
+import venture.sugars_processor
 
 import venture_engine
 
