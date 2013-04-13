@@ -8,12 +8,20 @@ cloud.setkey(5529, api_secretkey='d492275c1761470b0add06d6ece2c89d406482d7')
 cloud_environment = 'venture-2-' + str(sys.version_info[1])
 import time
 
-NumberOfSamples = 20
+def get_random_random_seed():
+  import urllib2
+  usock = urllib2.urlopen("http://www.yuraperov.com/MIT.PCP/get_random_seed.php")
+  data = usock.read()
+  usock.close()
+  return int(data)
+
+NumberOfSamples = 100
 IntermediateMHIterations = 100
 
 def sample_once(void_argument):
   import venture.engine
   MyRIPL = venture.engine
+  MyRIPL.set_seed(get_random_random_seed())
   # Tricky coin
   generative_model = """
   [CLEAR]
