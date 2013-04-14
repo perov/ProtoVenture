@@ -1,4 +1,3 @@
-
 #include "HeaderPre.h"
 #include "Header.h"
 #include "VentureValues.h"
@@ -234,7 +233,7 @@ PyObject* VentureValue::GetAsPythonObject() { throw std::runtime_error("Should n
 PyObject* VentureBoolean::GetAsPythonObject() { if (this->data) { Py_INCREF(Py_True); return Py_True; } else { Py_INCREF(Py_False); return Py_False; } }
 PyObject* VentureCount::GetAsPythonObject() { return Py_BuildValue("i", this->data); }
 PyObject* VentureReal::GetAsPythonObject() { return Py_BuildValue("d", this->data); }
-PyObject* VentureAtom::GetAsPythonObject() { return Py_BuildValue("i", this->data); }
+PyObject* VentureAtom::GetAsPythonObject() { return Py_BuildValue("s", "a[" + boost::lexical_cast<string>(this->data) + "]"); }
 PyObject* VentureProbability::GetAsPythonObject() { return Py_BuildValue("d", this->data); }
 PyObject* VentureSimplexPoint::GetAsPythonObject() {
   PyObject* returning_tuple = PyTuple_New(data.size());
