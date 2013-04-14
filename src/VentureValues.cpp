@@ -8,7 +8,8 @@ void VentureValue::CheckMyData(VentureValue* venture_value) {
 }
 void VentureCount::CheckMyData(VentureValue* venture_value) {
   if (venture_value->GetInteger() < 0) {
-    throw std::runtime_error("VentureCount should be non-negative.");
+    // Disabled just for now, before we have VentureNumber.
+    // throw std::runtime_error("VentureCount should be non-negative.");
   }
 }
 void VentureReal::CheckMyData(VentureValue* venture_value) {
