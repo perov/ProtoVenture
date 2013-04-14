@@ -160,7 +160,7 @@ class RemoteRIPL():
       r = requests.get(self.uri + '/logscore')
       CheckStatus(r)
       contents = json.loads(r.content)
-      return contents # Returns the dictionary with the key 'total_logscore'.
+      return contents['logscore'] # Returns the dictionary with the key 'total_logscore'.
     else:
       # Get the logscore of the outermost
       # XRP of the OBSERVE directive.
