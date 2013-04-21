@@ -76,6 +76,14 @@ PyMODINIT_FUNC init_engine(void) {
   Py_InitModule("_engine", MethodsForPythons);
 }
 
+
+// This one is for the new python stack
+PyMODINIT_FUNC init_cpp_engine_extension(void) {
+  InitGSL();
+  InitRIPL();
+  Py_InitModule("_cpp_engine_extension", MethodsForPythons);
+}
+
 int main(int argc, char *argv[])
 {
   ShowAnnouncement();
