@@ -65,11 +65,15 @@ real ERP__Binomial::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& 
     throw std::runtime_error("Wrong number of arguments.");
   }
   int number_of_successes = sampled_value->GetInteger();
-  return
-    gsl_sf_lngamma(number_of_attempts + 1) -
-    (gsl_sf_lngamma(number_of_attempts - number_of_successes + 1) +
-    gsl_sf_lngamma(number_of_successes + 1)) + log(weight) * number_of_successes +
-    log(1 - weight) * (number_of_attempts - number_of_successes);
+  if (number_of_successes > number_of_attempts) {
+    return log(0.0);                
+  } else {
+    return
+      gsl_sf_lngamma(number_of_attempts + 1) -
+      (gsl_sf_lngamma(number_of_attempts - number_of_successes + 1) +
+      gsl_sf_lngamma(number_of_successes + 1)) + log(weight) * number_of_successes +
+      log(1 - weight) * (number_of_attempts - number_of_successes);
+  }
 }
 shared_ptr<VentureValue> ERP__Binomial::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
   real weight;
