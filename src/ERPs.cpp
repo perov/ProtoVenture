@@ -55,10 +55,10 @@ string ERP__Flip::GetName() { return "ERP__Flip"; }
 real ERP__Binomial::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
                                 shared_ptr<VentureValue> sampled_value) { // inline?
   real weight;
-  int number_of_attemtps;
+  int number_of_attempts;
   if (arguments.size() == 2) {
     VentureCount::CheckMyData(arguments[0].get());
-    number_of_attemtps = arguments[0]->GetInteger();
+    number_of_attempts = arguments[0]->GetInteger();
     VentureProbability::CheckMyData(arguments[1].get());
     weight = arguments[1]->GetReal();
   } else {
@@ -66,23 +66,23 @@ real ERP__Binomial::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& 
   }
   int number_of_successes = sampled_value->GetInteger();
   return
-    gsl_sf_lngamma(number_of_attemtps + 1) -
-    (gsl_sf_lngamma(number_of_attemtps - number_of_successes + 1) +
+    gsl_sf_lngamma(number_of_attempts + 1) -
+    (gsl_sf_lngamma(number_of_attempts - number_of_successes + 1) +
     gsl_sf_lngamma(number_of_successes + 1)) + log(weight) * number_of_successes +
-    log(1 - weight) * (number_of_attemtps - number_of_successes);
+    log(1 - weight) * (number_of_attempts - number_of_successes);
 }
 shared_ptr<VentureValue> ERP__Binomial::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
   real weight;
-  int number_of_attemtps;
+  int number_of_attempts;
   if (arguments.size() == 2) {
     VentureCount::CheckMyData(arguments[0].get());
-    number_of_attemtps = arguments[0]->GetInteger();
+    number_of_attempts = arguments[0]->GetInteger();
     VentureProbability::CheckMyData(arguments[1].get());
     weight = arguments[1]->GetReal();
   } else {
     throw std::runtime_error("Wrong number of arguments.");
   }
-  return shared_ptr<VentureCount>(new VentureCount(gsl_ran_binomial(random_generator, weight, number_of_attemtps)));
+  return shared_ptr<VentureCount>(new VentureCount(gsl_ran_binomial(random_generator, weight, number_of_attempts)));
 }
 string ERP__Binomial::GetName() { return "ERP__Binomial"; }
 
