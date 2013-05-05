@@ -6,7 +6,7 @@
 #include "ExternalXRPInterface.h"
 #endif
 
-#include "Shell/PrimitiveProbabilisticProcedures.h"
+#include "Shell_PPPs.h"
 
 // Should be called DirectiveEntry!
 directive_entry::directive_entry(string directice_as_string,

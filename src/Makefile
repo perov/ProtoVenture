@@ -8,7 +8,7 @@ python_version_patch := $(word 3,${python_version_full})
 python_version_include := ${python_version_major}.${python_version_minor}
 
 CXXFLAGS = -c -O2 -I/usr/include/python${python_version_include}
-CPP_SOURCE_FILES = $(wildcard *.cpp) $(wildcard */*.cpp)
+CPP_SOURCE_FILES = $(wildcard *.cpp)
 
 # "withzmq=true make" adds external XRP support.
 ifneq ($(withzmq),)

@@ -446,10 +446,14 @@ shared_ptr<VentureList> ToVentureList(shared_ptr<VentureValue> value_reference) 
 
 VenturePythonObject::VenturePythonObject(PyObject* python_object)
   : python_object(python_object)
-  {}
+{
+  if (python_object == NULL) {
+    throw std::runtime_error("python_objects should not be NULL!");
+  }
+}
 
 VenturePythonObject::~VenturePythonObject() {
-  Py_XDECREF(python_object);
+  Py_DECREF(python_object);
 }
 
 void VenturePythonObject::CheckMyData(VentureValue* venture_value)

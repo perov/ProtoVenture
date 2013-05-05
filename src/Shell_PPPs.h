@@ -2,11 +2,11 @@
 #ifndef VENTURE___SHELL__PRIMITIVE_PROBABILISTIC_PROCEDURES_H
 #define VENTURE___SHELL__PRIMITIVE_PROBABILISTIC_PROCEDURES_H
 
-#include "../Header.h"
-#include "../VentureValues.h"
-#include "../VentureParser.h"
-#include "../XRPCore.h"
-#include "../ERPs.h"
+#include "Header.h"
+#include "VentureValues.h"
+#include "VentureParser.h"
+#include "XRPCore.h"
+#include "ERPs.h"
 
 // Deterministic procedures.
 
