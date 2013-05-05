@@ -461,7 +461,10 @@ void VenturePythonObject::CheckMyData(VentureValue* venture_value)
 
 VentureDataTypes VenturePythonObject::GetType() { return PYTHON_OBJECT; }
 
-PyObject* VenturePythonObject::GetAsPythonObject() { return python_object; }
+PyObject* VenturePythonObject::GetAsPythonObject() {
+  Py_INCREF(python_object); // We assume that somebody is going to use this object.
+  return python_object;
+}
 
 bool VenturePythonObject::CompareByValue(shared_ptr<VentureValue> another) {
   // Should be better, with Python "=="!

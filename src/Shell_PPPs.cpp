@@ -38,7 +38,7 @@ real ERP__GetLobePosX::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> 
   
   vector< shared_ptr<VentureValue> > arguments_to_python = arguments;
   arguments_to_python.push_back(sampled_value);
-  
+
   return PyFloat_AsDouble(ExecutePythonFunction("Shell", "get_lobe_pos_x__logscore", arguments_to_python)->GetAsPythonObject());
 }
 
@@ -64,7 +64,7 @@ real ERP__GetLobePosY::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> 
   vector< shared_ptr<VentureValue> > arguments_to_python = arguments;
   arguments_to_python.push_back(sampled_value);
   
-  return PyFloat_AsDouble(ExecutePythonFunction("Shell", "get_lobe_pos_x__logscore", arguments_to_python)->GetAsPythonObject());
+  return PyFloat_AsDouble(ExecutePythonFunction("Shell", "get_lobe_pos_y__logscore", arguments_to_python)->GetAsPythonObject());
 }
 
 shared_ptr<VentureValue> ERP__GetLobePosY::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
