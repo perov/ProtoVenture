@@ -7,13 +7,15 @@
 // Deterministic procedures.
 
 shared_ptr<VentureValue> Primitive__GenerateEmptySurfaceAndPMapPrior::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
-  if(arguments.size() != 5) {
+  if(arguments.size() != 0) {
     throw std::runtime_error("Wrong number of arguments.");
   }
   
   return ExecutePythonFunction("Shell", "generate_empty_surface_and_pmap_prior", arguments);
 }
 string Primitive__GenerateEmptySurfaceAndPMapPrior::GetName() { return "Primitive__GenerateEmptySurfaceAndPMapPrior"; }
+
+
 
 shared_ptr<VentureValue> Primitive__UpdatePMapAndAddLobe::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
   if(arguments.size() != 5) {
@@ -23,6 +25,9 @@ shared_ptr<VentureValue> Primitive__UpdatePMapAndAddLobe::Sampler(vector< shared
   return ExecutePythonFunction("Shell", "update_p_map_and_add_lobe", arguments);
 }
 string Primitive__UpdatePMapAndAddLobe::GetName() { return "Primitive__UpdatePMapAndAddLobe"; }
+
+
+
 
 // Elementary probabilistic procedure.
 
@@ -37,6 +42,8 @@ real ERP__GetLobePosX::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> 
   
   return PyFloat_AsDouble(ExecutePythonFunction("Shell", "get_lobe_pos_x__logscore", arguments_to_python)->GetAsPythonObject());
 }
+
+
 shared_ptr<VentureValue> ERP__GetLobePosX::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
   if (arguments.size() != 1) {
     throw std::runtime_error("Wrong number of arguments.");
@@ -45,6 +52,9 @@ shared_ptr<VentureValue> ERP__GetLobePosX::Sampler(vector< shared_ptr<VentureVal
   return ExecutePythonFunction("Shell", "get_lobe_pos_x", arguments);
 }
 string ERP__GetLobePosX::GetName() { return "ERP__GetLobePosX"; }
+
+
+
 
 real ERP__GetLobePosY::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
                                 shared_ptr<VentureValue> sampled_value) { // inline?
@@ -57,7 +67,8 @@ real ERP__GetLobePosY::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> 
   
   return PyFloat_AsDouble(ExecutePythonFunction("Shell", "get_lobe_pos_x__logscore", arguments_to_python)->GetAsPythonObject());
 }
-shared_ptr<VentureValue> ERP__GetLobePosX::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+
+shared_ptr<VentureValue> ERP__GetLobePosY::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
   if (arguments.size() != 1) {
     throw std::runtime_error("Wrong number of arguments.");
   }
@@ -66,9 +77,10 @@ shared_ptr<VentureValue> ERP__GetLobePosX::Sampler(vector< shared_ptr<VentureVal
 }
 string ERP__GetLobePosY::GetName() { return "ERP__GetLobePosY"; }
 
+
 real ERP__NoisyDrillWell::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
                                 shared_ptr<VentureValue> sampled_value) { // inline?
-  if (arguments.size() != ) {
+  if (arguments.size() != 2) {
     throw std::runtime_error("Wrong number of arguments.");
   }
   
@@ -78,7 +90,7 @@ real ERP__NoisyDrillWell::GetSampledLoglikelihood(vector< shared_ptr<VentureValu
   return PyFloat_AsDouble(ExecutePythonFunction("Shell", "noisy_drill_well__logscore", arguments_to_python)->GetAsPythonObject());
 }
 shared_ptr<VentureValue> ERP__NoisyDrillWell::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
-  if (arguments.size() != 1) {
+  if (arguments.size() != 3) {
     throw std::runtime_error("Wrong number of arguments.");
   }
   
