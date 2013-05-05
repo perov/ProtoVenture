@@ -92,4 +92,9 @@ ForPython___exit(PyObject *self, PyObject *args);
 
 extern PyMethodDef MethodsForPythons[];
 
+shared_ptr< VenturePythonObject > ExecutePythonFunction(
+  string module_name_as_string,
+  string function_name,
+  vector< shared_ptr<VentureValue> > arguments);
+
 #endif

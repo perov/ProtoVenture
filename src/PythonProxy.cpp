@@ -577,3 +577,57 @@ ForPython___exit(PyObject *self, PyObject *args)
 
   exit(0);
 } catch(handling_python_error&) { return NULL; } catch(std::runtime_error& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }
+
+
+shared_ptr< VenturePythonObject > ExecutePythonFunction(
+  string module_name_as_string,
+  string function_name,
+  vector< shared_ptr<VentureValue> > arguments)
+{
+  PyObject *module_name_as_python_object;
+  PyObject *module;
+  PyObject *function;
+  PyObject *arguments_as_python_object;
+  
+  module_name_as_python_object = PyString_FromString(module_name_as_string.c_str());
+  if (module_name_as_python_object == NULL) {
+    throw std::runtime_error("Strange, cannot create the string '" + module_name_as_string + "'.");
+  }
+  module = PyImport_Import(module_name_as_python_object);
+  Py_DECREF(module_name_as_python_object);
+  if (module == NULL) {
+    throw std::runtime_error("Strange, cannot find the module '" + module_name_as_string + "'.");
+  }
+  function = PyObject_GetAttrString(module, function_name.c_str());
+  Py_DECREF(module);
+  if (function == NULL) {
+    throw std::runtime_error("For some reason the function '" + module_name_as_string + "." + function_name + "' is not defined.");
+  }
+  arguments_as_python_object = PyTuple_New(arguments.size());
+  for (size_t index = 0; index < arguments.size(); index++) {
+    PyTuple_SetItem(arguments_as_python_object, index, arguments[index]->GetAsPythonObject());
+  }
+  if (arguments_as_python_object == NULL) {
+    throw std::runtime_error("Cannot execute the function '" + module_name_as_string + "." + function_name + "' with the provided argument.");
+  }
+
+  PyObject* output_value = PyObject_CallObject(function, arguments_as_python_object);
+  Py_DECREF(function);
+  Py_DECREF(arguments_as_python_object);
+  if (output_value == NULL) {
+    // Assuming that Python raised some error.
+    // Pass this error further.
+    throw handling_python_error();
+    /* Old code to delete:
+      PyObject* error_string__as_Python_object = PyObject_Str(PyExc_Exception);
+      if (error_string__as_Python_object == NULL) {
+        throw std::runtime_error("The function 'venture.lisp_parser.read' has raised an error (or was not evaluated for some other reason). Cannot get the error message.");
+      }
+      const char* error_string = PyString_AsString(error_string__as_Python_object);
+      Py_DECREF(error_string__as_Python_object);
+      throw std::runtime_error("The function 'venture.lisp_parser.read' has raised an error (or was not evaluated for some other reason). The error message: " + string(error_string));
+    */
+  }
+
+  return shared_ptr< VenturePythonObject >(new VenturePythonObject(output_value));
+}

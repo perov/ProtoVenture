@@ -521,6 +521,10 @@ void BindStandardElementsToGlobalEnvironment() {
   BindToEnvironment(global_environment,
                     shared_ptr<VentureSymbol>(new VentureSymbol("get-letter-id")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new ERP__GetLetterId()))));
+                    
+  BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol("load-python-Shell-module")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive_LoadPythonShellModule()))));
 }
 
 
