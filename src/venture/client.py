@@ -214,6 +214,9 @@ class RemoteRIPL():
   def force(self, expression, literal_value):
     return venture.utils.force(self, expression, literal_value)
 
+  def get_log_probability(self, expression, literal_value):
+    return venture.utils.get_log_probability(self, expression, literal_value)
+
 def directives_to_string(directives): # Change 8: added new utility.
   info = []
   info_element = [] # Better through info_element.append(...)?
