@@ -16,7 +16,6 @@ def force(expression, literal_value):
   import venture.utils
   return venture.utils.force(venture._engine, expression, literal_value)
 
-
 def get_log_probability(expression, literal_value):
   import venture.utils
-  return venture.utils.get_log_probability(venture._engine,expression,literal_value)
+  return venture.utils.get_log_probability(venture._engine, expression, literal_value)
