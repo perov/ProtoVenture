@@ -1,4 +1,13 @@
 
+def get_log_probability(ripl,expression,literal_value):
+  prev_logscore = ripl.logscore()
+  directive = ripl.observe(expression,literal_value)
+  cur_logscore = ripl.logscore()
+  logscore = cur_logscore - prev_logscore
+  ripl.forget(directive)
+  return logscore
+
+
 def sample(ripl, expression):
   (directive_id, value) = ripl.predict(expression)
   ripl.forget(directive_id)
