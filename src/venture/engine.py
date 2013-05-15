@@ -15,3 +15,12 @@ def sample(expression):
 def force(expression, literal_value):
   import venture.utils
   return venture.utils.force(venture._engine, expression, literal_value)
+
+
+def get_log_probability(expression, literal_value):
+  prev_logscore = venture._engine.logscore()
+  directive = venture._engine.observe(expression,literal_value)
+  cur_logscore = venture._engine.logscore()
+  logscore = cur_logscore - prev_logscore
+  venture._engine.forget(directive)
+  return logscore
