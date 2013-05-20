@@ -1,4 +1,3 @@
-
 #include "HeaderPre.h"
 #include "PythonProxy.h"
 #include "Shell_PPPs.h"
@@ -79,7 +78,7 @@ string ERP__GetLobePosY::GetName() { return "ERP__GetLobePosY"; }
 
 real ERP__NoisyDrillWell::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
                                 shared_ptr<VentureValue> sampled_value) { // inline?
-  if (arguments.size() != 2) {
+  if (arguments.size() != 3) {
     throw std::runtime_error("Wrong number of arguments.");
   }
   
