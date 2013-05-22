@@ -322,12 +322,12 @@ real ERP__SymmetricDirichlet::GetSampledLoglikelihood(vector< shared_ptr<Venture
       returned_values[index] = sampled_simplex_point[index];
     }
 
-    real likelihood = gsl_ran_dirichlet_pdf(dimensionality, arguments_for_gsl, returned_values);
+    real log_likelihood = gsl_ran_dirichlet_lnpdf(dimensionality, arguments_for_gsl, returned_values);
     
     delete [] arguments_for_gsl;
     delete [] returned_values;
 
-    return log(likelihood);
+    return log_likelihood;
   } else {
     throw std::runtime_error("Wrong number of arguments.");
   }
@@ -372,7 +372,7 @@ real ERP__Dirichlet::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >&
       returned_values[index] = sampled_simplex_point[index];
     }
 
-    real likelihood = gsl_ran_dirichlet_pdf(dimensionality, arguments_for_gsl, returned_values);
+    real likelihood = gsl_ran_dirichlet_lnpdf(dimensionality, arguments_for_gsl, returned_values);
     
     delete [] arguments_for_gsl;
     delete [] returned_values;
