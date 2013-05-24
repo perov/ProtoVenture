@@ -1,4 +1,3 @@
-
 from venture._engine import *
 
 # import sys
@@ -13,6 +12,10 @@ def sample(expression):
   import venture.utils
   return venture.utils.sample(venture._engine, expression)
 
-def force(expression):
+def force(expression, literal_value):
   import venture.utils
-  return venture.utils.force(venture._engine, expression)
+  return venture.utils.force(venture._engine, expression, literal_value)
+
+def get_log_probability(expression, literal_value):
+  import venture.utils
+  return venture.utils.get_log_probability(venture._engine, expression, literal_value)

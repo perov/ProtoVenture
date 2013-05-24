@@ -301,6 +301,7 @@ void __BlankFunction1() { // Why without this function the g++ (Unix) with -O2 r
   ToVentureType<VentureList>(shared_ptr<VentureValue>());
   ToVentureType<VentureSimplexPoint>(shared_ptr<VentureValue>());
   ToVentureType<VentureXRP>(shared_ptr<VentureValue>());
+  ToVentureType<VenturePythonObject>(shared_ptr<VentureValue>());
 #ifdef VENTURE__FLAG__COMPILE_WITH_ZMQ
   ToVentureType<VentureExternalXRPObject>(shared_ptr<VentureValue>());
 #endif
@@ -442,6 +443,35 @@ shared_ptr<VentureList> ToVentureList(shared_ptr<VentureValue> value_reference) 
   shared_ptr<VentureList> return_reference = dynamic_pointer_cast<VentureList>(value_reference);
   return return_reference;
 }
+
+VenturePythonObject::VenturePythonObject(PyObject* python_object)
+  : python_object(python_object)
+{
+  if (python_object == NULL) {
+    throw std::runtime_error("python_objects should not be NULL!");
+  }
+}
+
+VenturePythonObject::~VenturePythonObject() {
+  Py_DECREF(python_object);
+}
+
+void VenturePythonObject::CheckMyData(VentureValue* venture_value)
+{}
+
+VentureDataTypes VenturePythonObject::GetType() { return PYTHON_OBJECT; }
+
+PyObject* VenturePythonObject::GetAsPythonObject() {
+  Py_INCREF(python_object); // We assume that somebody is going to use this object.
+  return python_object;
+}
+
+bool VenturePythonObject::CompareByValue(shared_ptr<VentureValue> another) {
+  // Should be better, with Python "=="!
+  return (this->python_object == ToVentureType<VenturePythonObject>(another)->python_object);
+}
+
+string VenturePythonObject::GetString() {return "PYTHON_OBJECT_OPAQUE";}
 
 #ifdef VENTURE__FLAG__COMPILE_WITH_ZMQ
   VentureExternalXRPObject::~VentureExternalXRPObject() {

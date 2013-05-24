@@ -65,7 +65,7 @@ module1 = Extension('_engine',
                     libraries = venture_libraries,
                     extra_compile_args = venture_extra_compile_args,
                     #library_dirs = ['/usr/local/lib'],
-                    sources = ['Utilities.cpp', 'VentureValues.cpp', 'VentureParser.cpp', 'Primitives.cpp', 'Evaluator.cpp', 'Main.cpp', 'XRPCore.cpp', 'XRPmem.cpp', 'XRPs.cpp', 'RIPL.cpp', 'Analyzer.cpp', 'ERPs.cpp', 'MHProposal.cpp', 'PythonProxy.cpp'])
+                    sources = ['Utilities.cpp', 'VentureValues.cpp', 'VentureParser.cpp', 'Primitives.cpp', 'Evaluator.cpp', 'Main.cpp', 'XRPCore.cpp', 'XRPmem.cpp', 'XRPs.cpp', 'RIPL.cpp', 'Analyzer.cpp', 'ERPs.cpp', 'MHProposal.cpp', 'PythonProxy.cpp', 'Shell_PPPs.cpp'])
 #-lpython2.6 -lgsl -lgslcblas
 
 setup (name = 'venture',

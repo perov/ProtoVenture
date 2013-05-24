@@ -55,34 +55,38 @@ string ERP__Flip::GetName() { return "ERP__Flip"; }
 real ERP__Binomial::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
                                 shared_ptr<VentureValue> sampled_value) { // inline?
   real weight;
-  int number_of_attemtps;
+  int number_of_attempts;
   if (arguments.size() == 2) {
     VentureCount::CheckMyData(arguments[0].get());
-    number_of_attemtps = arguments[0]->GetInteger();
+    number_of_attempts = arguments[0]->GetInteger();
     VentureProbability::CheckMyData(arguments[1].get());
     weight = arguments[1]->GetReal();
   } else {
     throw std::runtime_error("Wrong number of arguments.");
   }
   int number_of_successes = sampled_value->GetInteger();
-  return
-    gsl_sf_lngamma(number_of_attemtps + 1) -
-    (gsl_sf_lngamma(number_of_attemtps - number_of_successes + 1) +
-    gsl_sf_lngamma(number_of_successes + 1)) + log(weight) * number_of_successes +
-    log(1 - weight) * (number_of_attemtps - number_of_successes);
+  if (number_of_successes > number_of_attempts) {
+    return log(0.0);                
+  } else {
+    return
+      gsl_sf_lngamma(number_of_attempts + 1) -
+      (gsl_sf_lngamma(number_of_attempts - number_of_successes + 1) +
+      gsl_sf_lngamma(number_of_successes + 1)) + log(weight) * number_of_successes +
+      log(1 - weight) * (number_of_attempts - number_of_successes);
+  }
 }
 shared_ptr<VentureValue> ERP__Binomial::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
   real weight;
-  int number_of_attemtps;
+  int number_of_attempts;
   if (arguments.size() == 2) {
     VentureCount::CheckMyData(arguments[0].get());
-    number_of_attemtps = arguments[0]->GetInteger();
+    number_of_attempts = arguments[0]->GetInteger();
     VentureProbability::CheckMyData(arguments[1].get());
     weight = arguments[1]->GetReal();
   } else {
     throw std::runtime_error("Wrong number of arguments.");
   }
-  return shared_ptr<VentureCount>(new VentureCount(gsl_ran_binomial(random_generator, weight, number_of_attemtps)));
+  return shared_ptr<VentureCount>(new VentureCount(gsl_ran_binomial(random_generator, weight, number_of_attempts)));
 }
 string ERP__Binomial::GetName() { return "ERP__Binomial"; }
 
@@ -318,12 +322,12 @@ real ERP__SymmetricDirichlet::GetSampledLoglikelihood(vector< shared_ptr<Venture
       returned_values[index] = sampled_simplex_point[index];
     }
 
-    real likelihood = gsl_ran_dirichlet_pdf(dimensionality, arguments_for_gsl, returned_values);
+    real log_likelihood = gsl_ran_dirichlet_lnpdf(dimensionality, arguments_for_gsl, returned_values);
     
     delete [] arguments_for_gsl;
     delete [] returned_values;
 
-    return log(likelihood);
+    return log_likelihood;
   } else {
     throw std::runtime_error("Wrong number of arguments.");
   }
@@ -368,7 +372,7 @@ real ERP__Dirichlet::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >&
       returned_values[index] = sampled_simplex_point[index];
     }
 
-    real likelihood = gsl_ran_dirichlet_pdf(dimensionality, arguments_for_gsl, returned_values);
+    real likelihood = gsl_ran_dirichlet_lnpdf(dimensionality, arguments_for_gsl, returned_values);
     
     delete [] arguments_for_gsl;
     delete [] returned_values;

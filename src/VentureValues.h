@@ -6,7 +6,7 @@
 
 enum VentureDataTypes
 {
-  UNDEFINED_TYPE, BOOLEAN, COUNT, REAL, PROBABILITY, ATOM, SIMPLEXPOINT, SMOOTHEDCOUNT, NIL, LIST, SYMBOL, LAMBDA, XRP_REFERENCE, NODE
+  UNDEFINED_TYPE, BOOLEAN, COUNT, REAL, PROBABILITY, ATOM, SIMPLEXPOINT, SMOOTHEDCOUNT, NIL, LIST, SYMBOL, LAMBDA, XRP_REFERENCE, NODE, PYTHON_OBJECT
 
 #ifdef VENTURE__FLAG__COMPILE_WITH_ZMQ
   , ZMQ, EXTERNALXRP
@@ -226,6 +226,20 @@ size_t GetSize(shared_ptr<VentureList> list);
 
 bool StandardPredicate(shared_ptr<VentureValue>);
 
+struct VenturePythonObject : public VentureValue {
+  VenturePythonObject(PyObject* python_object);
+  static void CheckMyData(VentureValue* venture_value);
+  // Question: where would be the type transformation happen?
+  //           Before this function, it seems?
+  virtual VentureDataTypes GetType();
+  virtual bool CompareByValue(shared_ptr<VentureValue>);
+  virtual string GetString();
+  virtual PyObject* GetAsPythonObject();
+  ~VenturePythonObject();
+
+  PyObject* python_object;
+};
+  
 #ifdef VENTURE__FLAG__COMPILE_WITH_ZMQ
   struct VentureExternalXRPObject : public VentureValue {
     VentureExternalXRPObject(const int, void *);

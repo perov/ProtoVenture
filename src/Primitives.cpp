@@ -402,3 +402,8 @@ shared_ptr<VentureValue> Primitive__IntegerModulo::Sampler(vector< shared_ptr<Ve
 }
 string Primitive__IntegerModulo::GetName() { return "Primitive__IntegerModulo"; }
 
+shared_ptr<VentureValue> Primitive_LoadPythonShellModule::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+  PyRun_SimpleString("import Shell");
+  return shared_ptr<VentureBoolean>(new VentureBoolean(true));
+}
+string Primitive_LoadPythonShellModule::GetName() { return "Primitive_LoadPythonShellModule"; }

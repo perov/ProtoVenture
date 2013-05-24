@@ -211,8 +211,11 @@ class RemoteRIPL():
   def sample(self, expression):
     return venture.utils.sample(self, expression)
 
-  def force(self, expression):
-    return venture.utils.force(self, expression)
+  def force(self, expression, literal_value):
+    return venture.utils.force(self, expression, literal_value)
+
+  def get_log_probability(self, expression, literal_value):
+    return venture.utils.get_log_probability(self, expression, literal_value)
 
 def directives_to_string(directives): # Change 8: added new utility.
   info = []

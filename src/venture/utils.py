@@ -1,4 +1,3 @@
-
 def sample(ripl, expression):
   (directive_id, value) = ripl.predict(expression)
   ripl.forget(directive_id)
@@ -40,3 +39,11 @@ def load_to_RIPL(ripl, generative_model_string): # Jay Baxter, March 04 2013
         else:
           raise Exception("Unknown directive")
     return {"directive_ids": directives_ids}
+
+def get_log_probability(ripl, expression, literal_value):
+  before_logscore = ripl.logscore()
+  directive_id = ripl.observe(expression, literal_value)
+  new_logscore = ripl.logscore()
+  logscore = new_logscore - before_logscore
+  ripl.forget(directive_id)
+  return logscore
