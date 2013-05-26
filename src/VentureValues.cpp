@@ -85,6 +85,9 @@ VentureNil::VentureNil() : VentureList(shared_ptr<VentureValue>()) {}
 VentureList::VentureList(shared_ptr<VentureValue> car)
   : car(car), cdr(NIL_INSTANCE) {}
 
+VentureList::VentureList(shared_ptr<VentureValue> car, shared_ptr<VentureList> cdr)
+  : car(car), cdr(cdr) {}
+
 VentureXRP::VentureXRP(shared_ptr<XRP> xrp)
   : xrp(xrp) {}
 
@@ -402,6 +405,9 @@ void AddToList(shared_ptr<VentureList> target_list, shared_ptr<VentureValue> ele
     target_list = GetNext(target_list);
   }
   target_list->cdr = shared_ptr<VentureList>(new VentureList(element));
+}
+shared_ptr<VentureList> AddFirst(shared_ptr<VentureValue> car, shared_ptr<VentureList> cdr) {
+  return shared_ptr<VentureList>(new VentureList(car, cdr));
 }
 size_t GetSize(shared_ptr<VentureList> list) {
   size_t size = 0;
