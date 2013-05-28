@@ -550,6 +550,9 @@ MHProposalResults MakeMHProposal
     real random_value = log(gsl_ran_flat(random_generator, 0, 1));
     if (global_environment->variables.count("use-tempreture") == 1) {
       to_compare /= global_environment->variables["use-tempreture"]->GetReal();
+      if (global_environment->variables.count("show-tempreture-usage") == 1) {
+        cout << "Using tempreture: " << global_environment->variables["use-tempreture"]->GetReal() << endl;
+      }
     }
     if (random_value < to_compare && reevaluation_parameters->__unsatisfied_constraint != true) {
       mh_decision = MH_APPROVED;
