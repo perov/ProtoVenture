@@ -1,4 +1,3 @@
-
 #include "HeaderPre.h"
 #include "Header.h"
 #include "VentureValues.h"
@@ -188,7 +187,6 @@ shared_ptr<VentureValue> Primitive__SimplexPoint::Sampler(vector< shared_ptr<Ven
 string Primitive__SimplexPoint::GetName() {return "Primitive__SimplexPoint";}
 
 shared_ptr<VentureValue> Primitive__List::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
-  
   if (arguments.size() == 0) {
     return NIL_INSTANCE;
   }
@@ -223,7 +221,7 @@ shared_ptr<VentureValue> Primitive__Cons::Sampler(vector< shared_ptr<VentureValu
   if (arguments.size() != 2) {
     throw std::runtime_error("Wrong number of arguments.");
   }
-  return AddFirst(arguments[0], ToVentureType<VentureList>(arguments[1]));
+  return Cons(arguments[0], ToVentureType<VentureList>(arguments[1]));
 }
 string Primitive__Cons::GetName() { return "Primitive__Cons"; }
 
