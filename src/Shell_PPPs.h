@@ -1,4 +1,3 @@
-
 #ifndef VENTURE___SHELL__PRIMITIVE_PROBABILISTIC_PROCEDURES_H
 #define VENTURE___SHELL__PRIMITIVE_PROBABILISTIC_PROCEDURES_H
 
@@ -17,6 +16,12 @@ public:
 };
 
 class Primitive__UpdatePMapAndAddLobe : public Primitive {
+  virtual shared_ptr<VentureValue> Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config);
+public:
+  virtual string GetName();
+};
+
+class Primitive__SaveToFile : public Primitive {
   virtual shared_ptr<VentureValue> Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config);
 public:
   virtual string GetName();

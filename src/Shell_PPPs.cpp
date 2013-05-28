@@ -26,6 +26,17 @@ string Primitive__UpdatePMapAndAddLobe::GetName() { return "Primitive__UpdatePMa
 
 
 
+shared_ptr<VentureValue> Primitive__SaveToFile::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+  if(arguments.size() != 1) {
+    throw std::runtime_error("Wrong number of arguments.");
+  }
+  
+  return ExecutePythonFunction("Shell", "save_to_file", arguments);
+}
+string Primitive__SaveToFile::GetName() { return "Primitive__SaveToFile"; }
+
+
+
 
 // Elementary probabilistic procedure.
 
