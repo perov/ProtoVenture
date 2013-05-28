@@ -1,4 +1,3 @@
-
 #include "HeaderPre.h"
 #include "Header.h"
 #include "VentureValues.h"
@@ -549,6 +548,9 @@ MHProposalResults MakeMHProposal
     }
   } else {
     real random_value = log(gsl_ran_flat(random_generator, 0, 1));
+    if (global_environment->variables.count("use-tempreture") == 1) {
+      to_compare /= global_environment->variables["use-tempreture"]->GetReal();
+    }
     if (random_value < to_compare && reevaluation_parameters->__unsatisfied_constraint != true) {
       mh_decision = MH_APPROVED;
     } else {
