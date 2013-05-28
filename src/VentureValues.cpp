@@ -406,7 +406,7 @@ void AddToList(shared_ptr<VentureList> target_list, shared_ptr<VentureValue> ele
   }
   target_list->cdr = shared_ptr<VentureList>(new VentureList(element));
 }
-shared_ptr<VentureList> AddFirst(shared_ptr<VentureValue> car, shared_ptr<VentureList> cdr) {
+shared_ptr<VentureList> Cons(shared_ptr<VentureValue> car, shared_ptr<VentureList> cdr) {
   return shared_ptr<VentureList>(new VentureList(car, cdr));
 }
 size_t GetSize(shared_ptr<VentureList> list) {
