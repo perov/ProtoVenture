@@ -1,4 +1,3 @@
-
 #ifndef VENTURE___VENTURE_VALUES_H
 #define VENTURE___VENTURE_VALUES_H
 
@@ -223,7 +222,7 @@ shared_ptr<VentureValue> GetNth(shared_ptr<VentureList>, size_t);
 
 void AddToList(shared_ptr<VentureList>, shared_ptr<VentureValue>);
 
-shared_ptr<VentureList> AddFirst(shared_ptr<VentureValue>, shared_ptr<VentureList>);
+shared_ptr<VentureList> Cons(shared_ptr<VentureValue>, shared_ptr<VentureList>);
 
 size_t GetSize(shared_ptr<VentureList> list);
 
