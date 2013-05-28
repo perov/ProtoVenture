@@ -516,6 +516,19 @@ void BindStandardElementsToGlobalEnvironment() {
   BindToEnvironment(global_environment,
                     shared_ptr<VentureSymbol>(new VentureSymbol("nth")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__Nth()))));
+                    
+  BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol("scv+scv")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__SCVPlusSCV()))));
+  BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol("scv*scalar")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__SCVMultiplyScalar()))));
+  BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol("scv")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__SCV()))));
+  BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol("repeat-scv")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__RepeatSCV()))));
   
   // Types casting.
   BindToEnvironment(global_environment,

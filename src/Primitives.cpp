@@ -414,3 +414,62 @@ shared_ptr<VentureValue> Primitive_LoadPythonShellModule::Sampler(vector< shared
   return shared_ptr<VentureBoolean>(new VentureBoolean(true));
 }
 string Primitive_LoadPythonShellModule::GetName() { return "Primitive_LoadPythonShellModule"; }
+
+
+
+shared_ptr<VentureValue> Primitive__SCVPlusSCV::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+  if (arguments.size() != 2) {
+    throw std::runtime_error("Wrong number of arguments.");
+  }
+  if (ToVentureType<VentureSmoothedCountVector>(arguments[0])->data.size() != ToVentureType<VentureSmoothedCountVector>(arguments[1])->data.size()) {
+    throw std::runtime_error("Smoothed count vectors should have the same size.");
+  }
+  vector<real> new_vector_elements(ToVentureType<VentureSmoothedCountVector>(arguments[0])->data.size());
+  for (size_t index = 0; index < ToVentureType<VentureSmoothedCountVector>(arguments[0])->data.size(); index++) {
+    new_vector_elements.push_back(
+      ToVentureType<VentureSmoothedCountVector>(arguments[0])->data[index] +
+        ToVentureType<VentureSmoothedCountVector>(arguments[1])->data[index]);
+  }
+  return shared_ptr<VentureSmoothedCountVector>(new VentureSmoothedCountVector(new_vector_elements));
+}
+string Primitive__SCVPlusSCV::GetName() { return "Primitive__SCVPlusSCV"; }
+
+shared_ptr<VentureValue> Primitive__SCVMultiplyScalar::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+  if (arguments.size() != 2) {
+    throw std::runtime_error("Wrong number of arguments.");
+  }
+  vector<real> new_vector_elements(ToVentureType<VentureSmoothedCountVector>(arguments[0])->data.size());
+  for (size_t index = 0; index < ToVentureType<VentureSmoothedCountVector>(arguments[0])->data.size(); index++) {
+    new_vector_elements.push_back(
+      ToVentureType<VentureSmoothedCountVector>(arguments[0])->data[index] *
+        arguments[1]->GetReal());
+  }
+  return shared_ptr<VentureSmoothedCountVector>(new VentureSmoothedCountVector(new_vector_elements));
+}
+string Primitive__SCVMultiplyScalar::GetName() { return "Primitive__SCVMultiplyScalar"; }
+
+shared_ptr<VentureValue> Primitive__SCV::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+  if (arguments.size() != 1) {
+    throw std::runtime_error("Wrong number of arguments.");
+  }
+  // Write a better error if argument is not a simplex point! Support more types?
+  vector<real> new_vector_elements(ToVentureType<VentureSimplexPoint>(arguments[0])->data.size());
+  for (size_t index = 0; index < new_vector_elements.size(); index++) {
+    new_vector_elements.push_back(ToVentureType<VentureSimplexPoint>(arguments[0])->data[index]);
+  }
+  return shared_ptr<VentureSmoothedCountVector>(new VentureSmoothedCountVector(new_vector_elements));
+}
+string Primitive__SCV::GetName() { return "Primitive__SCV"; }
+
+shared_ptr<VentureValue> Primitive__RepeatSCV::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+  if (arguments.size() != 2) {
+    throw std::runtime_error("Wrong number of arguments.");
+  }
+  // Not efficient, make with vector(..., ...)!
+  vector<real> new_vector_elements(ToVentureType<VentureSmoothedCountVector>(arguments[1])->GetInteger());
+  for (size_t index = 0; index < ToVentureType<VentureSmoothedCountVector>(arguments[1])->GetInteger(); index++) {
+    new_vector_elements.push_back(arguments[0]->GetReal());
+  }
+  return shared_ptr<VentureSmoothedCountVector>(new VentureSmoothedCountVector(new_vector_elements));
+}
+string Primitive__RepeatSCV::GetName() { return "Primitive__RepeatSCV"; }

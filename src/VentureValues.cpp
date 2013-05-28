@@ -31,6 +31,11 @@ void VentureSimplexPoint::CheckMyData(VentureValue* venture_value) {
     throw std::runtime_error("VentureSimplexPoint should be represented only by itself.");
   }
 }
+void VentureSmoothedCountVector::CheckMyData(VentureValue* venture_value) {
+  if (venture_value->GetType() == SMOOTHED_COUNT_VECTOR) {
+    throw std::runtime_error("VentureSmoothedCountVector should be represented only by itself.");
+  }
+}
 void VentureSmoothedCount::CheckMyData(VentureValue* venture_value) {
   if (venture_value->GetReal() <= 0.0) { // Add acceptable epsilon error.
                                          // What about zero?
@@ -70,6 +75,23 @@ VentureSimplexPoint::VentureSimplexPoint(vector<real>& input_data) {
   }
   if (fabs(sum - 1.0) > comparison_epsilon) {
     throw std::runtime_error("Sum of VentureSimplexPoint elements should be equal to 1.0.");
+  }
+}
+VentureSmoothedCountVector::VentureSmoothedCountVector(vector<real>& input_data) {
+  // : data(SOMEFUNCTION(data)) -- it should be implemented in this way?
+  // this->CheckMyData(this); // Blank. // FIXME!
+  size_t dimension = input_data.size();
+  if (dimension == 0) {
+    throw std::runtime_error("VentureSmoothedCountVector should be at least one-dimensional.");
+  }
+  data.reserve(dimension);
+
+  for (size_t index = 0; index < dimension; index++) {
+    real weight = input_data[index];
+    if (weight <= 0.0) { // Add acceptable epsilon error?
+      throw std::runtime_error("VentureSmoothedCountVector element should be positive.");
+    }
+    data.push_back(weight);
   }
 }
 
@@ -129,6 +151,7 @@ VentureProbability::~VentureProbability() {}
 VentureAtom::~VentureAtom() {}
 
 VentureSimplexPoint::~VentureSimplexPoint() {}
+VentureSmoothedCountVector::~VentureSmoothedCountVector() {}
 VentureSmoothedCount::~VentureSmoothedCount() {}
 VentureList::~VentureList() {}
 VentureNil::~VentureNil() {}
@@ -144,6 +167,7 @@ VentureDataTypes VentureReal::GetType() { return REAL; }
 VentureDataTypes VentureProbability::GetType() { return PROBABILITY; }
 VentureDataTypes VentureAtom::GetType() { return ATOM; }
 VentureDataTypes VentureSimplexPoint::GetType() { return SIMPLEXPOINT; }
+VentureDataTypes VentureSmoothedCountVector::GetType() { return SMOOTHED_COUNT_VECTOR; }
 VentureDataTypes VentureSmoothedCount::GetType() { return SMOOTHEDCOUNT; }
 VentureDataTypes VentureList::GetType() { return LIST; }
 VentureDataTypes VentureNil::GetType() { return NIL; }
@@ -214,6 +238,18 @@ string VentureSimplexPoint::GetString() {
   output += "]";
   return output;
 }
+string VentureSmoothedCountVector::GetString() {
+  string output = "vsc[";
+  for (size_t index = 0; index < data.size(); index++)
+  {
+    if (index > 0) {
+      output += ",";
+    }
+    output += boost::lexical_cast<string>(data[index]);
+  }
+  output += "]";
+  return output;
+}
 string VentureSmoothedCount::GetString() { return boost::lexical_cast<string>(data); }
 string VentureNil::GetString() { return "#nil"; }
 string VentureSymbol::GetString() { return symbol; }
@@ -240,6 +276,13 @@ PyObject* VentureReal::GetAsPythonObject() { return Py_BuildValue("d", this->dat
 PyObject* VentureAtom::GetAsPythonObject() { return Py_BuildValue("s", (string("a[") + string(boost::lexical_cast<string>(this->data)) + string("]")).c_str()); }
 PyObject* VentureProbability::GetAsPythonObject() { return Py_BuildValue("d", this->data); }
 PyObject* VentureSimplexPoint::GetAsPythonObject() {
+  PyObject* returning_tuple = PyTuple_New(data.size());
+  for (size_t index = 0; index < data.size(); index++) {
+    PyTuple_SetItem(returning_tuple, index, Py_BuildValue("d", data[index]));
+  }
+  return returning_tuple;
+}
+PyObject* VentureSmoothedCountVector::GetAsPythonObject() {
   PyObject* returning_tuple = PyTuple_New(data.size());
   for (size_t index = 0; index < data.size(); index++) {
     PyTuple_SetItem(returning_tuple, index, Py_BuildValue("d", data[index]));
@@ -303,6 +346,7 @@ void __BlankFunction1() { // Why without this function the g++ (Unix) with -O2 r
   ToVentureType<VentureBoolean>(shared_ptr<VentureValue>());
   ToVentureType<VentureList>(shared_ptr<VentureValue>());
   ToVentureType<VentureSimplexPoint>(shared_ptr<VentureValue>());
+  ToVentureType<VentureSmoothedCountVector>(shared_ptr<VentureValue>());
   ToVentureType<VentureXRP>(shared_ptr<VentureValue>());
   ToVentureType<VenturePythonObject>(shared_ptr<VentureValue>());
 #ifdef VENTURE__FLAG__COMPILE_WITH_ZMQ
@@ -334,6 +378,9 @@ bool VentureAtom::CompareByValue(shared_ptr<VentureValue> another) {
 }
 bool VentureSimplexPoint::CompareByValue(shared_ptr<VentureValue> another) {
   return (this->data == ToVentureType<VentureSimplexPoint>(another)->data); // FIXME: is it enough? Check for other Venture data types.
+}
+bool VentureSmoothedCountVector::CompareByValue(shared_ptr<VentureValue> another) {
+  return (this->data == ToVentureType<VentureSmoothedCountVector>(another)->data); // FIXME: is it enough? Check for other Venture data types.
 }
 bool VentureSmoothedCount::CompareByValue(shared_ptr<VentureValue> another) {
   return (this->data == ToVentureType<VentureSmoothedCount>(another)->data);

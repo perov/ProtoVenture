@@ -322,12 +322,12 @@ real ERP__SymmetricDirichlet::GetSampledLoglikelihood(vector< shared_ptr<Venture
       returned_values[index] = sampled_simplex_point[index];
     }
 
-    real log_likelihood = gsl_ran_dirichlet_lnpdf(dimensionality, arguments_for_gsl, returned_values);
+    real loglikelihood = gsl_ran_dirichlet_lnpdf(dimensionality, arguments_for_gsl, returned_values);
     
     delete [] arguments_for_gsl;
     delete [] returned_values;
 
-    return log_likelihood;
+    return loglikelihood;
   } else {
     throw std::runtime_error("Wrong number of arguments.");
   }
@@ -359,50 +359,96 @@ shared_ptr<VentureValue> ERP__SymmetricDirichlet::Sampler(vector< shared_ptr<Ven
 string ERP__SymmetricDirichlet::GetName() { return "ERP__SymmetricDirichlet"; }
 
 real ERP__Dirichlet::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<VentureValue> sampled_value) {
-  size_t dimensionality = arguments.size();
-  if (dimensionality >= 2) {
-    vector<real>& sampled_simplex_point = ToVentureType<VentureSimplexPoint>(sampled_value)->data;
-    assert(dimensionality == sampled_simplex_point.size());
-    double* arguments_for_gsl = new double[dimensionality];
-    double* returned_values = new double[dimensionality];
-
+  if (arguments.size() == 0)
+  {
+    throw std::runtime_error("Wrong number of arguments.");
+  }
+  
+  size_t dimensionality;
+  if (arguments[0]->GetType() == SMOOTHED_COUNT_VECTOR) {
+    if (arguments.size() != 1)
+    {
+      throw std::runtime_error("Wrong number of arguments.");
+    }
+    dimensionality = ToVentureType<VentureSmoothedCountVector>(arguments[0])->data.size();
+  } else {
+    if (arguments.size() < 2) {
+      throw std::runtime_error("Wrong number of arguments.");
+    }
+    dimensionality = arguments.size();
+  }
+  
+  // After this line no exceptions should happen!
+  double* arguments_for_gsl = new double[dimensionality];
+  if (arguments[0]->GetType() == SMOOTHED_COUNT_VECTOR) {
+    for (size_t index = 0; index < dimensionality; index++) {
+      arguments_for_gsl[index] = ToVentureType<VentureSmoothedCountVector>(arguments[0])->data[index];
+    }
+  } else {
     for (size_t index = 0; index < dimensionality; index++) {
       VentureSmoothedCount::CheckMyData(arguments[index].get());
       arguments_for_gsl[index] = arguments[index]->GetReal();
-      returned_values[index] = sampled_simplex_point[index];
     }
-
-    real likelihood = gsl_ran_dirichlet_lnpdf(dimensionality, arguments_for_gsl, returned_values);
-    
-    delete [] arguments_for_gsl;
-    delete [] returned_values;
-
-    return log(likelihood);
-  } else {
-    throw std::runtime_error("Wrong number of arguments.");
   }
+  
+  vector<real>& sampled_simplex_point = ToVentureType<VentureSimplexPoint>(sampled_value)->data;
+  assert(dimensionality == sampled_simplex_point.size());
+  double* returned_values = new double[dimensionality];
+
+  for (size_t index = 0; index < dimensionality; index++) {
+    returned_values[index] = sampled_simplex_point[index];
+  }
+
+  real loglikelihood = gsl_ran_dirichlet_lnpdf(dimensionality, arguments_for_gsl, returned_values);
+  
+  delete [] arguments_for_gsl;
+  delete [] returned_values;
+
+  return loglikelihood;
 }
 shared_ptr<VentureValue> ERP__Dirichlet::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
-  size_t dimensionality = arguments.size();
-  if (dimensionality >= 2) {
-    double* arguments_for_gsl = new double[dimensionality];
-    double* returned_values = new double[dimensionality];
+  if (arguments.size() == 0)
+  {
+    throw std::runtime_error("Wrong number of arguments.");
+  }
+  
+  size_t dimensionality;
+  if (arguments[0]->GetType() == SMOOTHED_COUNT_VECTOR) {
+    if (arguments.size() != 1)
+    {
+      throw std::runtime_error("Wrong number of arguments.");
+    }
+    dimensionality = ToVentureType<VentureSmoothedCountVector>(arguments[0])->data.size();
+  } else {
+    if (arguments.size() < 2) {
+      throw std::runtime_error("Wrong number of arguments.");
+    }
+    dimensionality = arguments.size();
+  }
+
+  // After this line no exceptions should happen!
+  double* arguments_for_gsl = new double[dimensionality];
+  if (arguments[0]->GetType() == SMOOTHED_COUNT_VECTOR) {
+    for (size_t index = 0; index < dimensionality; index++) {
+      arguments_for_gsl[index] = ToVentureType<VentureSmoothedCountVector>(arguments[0])->data[index];
+    }
+  } else {
     for (size_t index = 0; index < dimensionality; index++) {
       VentureSmoothedCount::CheckMyData(arguments[index].get());
       arguments_for_gsl[index] = arguments[index]->GetReal();
     }
-
-    gsl_ran_dirichlet(random_generator, dimensionality, arguments_for_gsl, returned_values);
-    
-    vector<real> returned_value_as_vector(returned_values, returned_values + dimensionality);
-    
-    delete [] arguments_for_gsl;
-    delete [] returned_values;
-
-    return shared_ptr<VentureSimplexPoint>(new VentureSimplexPoint(returned_value_as_vector));
-  } else {
-    throw std::runtime_error("Wrong number of arguments.");
   }
+ 
+  double* returned_values = new double[dimensionality];
+ 
+  gsl_ran_dirichlet(random_generator, dimensionality, arguments_for_gsl, returned_values);
+  
+  vector<real> returned_value_as_vector(returned_values, returned_values + dimensionality);
+  
+  delete [] arguments_for_gsl;
+  delete [] returned_values;
+
+  return shared_ptr<VentureSimplexPoint>(new VentureSimplexPoint(returned_value_as_vector));
 }
 string ERP__Dirichlet::GetName() { return "ERP__Dirichlet"; }
 

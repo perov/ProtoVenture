@@ -5,7 +5,8 @@
 
 enum VentureDataTypes
 {
-  UNDEFINED_TYPE, BOOLEAN, COUNT, REAL, PROBABILITY, ATOM, SIMPLEXPOINT, SMOOTHEDCOUNT, NIL, LIST, SYMBOL, LAMBDA, XRP_REFERENCE, NODE, PYTHON_OBJECT
+  UNDEFINED_TYPE, BOOLEAN, COUNT, REAL, PROBABILITY, ATOM, SIMPLEXPOINT, SMOOTHEDCOUNT, NIL, LIST, SYMBOL, LAMBDA, XRP_REFERENCE, NODE, PYTHON_OBJECT,
+  SMOOTHED_COUNT_VECTOR
 
 #ifdef VENTURE__FLAG__COMPILE_WITH_ZMQ
   , ZMQ, EXTERNALXRP
@@ -130,6 +131,20 @@ struct VentureSmoothedCount : public VentureValue {
   ~VentureSmoothedCount();
 
   real data;
+};
+
+struct VentureSmoothedCountVector : public VentureValue {
+  VentureSmoothedCountVector(vector<real>&);
+  static void CheckMyData(VentureValue* venture_value);
+  // Question: where would be the type transformation happen?
+  //           Before this function, it seems?
+  virtual VentureDataTypes GetType();
+  virtual bool CompareByValue(shared_ptr<VentureValue>);
+  virtual string GetString();
+  virtual PyObject* GetAsPythonObject();
+  ~VentureSmoothedCountVector();
+
+  vector<real> data;
 };
 
 struct VentureList;
