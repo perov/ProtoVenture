@@ -64,13 +64,13 @@ shared_ptr<VentureValue> ProcessAtom(const string& token)
   } else if (token.substr(0, 3) == "sp[") {
     string value = token.substr(3, token.length() - 3 - 1);
     vector<string> elements_as_strings;
-    boost::split(elements_as_strings, value, boost::is_any_of(","));
+    boost::split(elements_as_strings, value, boost::is_any_of(",")); // Here and in other places we should catch Boost exceptions!
     vector<real> elements;
     for (size_t index = 0; index < elements_as_strings.size(); index++) {
       elements.push_back(boost::lexical_cast<real>(elements_as_strings[index]));
     }
     return shared_ptr<VentureValue>(new VentureSimplexPoint(elements));
-  } else if (token.substr(0, 4) == "vsc[") {
+  } else if (token.substr(0, 4) == "scv[") {
     string value = token.substr(4, token.length() - 4 - 1);
     vector<string> elements_as_strings;
     boost::split(elements_as_strings, value, boost::is_any_of(","));

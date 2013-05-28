@@ -426,9 +426,9 @@ shared_ptr<VentureValue> Primitive__SCVPlusSCV::Sampler(vector< shared_ptr<Ventu
   }
   vector<real> new_vector_elements(ToVentureType<VentureSmoothedCountVector>(arguments[0])->data.size());
   for (size_t index = 0; index < ToVentureType<VentureSmoothedCountVector>(arguments[0])->data.size(); index++) {
-    new_vector_elements.push_back(
+    new_vector_elements[index] =
       ToVentureType<VentureSmoothedCountVector>(arguments[0])->data[index] +
-        ToVentureType<VentureSmoothedCountVector>(arguments[1])->data[index]);
+        ToVentureType<VentureSmoothedCountVector>(arguments[1])->data[index];
   }
   return shared_ptr<VentureSmoothedCountVector>(new VentureSmoothedCountVector(new_vector_elements));
 }
@@ -440,9 +440,9 @@ shared_ptr<VentureValue> Primitive__SCVMultiplyScalar::Sampler(vector< shared_pt
   }
   vector<real> new_vector_elements(ToVentureType<VentureSmoothedCountVector>(arguments[0])->data.size());
   for (size_t index = 0; index < ToVentureType<VentureSmoothedCountVector>(arguments[0])->data.size(); index++) {
-    new_vector_elements.push_back(
+    new_vector_elements[index] =
       ToVentureType<VentureSmoothedCountVector>(arguments[0])->data[index] *
-        arguments[1]->GetReal());
+        arguments[1]->GetReal();
   }
   return shared_ptr<VentureSmoothedCountVector>(new VentureSmoothedCountVector(new_vector_elements));
 }
@@ -455,7 +455,7 @@ shared_ptr<VentureValue> Primitive__SCV::Sampler(vector< shared_ptr<VentureValue
   // Write a better error if argument is not a simplex point! Support more types?
   vector<real> new_vector_elements(ToVentureType<VentureSimplexPoint>(arguments[0])->data.size());
   for (size_t index = 0; index < new_vector_elements.size(); index++) {
-    new_vector_elements.push_back(ToVentureType<VentureSimplexPoint>(arguments[0])->data[index]);
+    new_vector_elements[index] = ToVentureType<VentureSimplexPoint>(arguments[0])->data[index];
   }
   return shared_ptr<VentureSmoothedCountVector>(new VentureSmoothedCountVector(new_vector_elements));
 }
@@ -466,9 +466,9 @@ shared_ptr<VentureValue> Primitive__RepeatSCV::Sampler(vector< shared_ptr<Ventur
     throw std::runtime_error("Wrong number of arguments.");
   }
   // Not efficient, make with vector(..., ...)!
-  vector<real> new_vector_elements(ToVentureType<VentureSmoothedCountVector>(arguments[1])->GetInteger());
-  for (size_t index = 0; index < ToVentureType<VentureSmoothedCountVector>(arguments[1])->GetInteger(); index++) {
-    new_vector_elements.push_back(arguments[0]->GetReal());
+  vector<real> new_vector_elements(arguments[1]->GetInteger());
+  for (size_t index = 0; index < arguments[1]->GetInteger(); index++) {
+    new_vector_elements[index] = arguments[0]->GetReal();
   }
   return shared_ptr<VentureSmoothedCountVector>(new VentureSmoothedCountVector(new_vector_elements));
 }
