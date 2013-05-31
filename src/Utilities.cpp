@@ -1,4 +1,3 @@
-
 #include "HeaderPre.h"
 #include "Utilities.h"
 #include <gsl/gsl_sf.h>
@@ -79,6 +78,9 @@ real PoissonDistributionLogLikelihood(int sampled_value_count, real lambda) {
 
 real GammaDistributionLogLikelihood(real sampled_value_real, real alpha, real beta) {
   //b^a * x^{a-1} * e^{-b * x} / Gamma(a)
+  if (sampled_value_real <= 0.0) {
+    return log(0.0);
+  }
   double loglikelihood = alpha * log(beta);
   loglikelihood += (alpha - 1.0) * log(sampled_value_real);
   loglikelihood -= beta * sampled_value_real;

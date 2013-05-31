@@ -141,6 +141,7 @@ extern shared_ptr<VentureList> const NIL_INSTANCE;
 // Should be renamed to the VentureCons!
 struct VentureList : public VentureValue {
   VentureList(shared_ptr<VentureValue> car);
+  VentureList(shared_ptr<VentureValue> car, shared_ptr<VentureList> cdr);
   virtual VentureDataTypes GetType(); // Should be virtual for NIL?..
   // FIXME: add CompareByValue? Do not forget about the NIL, that it has another type?
   virtual bool CompareByValue(shared_ptr<VentureValue>);
@@ -221,6 +222,8 @@ shared_ptr<VentureList> GetNext(shared_ptr<VentureList>);
 shared_ptr<VentureValue> GetNth(shared_ptr<VentureList>, size_t);
 
 void AddToList(shared_ptr<VentureList>, shared_ptr<VentureValue>);
+
+shared_ptr<VentureList> AddFirst(shared_ptr<VentureValue>, shared_ptr<VentureList>);
 
 size_t GetSize(shared_ptr<VentureList> list);
 
