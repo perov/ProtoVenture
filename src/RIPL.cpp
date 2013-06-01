@@ -342,7 +342,7 @@ void BindStandardElementsToGlobalEnvironment() {
                     shared_ptr<VentureSymbol>(new VentureSymbol("noisy_negate")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new ERP__NoisyNegate()))));
   BindToEnvironment(global_environment,
-                    shared_ptr<VentureSymbol>(new VentureSymbol("condition_ERP")), // Make just via the std::string?
+                    shared_ptr<VentureSymbol>(new VentureSymbol("condition_erp")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new ERP__ConditionERP()))));
   BindToEnvironment(global_environment,
                     shared_ptr<VentureSymbol>(new VentureSymbol("normal")), // Make just via the std::string?
