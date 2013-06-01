@@ -308,7 +308,7 @@ void BindStandardElementsToGlobalEnvironment() {
 
   // Makers of XRPs with internal state.
   BindToEnvironment(global_environment,
-                    shared_ptr<VentureSymbol>(new VentureSymbol("CRP_make")), // Make just via the std::string?
+                    shared_ptr<VentureSymbol>(new VentureSymbol("crp_make")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new XRP__CRPmaker()))));
   BindToEnvironment(global_environment,
                     shared_ptr<VentureSymbol>(new VentureSymbol("mem")), // Make just via the std::string?
@@ -410,7 +410,7 @@ void BindStandardElementsToGlobalEnvironment() {
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__RealEqualOrLesser()))));
   BindToEnvironment(global_environment,
                     shared_ptr<VentureSymbol>(new VentureSymbol(">")), // Make just via the std::string?
-                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__RealEqualOrGreater()))));
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__RealGreater()))));
   BindToEnvironment(global_environment,
                     shared_ptr<VentureSymbol>(new VentureSymbol("<")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__RealLesser()))));
@@ -453,7 +453,7 @@ void BindStandardElementsToGlobalEnvironment() {
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__RealEqualOrLesser()))));
   BindToEnvironment(global_environment,
                     shared_ptr<VentureSymbol>(new VentureSymbol("real>")), // Make just via the std::string?
-                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__RealEqualOrGreater()))));
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__RealGreater()))));
   BindToEnvironment(global_environment,
                     shared_ptr<VentureSymbol>(new VentureSymbol("real<")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__RealLesser()))));
@@ -481,7 +481,7 @@ void BindStandardElementsToGlobalEnvironment() {
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__IntegerEqualOrLesser()))));
   BindToEnvironment(global_environment,
                     shared_ptr<VentureSymbol>(new VentureSymbol("int>")), // Make just via the std::string?
-                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__IntegerEqualOrGreater()))));
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__IntegerGreater()))));
   BindToEnvironment(global_environment,
                     shared_ptr<VentureSymbol>(new VentureSymbol("int<")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__IntegerLesser()))));
