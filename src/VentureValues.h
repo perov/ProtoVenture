@@ -262,7 +262,7 @@ struct VentureString : public VentureValue {
   VentureString(string);
   virtual VentureDataTypes GetType() { return STRING; }
   virtual bool CompareByValue(shared_ptr<VentureValue> another) {
-    return ToVentureType<VentruString>(another)->data == data;
+    return ToVentureType<VentureString>(another)->data == data;
   } // We really do not need this function?
   virtual string GetString() { return data; }
   virtual PyObject* GetAsPythonObject() { return Py_BuildValue("s", data.c_str()); }
