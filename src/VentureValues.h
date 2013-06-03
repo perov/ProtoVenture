@@ -6,12 +6,25 @@
 enum VentureDataTypes
 {
   UNDEFINED_TYPE, BOOLEAN, COUNT, REAL, PROBABILITY, ATOM, SIMPLEXPOINT, SMOOTHEDCOUNT, NIL, LIST, SYMBOL, LAMBDA, XRP_REFERENCE, NODE, PYTHON_OBJECT,
-  SMOOTHED_COUNT_VECTOR
+  SMOOTHED_COUNT_VECTOR, STRING
 
 #ifdef VENTURE__FLAG__COMPILE_WITH_ZMQ
   , ZMQ, EXTERNALXRP
 #endif
 
+};
+
+// TMP.
+struct VentureString : public VentureValue {
+  VentureString(string);
+  virtual VentureDataTypes GetType() { return STRING; }
+  virtual bool CompareByValue(shared_ptr<VentureValue> another) {
+    return ToVentureType<VentruString>(another)->data == data;
+  } // We really do not need this function?
+  virtual string GetString() { return data; }
+  virtual PyObject* GetAsPythonObject() { return Py_BuildValue("s", data.c_str()); }
+
+  string data;
 };
 
 struct VentureValue : public boost::enable_shared_from_this<VentureValue> {
