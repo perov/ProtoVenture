@@ -20,6 +20,7 @@ class ERP__MATLABFunctionTemplate : public ERP {
 
 public:
   string function_name;
+  bool if_stochastic;
 
   virtual string GetName();
 };
