@@ -1,4 +1,3 @@
-
 #include "HeaderPre.h"
 #include "Header.h"
 #include "VentureParser.h"
@@ -486,7 +485,8 @@ shared_ptr<NodeEvaluation> AnalyzeExpression(shared_ptr<VentureValue> expression
       expression->GetType() == ATOM ||
       expression->GetType() == SIMPLEXPOINT ||
       expression->GetType() == SMOOTHEDCOUNT ||
-      expression->GetType() == NIL) // As in Scheme and Lisp?.
+      expression->GetType() == NIL ||
+      expression->GetType() == STRING) // As in Scheme and Lisp?.
   {
     shared_ptr<NodeEvaluation> new_self_evaluation = shared_ptr<NodeEvaluation>(new NodeSelfEvaluating(expression));
     new_self_evaluation->comment = expression->GetString();
