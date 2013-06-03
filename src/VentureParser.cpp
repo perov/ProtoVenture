@@ -1,4 +1,3 @@
-
 #include "HeaderPre.h"
 #include "Header.h"
 #include "VentureParser.h"
@@ -79,6 +78,9 @@ shared_ptr<VentureValue> ProcessAtom(const string& token)
       elements.push_back(boost::lexical_cast<real>(elements_as_strings[index]));
     }
     return shared_ptr<VentureValue>(new VentureSmoothedCountVector(elements));
+  } else if (token.substr(0, 4) == "str[") {
+    string value = token.substr(4, token.length() - 4 - 1);
+    return shared_ptr<VentureValue>(new VentureString(boost::lexical_cast<string>(value)));
   } else {
     return shared_ptr<VentureValue>(new VentureSymbol(token));
   }
