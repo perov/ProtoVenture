@@ -16,13 +16,13 @@ real ERP__MATLABFunctionTemplate::GetSampledLoglikelihood(vector< shared_ptr<Ven
                                  shared_ptr<VentureValue> sampled_value)
 {
   vector< shared_ptr<VentureValue> > new_arguments = arguments;
-  new_arguments.insert(new_arguments.begin(), shared_ptr<VentureString>(new VentureString(this->data)));
+  new_arguments.insert(new_arguments.begin(), shared_ptr<VentureString>(new VentureString(this->function_name)));
   new_arguments.push_back(sampled_value);
   return ExecutePythonFunction("Shell", "call_matlab_function", new_arguments);
 }
 shared_ptr<VentureValue> ERP__MATLABFunctionTemplate::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
   vector< shared_ptr<VentureValue> > new_arguments = arguments;
-  new_arguments.insert(new_arguments.begin(), shared_ptr<VentureString>(new VentureString(this->data)));
+  new_arguments.insert(new_arguments.begin(), shared_ptr<VentureString>(new VentureString(this->function_name)));
   return ExecutePythonFunction("Shell", "call_matlab_function", new_arguments);
 }
 string ERP__MATLABFunctionTemplate::GetName() {
