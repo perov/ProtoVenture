@@ -2,6 +2,33 @@
 #include "PythonProxy.h"
 #include "Shell_PPPs.h"
 
+shared_ptr<VentureValue> Primitive__LoadMATLABFunction::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config)
+{
+  shared_ptr<XRP> new_function = shared_ptr<XRP>(new ERP__MATLABFunctionTemplate());
+  dynamic_pointer_cast<ERP__MATLABFunctionTemplate>(new_xrp)->function_name = arguments[0]->GetString();
+  return shared_ptr<VentureXRP>(new VentureXRP(new_function));
+}
+string Primitive__LoadMATLABFunction::GetName() {
+  return "Primitive__LoadMATLABFunction";
+}
+
+real ERP__MATLABFunctionTemplate::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
+                                 shared_ptr<VentureValue> sampled_value)
+{
+  vector< shared_ptr<VentureValue> > new_arguments = arguments;
+  new_arguments.insert(new_arguments.begin(), shared_ptr<VentureString>(new VentureString(this->data)));
+  new_arguments.push_back(sampled_value);
+  return ExecutePythonFunction("Shell", "call_matlab_function", new_arguments);
+}
+shared_ptr<VentureValue> ERP__MATLABFunctionTemplate::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+  vector< shared_ptr<VentureValue> > new_arguments = arguments;
+  new_arguments.insert(new_arguments.begin(), shared_ptr<VentureString>(new VentureString(this->data)));
+  return ExecutePythonFunction("Shell", "call_matlab_function", new_arguments);
+}
+string ERP__MATLABFunctionTemplate::GetName() {
+  return "ERP__MATLABFunctionTemplate";
+}
+
 // Deterministic procedures.
 
 shared_ptr<VentureValue> Primitive__GenerateEmptySurfaceAndPMapPrior::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
