@@ -6,6 +6,7 @@ shared_ptr<VentureValue> Primitive__LoadMATLABFunction::Sampler(vector< shared_p
 {
   shared_ptr<XRP> new_function = shared_ptr<XRP>(new ERP__MATLABFunctionTemplate());
   dynamic_pointer_cast<ERP__MATLABFunctionTemplate>(new_function)->function_name = arguments[0]->GetString();
+  dynamic_pointer_cast<ERP__MATLABFunctionTemplate>(new_function)->if_stochastic = ToVentureType<VentureBoolean>(arguments[1])->data;
   return shared_ptr<VentureXRP>(new VentureXRP(new_function));
 }
 string Primitive__LoadMATLABFunction::GetName() {
@@ -15,10 +16,14 @@ string Primitive__LoadMATLABFunction::GetName() {
 real ERP__MATLABFunctionTemplate::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
                                  shared_ptr<VentureValue> sampled_value)
 {
-  vector< shared_ptr<VentureValue> > new_arguments = arguments;
-  new_arguments.insert(new_arguments.begin(), shared_ptr<VentureString>(new VentureString(this->function_name + "_logscore")));
-  new_arguments.push_back(sampled_value);
-  return PyFloat_AsDouble(ExecutePythonFunction("Shell", "call_matlab_function", new_arguments)->GetAsPythonObject());
+  if (this->if_stochastic == true) {
+    vector< shared_ptr<VentureValue> > new_arguments = arguments;
+    new_arguments.insert(new_arguments.begin(), shared_ptr<VentureString>(new VentureString(this->function_name + "_logscore")));
+    new_arguments.push_back(sampled_value);
+    return PyFloat_AsDouble(ExecutePythonFunction("Shell", "call_matlab_function", new_arguments)->GetAsPythonObject());
+  } else {
+    return log(1.0);
+  }
 }
 shared_ptr<VentureValue> ERP__MATLABFunctionTemplate::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
   vector< shared_ptr<VentureValue> > new_arguments = arguments;
