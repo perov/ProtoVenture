@@ -349,6 +349,7 @@ void __BlankFunction1() { // Why without this function the g++ (Unix) with -O2 r
   ToVentureType<VentureSmoothedCountVector>(shared_ptr<VentureValue>());
   ToVentureType<VentureXRP>(shared_ptr<VentureValue>());
   ToVentureType<VenturePythonObject>(shared_ptr<VentureValue>());
+  ToVentureType<VentureString>(shared_ptr<VentureValue>());
 #ifdef VENTURE__FLAG__COMPILE_WITH_ZMQ
   ToVentureType<VentureExternalXRPObject>(shared_ptr<VentureValue>());
 #endif
