@@ -5,7 +5,7 @@
 shared_ptr<VentureValue> Primitive__LoadMATLABFunction::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config)
 {
   shared_ptr<XRP> new_function = shared_ptr<XRP>(new ERP__MATLABFunctionTemplate());
-  dynamic_pointer_cast<ERP__MATLABFunctionTemplate>(new_xrp)->function_name = arguments[0]->GetString();
+  dynamic_pointer_cast<ERP__MATLABFunctionTemplate>(new_function)->function_name = arguments[0]->GetString();
   return shared_ptr<VentureXRP>(new VentureXRP(new_function));
 }
 string Primitive__LoadMATLABFunction::GetName() {
