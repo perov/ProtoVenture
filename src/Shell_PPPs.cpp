@@ -18,7 +18,7 @@ real ERP__MATLABFunctionTemplate::GetSampledLoglikelihood(vector< shared_ptr<Ven
   vector< shared_ptr<VentureValue> > new_arguments = arguments;
   new_arguments.insert(new_arguments.begin(), shared_ptr<VentureString>(new VentureString(this->function_name + "_logscore")));
   new_arguments.push_back(sampled_value);
-  return PyFloat_AsDouble(ExecutePythonFunction("Shell", "call_matlab_function", new_arguments));
+  return PyFloat_AsDouble(ExecutePythonFunction("Shell", "call_matlab_function", new_arguments)->GetAsPythonObject());
 }
 shared_ptr<VentureValue> ERP__MATLABFunctionTemplate::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
   vector< shared_ptr<VentureValue> > new_arguments = arguments;
