@@ -14,19 +14,6 @@ enum VentureDataTypes
 
 };
 
-// TMP.
-struct VentureString : public VentureValue {
-  VentureString(string);
-  virtual VentureDataTypes GetType() { return STRING; }
-  virtual bool CompareByValue(shared_ptr<VentureValue> another) {
-    return ToVentureType<VentruString>(another)->data == data;
-  } // We really do not need this function?
-  virtual string GetString() { return data; }
-  virtual PyObject* GetAsPythonObject() { return Py_BuildValue("s", data.c_str()); }
-
-  string data;
-};
-
 struct VentureValue : public boost::enable_shared_from_this<VentureValue> {
   VentureValue();
   static void CheckMyData(VentureValue* venture_value);
@@ -270,6 +257,19 @@ struct VenturePythonObject : public VentureValue {
   PyObject* python_object;
 };
   
+// TMP.
+struct VentureString : public VentureValue {
+  VentureString(string);
+  virtual VentureDataTypes GetType() { return STRING; }
+  virtual bool CompareByValue(shared_ptr<VentureValue> another) {
+    return ToVentureType<VentruString>(another)->data == data;
+  } // We really do not need this function?
+  virtual string GetString() { return data; }
+  virtual PyObject* GetAsPythonObject() { return Py_BuildValue("s", data.c_str()); }
+
+  string data;
+};
+
 #ifdef VENTURE__FLAG__COMPILE_WITH_ZMQ
   struct VentureExternalXRPObject : public VentureValue {
     VentureExternalXRPObject(const int, void *);
