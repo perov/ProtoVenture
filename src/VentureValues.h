@@ -259,7 +259,7 @@ struct VenturePythonObject : public VentureValue {
   
 // TMP.
 struct VentureString : public VentureValue {
-  VentureString(string);
+  VentureString(string data) : data(data) {}
   virtual VentureDataTypes GetType() { return STRING; }
   virtual bool CompareByValue(shared_ptr<VentureValue> another) {
     return ToVentureType<VentureString>(another)->data == data;
