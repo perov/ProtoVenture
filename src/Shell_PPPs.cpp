@@ -38,7 +38,7 @@ string ERP__MATLABFunctionTemplate::GetName() {
 
 shared_ptr<VentureValue> Primitive__GenerateEmptySurfaceAndPMapPrior::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
   if(arguments.size() != 0) {
-    throw std::runtime_error("Wrong number of arguments.");
+    // throw std::runtime_error("Wrong number of arguments.");
   }
   
   return ExecutePythonFunction("Shell", "generate_empty_surface_and_pmap_prior", arguments);

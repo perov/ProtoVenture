@@ -561,9 +561,9 @@ MHProposalResults MakeMHProposal
     }
   }
   if (mh_decision == MH_APPROVED) {
-    //Debug// cout << "Approved" << endl;
+    // cout << "Approved" << endl;
   } else {
-    //Debug// cout << "Decline" << endl;
+    // cout << "Decline" << endl;
   }
   // cout << "***" << endl;
 
