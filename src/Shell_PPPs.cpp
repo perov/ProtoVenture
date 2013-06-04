@@ -18,9 +18,9 @@ real ERP__MATLABFunctionTemplate::GetSampledLoglikelihood(vector< shared_ptr<Ven
 {
   if (this->if_stochastic == true) {
     vector< shared_ptr<VentureValue> > new_arguments = arguments;
-    new_arguments.insert(new_arguments.begin(), shared_ptr<VentureString>(new VentureString(this->function_name + "_logscore")));
+    new_arguments.insert(new_arguments.begin(), shared_ptr<VentureString>(new VentureString(this->function_name)));
     new_arguments.push_back(sampled_value);
-    return PyFloat_AsDouble(ExecutePythonFunction("Shell", "call_matlab_function", new_arguments)->GetAsPythonObject());
+    return PyFloat_AsDouble(ExecutePythonFunction("Shell", "call_matlab_function__logscore", new_arguments)->GetAsPythonObject());
   } else {
     return log(1.0);
   }
