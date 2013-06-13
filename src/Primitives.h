@@ -185,7 +185,11 @@ public:
   virtual string GetName();
 };
 
-
+class Primitive__IntegerDivide : public Primitive {
+  virtual shared_ptr<VentureValue> Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config);
+public:
+  virtual string GetName();
+};
 
 class Primitive__IntegerEqualOrGreater : public Primitive {
   virtual shared_ptr<VentureValue> Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config);

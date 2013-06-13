@@ -472,6 +472,9 @@ void BindStandardElementsToGlobalEnvironment() {
   BindToEnvironment(global_environment,
                     shared_ptr<VentureSymbol>(new VentureSymbol("int_minus")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__IntegerMinus()))));
+  BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol("int_div")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__IntegerDivide()))));
 
   BindToEnvironment(global_environment,
                     shared_ptr<VentureSymbol>(new VentureSymbol("int_gte")), // Make just via the std::string?

@@ -319,6 +319,17 @@ shared_ptr<VentureValue> Primitive__IntegerMinus::Sampler(vector< shared_ptr<Ven
 }
 string Primitive__IntegerMinus::GetName() { return "Primitive__IntegerMinus"; }
 
+shared_ptr<VentureValue> Primitive__IntegerDivide::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+  if (arguments.size() != 2) {
+    throw std::runtime_error("Wrong number of arguments.");
+  }
+  shared_ptr<VentureCount> result = shared_ptr<VentureCount>(new VentureCount(0));
+  result->data
+    = arguments[0]->GetInteger() /
+        arguments[1]->GetInteger();
+  return result;
+}
+string Primitive__IntegerDivide::GetName() { return "Primitive__IntegerDivide"; }
 
 
 
