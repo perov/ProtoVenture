@@ -166,7 +166,7 @@ public:
 };
 
 class XRP__Gensym : public XRP {
-  XRP__Gensym() : atom_id(0) {}
+  XRP__Gensym() : next_atom_id(0) {}
   virtual shared_ptr<VentureValue> Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config);
   virtual real GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >&,
                                        shared_ptr<VentureValue>);
