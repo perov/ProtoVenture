@@ -347,9 +347,11 @@ ForPython__continuous_inference_status(PyObject *self, PyObject *args)
     return NULL; // ReturnInferenceIfNecessary(); ?
   }
   if (continuous_inference_status == 0) {
-    return Py_BuildValue("b", false);
+    Py_INCREF(Py_False);
+    return Py_False;
   } else {
-    return Py_BuildValue("b", true);
+    Py_INCREF(Py_True); 
+    return Py_True;
   }
 } catch(handling_python_error&) { return NULL; } catch(std::runtime_error& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }
 
