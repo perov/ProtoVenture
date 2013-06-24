@@ -221,6 +221,7 @@ void PropagateNewValue
     if (!(already_existent_element == GetStackContainer(touched_nodes).end())) {
       int distance = std::distance(GetStackContainer(touched_nodes).begin(), already_existent_element);
       //cout << "Pam: " << distance << endl;
+      cout << "Size: " << touched_nodes.size() << endl;
       DrawGraphDuringMH(touched_nodes);
     }
 #endif
