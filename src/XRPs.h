@@ -1,4 +1,3 @@
-
 #ifndef VENTURE___XRPS_H
 #define VENTURE___XRPS_H
 
@@ -164,6 +163,24 @@ public:
   virtual bool IsRandomChoice();
   virtual bool CouldBeRescored();
   virtual string GetName();
+};
+
+class XRP__Gensym : public XRP {
+  virtual shared_ptr<VentureValue> Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config);
+  virtual real GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >&,
+                                       shared_ptr<VentureValue>);
+  virtual void Incorporate(vector< shared_ptr<VentureValue> >&,
+                                shared_ptr<VentureValue>);
+  virtual void Remove(vector< shared_ptr<VentureValue> >&,
+                           shared_ptr<VentureValue>);
+
+public:
+  XRP__Gensym() : next_atom_id(0) {}
+  virtual bool IsRandomChoice();
+  virtual bool CouldBeRescored();
+  virtual string GetName();
+  
+  size_t next_atom_id;
 };
 
 #endif
