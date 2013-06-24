@@ -125,10 +125,10 @@ ripl.predict("(map3 12)")
 # ripl.predict("(map3 2)")
 """
 
-# import venture.utils
-# venture.utils.load_to_RIPL(
-  # ripl,
-  # open('C:/pcp/20November2012/VentureAlphaOld/SourceCode/Venture/src/serialized_model.lisp').read())
+import venture.utils
+venture.utils.load_to_RIPL(
+  ripl,
+  open('C:/Temp/serialized_model.lisp').read())
 # venture.utils.load_to_RIPL(
   # ripl,
   # """
@@ -138,13 +138,13 @@ ripl.predict("(map3 12)")
   # [PREDICT (b)]
   # """
 # )
-# for i in range(1000):
-  # print "Starting to calculate the logscore"
-  # ripl.logscore()
-  # print "Stopping to calculate the logscore"
-  # print "Starting to perform one inference iteration"
-  # ripl.infer(1)
-  # print "Stopping to perform one inference iteration"
+for i in range(1000):
+  print "Starting to calculate the logscore"
+  ripl.logscore()
+  print "Stopping to calculate the logscore"
+  print "Starting to perform one inference iteration"
+  ripl.infer(1)
+  print "Stopping to perform one inference iteration"
 # ripl.infer(1000)
 
 # Just for compatibility

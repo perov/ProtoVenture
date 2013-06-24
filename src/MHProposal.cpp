@@ -163,8 +163,8 @@ void AddToReevaluationQueue
           }
           reevaluation_parameters->
             omit_patterns.push(OmitPattern(GetOrder(dynamic_pointer_cast<NodeApplicationCaller>(
-                                            current_reevaluation.reevaluation_node->parent.lock())->application_node),
-                                          GetOrder(current_reevaluation.reevaluation_node->parent.lock())));
+                                            current_reevaluation.reevaluation_node->parent.lock())->application_node, true),
+                                          GetOrder(current_reevaluation.reevaluation_node->parent.lock(), true)));
         }
       }
       assert(current_reevaluation.reevaluation_node != shared_ptr<NodeEvaluation>());
@@ -204,13 +204,13 @@ void PropagateNewValue
       reevaluation_queue.erase(iterator_to_last_element);
     }
     if (!omit_patterns.empty()) {
-      if (VerifyOrderPattern(omit_patterns.top().omit_pattern, GetOrder(current_reevaluation.reevaluation_node))) {
-        if (omit_patterns.top().stop_pattern == GetOrder(current_reevaluation.reevaluation_node)) {
+      if (VerifyOrderPattern(omit_patterns.top().omit_pattern, GetOrder(current_reevaluation.reevaluation_node, true))) {
+        if (omit_patterns.top().stop_pattern == GetOrder(current_reevaluation.reevaluation_node, true)) {
           omit_patterns.pop(); // FIXME: do not copy this condition the second time below?
         }
         continue;
       }
-      if (omit_patterns.top().stop_pattern == GetOrder(current_reevaluation.reevaluation_node)) {
+      if (omit_patterns.top().stop_pattern == GetOrder(current_reevaluation.reevaluation_node, true)) {
         omit_patterns.pop();
       }
     }
