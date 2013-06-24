@@ -10,9 +10,9 @@
 // extern unsigned char digits[10][50][28][28];
 
 class ERP : public XRP {
-  virtual void Incorporate(vector< shared_ptr<VentureValue> >& arguments,
+  virtual void Incorporate(shared_ptr<ReevaluationParameters>, shared_ptr<Node> caller, vector< shared_ptr<VentureValue> >& arguments,
                    shared_ptr<VentureValue> sampled_value);
-  virtual void Remove(vector< shared_ptr<VentureValue> >& arguments,
+  virtual void Remove(shared_ptr<ReevaluationParameters> reevaluation_parameters, shared_ptr<Node> caller, vector< shared_ptr<VentureValue> >& arguments,
               shared_ptr<VentureValue> sampled_value);
   
 public:

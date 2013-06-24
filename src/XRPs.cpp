@@ -21,11 +21,11 @@ real XRP__CRPmaker::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& 
   return log(1.0); // ?
 }
 
-void XRP__CRPmaker::Incorporate(vector< shared_ptr<VentureValue> >& arguments,
+void XRP__CRPmaker::Incorporate(shared_ptr<ReevaluationParameters>, shared_ptr<Node> caller, vector< shared_ptr<VentureValue> >& arguments,
                               shared_ptr<VentureValue> sampled_value) {
 }
 
-void XRP__CRPmaker::Remove(vector< shared_ptr<VentureValue> >& arguments,
+void XRP__CRPmaker::Remove(shared_ptr<ReevaluationParameters> reevaluation_parameters, shared_ptr<Node> caller, vector< shared_ptr<VentureValue> >& arguments,
                           shared_ptr<VentureValue> sampled_value) {
 }
 bool XRP__CRPmaker::IsRandomChoice() { return false; }
@@ -76,7 +76,7 @@ real XRP__CRPsampler::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >
   }
 }
 
-void XRP__CRPsampler::Incorporate(vector< shared_ptr<VentureValue> >& arguments,
+void XRP__CRPsampler::Incorporate(shared_ptr<ReevaluationParameters>, shared_ptr<Node> caller, vector< shared_ptr<VentureValue> >& arguments,
                               shared_ptr<VentureValue> sampled_value) {
   if (this->atoms.count(ToVentureType<VentureAtom>(sampled_value)->data) == 1) {
     this->atoms[ToVentureType<VentureAtom>(sampled_value)->data]++;
@@ -86,7 +86,7 @@ void XRP__CRPsampler::Incorporate(vector< shared_ptr<VentureValue> >& arguments,
   this->current_number_of_clients++;
 }
 
-void XRP__CRPsampler::Remove(vector< shared_ptr<VentureValue> >& arguments,
+void XRP__CRPsampler::Remove(shared_ptr<ReevaluationParameters> reevaluation_parameters, shared_ptr<Node> caller, vector< shared_ptr<VentureValue> >& arguments,
                           shared_ptr<VentureValue> sampled_value) {
   if (this->atoms.count(ToVentureType<VentureAtom>(sampled_value)->data) == 0) {
     throw std::runtime_error("CRP statistics does not have this atom.");
@@ -135,11 +135,11 @@ real XRP__SymmetricDirichletMultinomial_maker::GetSampledLoglikelihood(vector< s
   return log(1.0); // ?
 }
 
-void XRP__SymmetricDirichletMultinomial_maker::Incorporate(vector< shared_ptr<VentureValue> >& arguments,
+void XRP__SymmetricDirichletMultinomial_maker::Incorporate(shared_ptr<ReevaluationParameters>, shared_ptr<Node> caller, vector< shared_ptr<VentureValue> >& arguments,
                               shared_ptr<VentureValue> sampled_value) {
 }
 
-void XRP__SymmetricDirichletMultinomial_maker::Remove(vector< shared_ptr<VentureValue> >& arguments,
+void XRP__SymmetricDirichletMultinomial_maker::Remove(shared_ptr<ReevaluationParameters> reevaluation_parameters, shared_ptr<Node> caller, vector< shared_ptr<VentureValue> >& arguments,
                           shared_ptr<VentureValue> sampled_value) {
 }
 bool XRP__SymmetricDirichletMultinomial_maker::IsRandomChoice() { return false; }
@@ -174,11 +174,11 @@ real XRP__DirichletMultinomial_maker::GetSampledLoglikelihood(vector< shared_ptr
   return log(1.0); // ?
 }
 
-void XRP__DirichletMultinomial_maker::Incorporate(vector< shared_ptr<VentureValue> >& arguments,
+void XRP__DirichletMultinomial_maker::Incorporate(shared_ptr<ReevaluationParameters>, shared_ptr<Node> caller, vector< shared_ptr<VentureValue> >& arguments,
                               shared_ptr<VentureValue> sampled_value) {
 }
 
-void XRP__DirichletMultinomial_maker::Remove(vector< shared_ptr<VentureValue> >& arguments,
+void XRP__DirichletMultinomial_maker::Remove(shared_ptr<ReevaluationParameters> reevaluation_parameters, shared_ptr<Node> caller, vector< shared_ptr<VentureValue> >& arguments,
                           shared_ptr<VentureValue> sampled_value) {
 }
 bool XRP__DirichletMultinomial_maker::IsRandomChoice() { return false; }
@@ -221,14 +221,14 @@ real XRP__DirichletMultinomial_sampler::GetSampledLoglikelihood(vector< shared_p
   return log(this->statistics[sampled_value->GetInteger()]) - log(this->sum_of_statistics);
 }
 
-void XRP__DirichletMultinomial_sampler::Incorporate(vector< shared_ptr<VentureValue> >& arguments,
+void XRP__DirichletMultinomial_sampler::Incorporate(shared_ptr<ReevaluationParameters>, shared_ptr<Node> caller, vector< shared_ptr<VentureValue> >& arguments,
                               shared_ptr<VentureValue> sampled_value) {
   assert(sampled_value->GetInteger() < this->statistics.size());
   this->sum_of_statistics++;
   this->statistics[sampled_value->GetInteger()]++;
 }
 
-void XRP__DirichletMultinomial_sampler::Remove(vector< shared_ptr<VentureValue> >& arguments,
+void XRP__DirichletMultinomial_sampler::Remove(shared_ptr<ReevaluationParameters> reevaluation_parameters, shared_ptr<Node> caller, vector< shared_ptr<VentureValue> >& arguments,
                           shared_ptr<VentureValue> sampled_value) {
   assert(sampled_value->GetInteger() < this->statistics.size());
   this->sum_of_statistics--;
@@ -262,9 +262,9 @@ real XRP__Set::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& argum
                                       shared_ptr<VentureValue> sampled_value) {
   return log(1.0);
 }
-void XRP__Set::Incorporate(vector< shared_ptr<VentureValue> >& arguments,
+void XRP__Set::Incorporate(shared_ptr<ReevaluationParameters>, shared_ptr<Node> caller, vector< shared_ptr<VentureValue> >& arguments,
                               shared_ptr<VentureValue> sampled_value) {}
-void XRP__Set::Remove(vector< shared_ptr<VentureValue> >& arguments,
+void XRP__Set::Remove(shared_ptr<ReevaluationParameters> reevaluation_parameters, shared_ptr<Node> caller, vector< shared_ptr<VentureValue> >& arguments,
   shared_ptr<VentureValue> sampled_value) {}
 bool XRP__Set::IsRandomChoice() { return false; }
 bool XRP__Set::CouldBeRescored() { return false; }
@@ -277,9 +277,9 @@ real XRP__NewSet::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& ar
                                       shared_ptr<VentureValue> sampled_value) {
   return log(1.0);
 }
-void XRP__NewSet::Incorporate(vector< shared_ptr<VentureValue> >& arguments,
+void XRP__NewSet::Incorporate(shared_ptr<ReevaluationParameters>, shared_ptr<Node> caller, vector< shared_ptr<VentureValue> >& arguments,
                               shared_ptr<VentureValue> sampled_value) {}
-void XRP__NewSet::Remove(vector< shared_ptr<VentureValue> >& arguments,
+void XRP__NewSet::Remove(shared_ptr<ReevaluationParameters> reevaluation_parameters, shared_ptr<Node> caller, vector< shared_ptr<VentureValue> >& arguments,
   shared_ptr<VentureValue> sampled_value) {}
 bool XRP__NewSet::IsRandomChoice() { return false; }
 bool XRP__NewSet::CouldBeRescored() { return false; }
@@ -292,7 +292,7 @@ real XRP__AddToSet::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& 
                                       shared_ptr<VentureValue> sampled_value) {
   return log(1.0);
 }
-void XRP__AddToSet::Incorporate(vector< shared_ptr<VentureValue> >& arguments,
+void XRP__AddToSet::Incorporate(shared_ptr<ReevaluationParameters>, shared_ptr<Node> caller, vector< shared_ptr<VentureValue> >& arguments,
                               shared_ptr<VentureValue> sampled_value)
 {
   shared_ptr<XRP__Set> the_set = dynamic_pointer_cast<XRP__Set>(ToVentureType<VentureXRP>(arguments[0])->xrp);
@@ -300,7 +300,7 @@ void XRP__AddToSet::Incorporate(vector< shared_ptr<VentureValue> >& arguments,
   // assert(the_set->my_set.count(element_to_add) == 0);
   the_set->my_set.insert(element_to_add);
 }
-void XRP__AddToSet::Remove(vector< shared_ptr<VentureValue> >& arguments,
+void XRP__AddToSet::Remove(shared_ptr<ReevaluationParameters> reevaluation_parameters, shared_ptr<Node> caller, vector< shared_ptr<VentureValue> >& arguments,
   shared_ptr<VentureValue> sampled_value)
 {
   shared_ptr<XRP__Set> the_set = dynamic_pointer_cast<XRP__Set>(ToVentureType<VentureXRP>(arguments[0])->xrp);
@@ -325,9 +325,9 @@ real XRP__SampleFromSet::GetSampledLoglikelihood(vector< shared_ptr<VentureValue
   shared_ptr<XRP__Set> the_set = dynamic_pointer_cast<XRP__Set>(ToVentureType<VentureXRP>(arguments[0])->xrp);
   return log(1.0 / static_cast<double>(the_set->my_set.size()));
 }
-void XRP__SampleFromSet::Incorporate(vector< shared_ptr<VentureValue> >& arguments,
+void XRP__SampleFromSet::Incorporate(shared_ptr<ReevaluationParameters>, shared_ptr<Node> caller, vector< shared_ptr<VentureValue> >& arguments,
                               shared_ptr<VentureValue> sampled_value) {}
-void XRP__SampleFromSet::Remove(vector< shared_ptr<VentureValue> >& arguments,
+void XRP__SampleFromSet::Remove(shared_ptr<ReevaluationParameters> reevaluation_parameters, shared_ptr<Node> caller, vector< shared_ptr<VentureValue> >& arguments,
   shared_ptr<VentureValue> sampled_value) {}
 bool XRP__SampleFromSet::IsRandomChoice() { return true; }
 bool XRP__SampleFromSet::CouldBeRescored() { return false; }

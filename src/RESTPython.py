@@ -91,10 +91,67 @@ import venture_engine
 # print venture_engine.report_value(2)
 # print venture_engine.report_value(3)
 
+ripl = venture_engine
+
+"""
+ripl.assume('map_make', '(lambda (map) (mem map))')
+ 
+ripl.assume('map_set', '(lambda (map key val)\
+    (mem (lambda (k)\
+        (if (= k key)\
+            val\
+            (map key)\
+        )\
+    )\
+))')
+
+ripl.assume('f', '(lambda (key) false)')
+ripl.assume('map0', '(map_make f)')
+
+N = 3
+M = 1
+
+# for i in range(N/M):
+    # ripl.assume('map%d' % (i+1), '(map_set map%d (uniform-discrete 0 %d) true)' % (i, N-1))
+
+ripl.assume('map1', '(map_set map%d (uniform-discrete 5 5) true)' % (0))
+ripl.assume('map2', '(map_set map%d (uniform-discrete 5 5) true)' % (1))
+ripl.assume('map3', '(map_set map%d (uniform-discrete 5 5) true)' % (2))
+ 
+# for i in range(N):
+    # ripl.predict('(map%d %d)' % (N/M, i))
+ripl.predict("(map3 11)")
+ripl.predict("(map3 12)")
+# ripl.predict("(map3 2)")
+"""
+
+# import venture.utils
+# venture.utils.load_to_RIPL(
+  # ripl,
+  # open('C:/pcp/20November2012/VentureAlphaOld/SourceCode/Venture/src/serialized_model.lisp').read())
+# venture.utils.load_to_RIPL(
+  # ripl,
+  # """
+  # [ASSUME a (flip)]
+  # [ASSUME b (mem (lambda () (+ a c)))]
+  # [ASSUME c a]
+  # [PREDICT (b)]
+  # """
+# )
+# for i in range(1000):
+  # print "Starting to calculate the logscore"
+  # ripl.logscore()
+  # print "Stopping to calculate the logscore"
+  # print "Starting to perform one inference iteration"
+  # ripl.infer(1)
+  # print "Stopping to perform one inference iteration"
+# ripl.infer(1000)
+
 # Just for compatibility
 class lisp_parser_Class:
   def parse(__self__, what_to_parse):
     return parse(what_to_parse)
+    
 
 lisp_parser = lisp_parser_Class()
     

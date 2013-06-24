@@ -7,6 +7,8 @@
 #include "MHProposal.h"
 #include "XRPCore.h"
 
+extern int mem_last_id;
+
 struct NodeApplicationCaller;
 
 struct XRP__memoizer_map_element {
@@ -29,9 +31,9 @@ class XRP__memoizer : public XRP { // So called "mem-maker".
   virtual shared_ptr<VentureValue> Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config);
   virtual real GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >&,
                                        shared_ptr<VentureValue>);
-  virtual void Incorporate(vector< shared_ptr<VentureValue> >&,
+  virtual void Incorporate(shared_ptr<ReevaluationParameters>, shared_ptr<Node> caller, vector< shared_ptr<VentureValue> >& arguments,
                                 shared_ptr<VentureValue>);
-  virtual void Remove(vector< shared_ptr<VentureValue> >&,
+  virtual void Remove(shared_ptr<ReevaluationParameters> reevaluation_parameters, shared_ptr<Node> caller, vector< shared_ptr<VentureValue> >& arguments,
                            shared_ptr<VentureValue>);
 
 public:
@@ -46,9 +48,9 @@ class XRP__memoized_procedure : public XRP { // So called "mem-sampler".
   virtual shared_ptr<VentureValue> Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config);
   virtual real GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >&,
                                        shared_ptr<VentureValue>);
-  virtual void Incorporate(vector< shared_ptr<VentureValue> >&,
+  virtual void Incorporate(shared_ptr<ReevaluationParameters>, shared_ptr<Node> caller, vector< shared_ptr<VentureValue> >& arguments,
                                 shared_ptr<VentureValue>);
-  virtual void Remove(vector< shared_ptr<VentureValue> >&,
+  virtual void Remove(shared_ptr<ReevaluationParameters> reevaluation_parameters, shared_ptr<Node> caller, vector< shared_ptr<VentureValue> >& arguments,
                            shared_ptr<VentureValue>);
 
 public:

@@ -55,7 +55,8 @@ string Node::GetUniqueID() {
 
 Node::Node()
   : was_deleted(false),
-    constraint_times(0)
+    constraint_times(0),
+    _marked(false)
 {
   //unique_id = ++NEXT_UNIQUE_ID; // FIXME: make transaction free!
 }
@@ -99,6 +100,10 @@ void Node::DeleteNode() {
   this->was_deleted = true;
 }
 
+void NodeEvaluation::DeleteNode() {
+  
+}
+
 
 
 NodeEnvironment::NodeEnvironment(shared_ptr<NodeEnvironment> parent_environment)
@@ -127,7 +132,7 @@ NodeTypes NodeVariable::GetNodeType() { return VARIABLE; }
 void NodeVariable::DeleteNode() {
   if (this->binding_node.expired() == false) { // If it is not the global environment's initially bound variable?
     assert(this->binding_node.lock()->output_references.count(this->weak_ptr_to_me) == 1);
-    this->binding_node.lock()->output_references.erase(this->weak_ptr_to_me);
+    this->binding_node.lock()->output_references.erase(this->binding_node.lock()->output_references.find(this->weak_ptr_to_me));
   }
 }
 
@@ -145,40 +150,74 @@ shared_ptr<NodeEvaluation> NodeEvaluation::clone() const {
   return shared_ptr<NodeEvaluation>(new NodeEvaluation());
 }
 
-void NodeEvaluation::DeleteNode() {
-
+vector<size_t> GetOrder(const shared_ptr<NodeEvaluation> node, bool if_only_mine) {
+  // Could be optimized in the future for constant time.
+  // Asymptotically?
+  // 1) Better finding the minimum?
+  // 2) Using lists instead of vectors?
+  if (node->memoized_procedure_order == shared_ptr<MemoizedProcedureOrder>() || if_only_mine == true) {
+    return node->myorder;
+  } else {
+    if (node->memoized_procedure_order->previous_nodes.size() > 0) {
+      assert(node->memoized_procedure_order->previous_nodes.size() > 0);
+      
+      std::map< shared_ptr<NodeEvaluation>, int, NodesComparer > previous_nodes_sorted(
+        node->memoized_procedure_order->previous_nodes.begin(),
+        node->memoized_procedure_order->previous_nodes.end(),
+        NodesComparer());
+      
+      vector<size_t> order_for_parent = GetOrder(previous_nodes_sorted.rbegin()->first);
+      vector<size_t> returning;
+      returning.reserve(order_for_parent.size() + node->myorder.size());
+      returning.insert( returning.end(), order_for_parent.begin(), order_for_parent.end() );
+      returning.insert( returning.end(), node->myorder.begin(), node->myorder.end() );
+      return returning;
+    } else {
+      // This should not happen when we actually compare for the propagation.
+      return node->myorder;
+    }
+  }
 }
 
-bool ReevaluationOrderComparer::operator()(const ReevaluationEntry& first, const ReevaluationEntry& second) {
+bool CompareReevaluationEntries(const ReevaluationEntry& first, const ReevaluationEntry& second) {
   if (first.reevaluation_node->myorder.size() == 0) {
     throw std::runtime_error("The first node has not been evaluated yet!");
   }
   if (second.reevaluation_node->myorder.size() == 0) {
     throw std::runtime_error("The second node has not been evaluated yet!");
   }
+  vector<size_t> first_order = GetOrder(first.reevaluation_node);
+  vector<size_t> second_order = GetOrder(second.reevaluation_node);
+  //if (dynamic_pointer_cast<NodeEvaluation>(first.reevaluation_node)->memoized_procedure_order != shared_ptr<MemoizedProcedureOrder>()) {
+  //  int a = 5;
+  //}
   for (size_t index = 0; true; index++) {
-    if (index >= first.reevaluation_node->myorder.size() &&
-        index >= second.reevaluation_node->myorder.size()) {
+    if (index >= first_order.size() &&
+        index >= second_order.size()) {
       // Same orders.
       return (first.priority > second.priority);
       // The higher priority number (size_t), the lower the priority.
       // Therefore the priority = 0 is the highest.
     } else {
-      if (index >= first.reevaluation_node->myorder.size()) {
+      if (index >= first_order.size()) {
         return true; // The first should be reevaluated later than the second.
       } else {
-        if (index >= second.reevaluation_node->myorder.size()) {
+        if (index >= second_order.size()) {
           return false; // The first should be reevaluated earlier than the second.
         } else {
-          if (first.reevaluation_node->myorder[index] == second.reevaluation_node->myorder[index]) {
+          if (first_order[index] == second_order[index]) {
             continue;
           } else {
-            return (first.reevaluation_node->myorder[index] > second.reevaluation_node->myorder[index]);
+            return (first_order[index] > second_order[index]);
           }
         }
       }
     }
   }
+}
+
+bool ReevaluationOrderComparer::operator()(const ReevaluationEntry& first, const ReevaluationEntry& second) {
+  return CompareReevaluationEntries(first, second);
 }
 
 
@@ -357,7 +396,7 @@ void NodeLookup::DeleteNode() {
   if (this->evaluated == true) {
     if (this->where_lookuped.expired() == false) { // FIXME: using "expired" here is not conceptually correct. Here we check if where_lookuped == weak_ptr<...>(). How to check it better?
       assert(this->where_lookuped.lock()->output_references.count(this->weak_ptr_to_me) == 1);
-      this->where_lookuped.lock()->output_references.erase(this->weak_ptr_to_me);
+      this->where_lookuped.lock()->output_references.erase(this->where_lookuped.lock()->output_references.find(this->weak_ptr_to_me));
     } else {
       // Otherwise it means that we throw an exception when there is no bound variable.
       //
@@ -452,7 +491,7 @@ void NodeXRPApplication::DeleteNode() {
                                   true); // FIXME: we should be sure that we are receiving old arguments!
 
   this->xrp->xrp->
-    Remove(old_arguments, this->my_sampled_value);
+    Remove(shared_ptr<ReevaluationParameters>(), shared_ptr<Node>(), old_arguments, this->my_sampled_value);
   
   this->xrp->xrp->Unsampler(old_arguments, this->weak_ptr_to_me, this->my_sampled_value);
 
@@ -540,18 +579,19 @@ void NodeEnvironment::DeleteNode() {
 }
 
 shared_ptr<VentureValue>
-NodeEvaluation::Evaluate(shared_ptr<NodeEnvironment> environment, EvaluationConfig& evaluation_config) { // It seems we do not need this function, do we?
+NodeEvaluation::Evaluate(shared_ptr<NodeEnvironment> environment, EvaluationConfig& evaluation_config, shared_ptr<MemoizedProcedureOrder> memoized_procedure_order) { // It seems we do not need this function, do we?
   throw std::runtime_error("It should not happen.");
 }
 
 shared_ptr<VentureValue>
-NodeDirectiveAssume::Evaluate(shared_ptr<NodeEnvironment> environment, EvaluationConfig& evaluation_config) {
+NodeDirectiveAssume::Evaluate(shared_ptr<NodeEnvironment> environment, EvaluationConfig& evaluation_config, shared_ptr<MemoizedProcedureOrder> memoized_procedure_order) {
   this->my_value =              Evaluator(this->expression,
                                 environment,
                                 dynamic_pointer_cast<Node>(this->shared_from_this()),
                                 dynamic_pointer_cast<NodeEvaluation>(this->shared_from_this()),
                                 evaluation_config,
-                                "");
+                                "",
+                                shared_ptr<MemoizedProcedureOrder>());
   this->output_references.insert(
     BindToEnvironment(environment,
                       this->name,
@@ -561,26 +601,28 @@ NodeDirectiveAssume::Evaluate(shared_ptr<NodeEnvironment> environment, Evaluatio
 }
 
 shared_ptr<VentureValue>
-NodeDirectivePredict::Evaluate(shared_ptr<NodeEnvironment> environment, EvaluationConfig& evaluation_config) {
+NodeDirectivePredict::Evaluate(shared_ptr<NodeEnvironment> environment, EvaluationConfig& evaluation_config, shared_ptr<MemoizedProcedureOrder> memoized_procedure_order) {
    this->my_value =
          Evaluator(this->expression,
                    environment,
                    dynamic_pointer_cast<Node>(this->shared_from_this()),
                    dynamic_pointer_cast<NodeEvaluation>(this->shared_from_this()),
                    evaluation_config,
-                   "");
+                   "",
+                   shared_ptr<MemoizedProcedureOrder>());
    //cout << this->my_value->GetString() << "$" << endl;
    return this->my_value;
 }
 
 shared_ptr<VentureValue>
-NodeDirectiveObserve::Evaluate(shared_ptr<NodeEnvironment> environment, EvaluationConfig& evaluation_config) {
+NodeDirectiveObserve::Evaluate(shared_ptr<NodeEnvironment> environment, EvaluationConfig& evaluation_config, shared_ptr<MemoizedProcedureOrder> memoized_procedure_order) {
   Evaluator(this->expression,
             environment,
             dynamic_pointer_cast<Node>(this->shared_from_this()),
             dynamic_pointer_cast<NodeEvaluation>(this->shared_from_this()),
             evaluation_config,
-            "");
+            "",
+            shared_ptr<MemoizedProcedureOrder>());
 
   set<ReevaluationEntry,
       ReevaluationOrderComparer> reevaluation_queue;
@@ -620,18 +662,18 @@ NodeDirectiveObserve::Evaluate(shared_ptr<NodeEnvironment> environment, Evaluati
 }
 
 shared_ptr<VentureValue>
-NodeSelfEvaluating::Evaluate(shared_ptr<NodeEnvironment> environment, EvaluationConfig& evaluation_config) {
+NodeSelfEvaluating::Evaluate(shared_ptr<NodeEnvironment> environment, EvaluationConfig& evaluation_config, shared_ptr<MemoizedProcedureOrder> memoized_procedure_order) {
   return this->value;
 }
 
 shared_ptr<VentureValue>
-NodeLambdaCreator::Evaluate(shared_ptr<NodeEnvironment> environment, EvaluationConfig& evaluation_config) {
+NodeLambdaCreator::Evaluate(shared_ptr<NodeEnvironment> environment, EvaluationConfig& evaluation_config, shared_ptr<MemoizedProcedureOrder> memoized_procedure_order) {
   this->returned_value = shared_ptr<VentureValue>(new VentureLambda(this->arguments, this->expressions, environment));
   return this->returned_value;
 }
 
 shared_ptr<VentureValue>
-NodeLookup::Evaluate(shared_ptr<NodeEnvironment> environment, EvaluationConfig& evaluation_config) {
+NodeLookup::Evaluate(shared_ptr<NodeEnvironment> environment, EvaluationConfig& evaluation_config, shared_ptr<MemoizedProcedureOrder> memoized_procedure_order) {
   return LookupValue(environment, this->symbol, dynamic_pointer_cast<NodeEvaluation>(this->shared_from_this()), false);
 }
 
@@ -641,7 +683,8 @@ EvaluateApplication(shared_ptr<VentureValue> evaluated_operator,
                     size_t number_of_operands,
                     shared_ptr<NodeEvaluation>& application_node, // "By reference" is because we also set it in the application caller node.
                     shared_ptr<NodeApplicationCaller> application_caller_ptr,
-                    EvaluationConfig& evaluation_config) {
+                    EvaluationConfig& evaluation_config,
+                    shared_ptr<MemoizedProcedureOrder> memoized_procedure_order) {
   if (evaluated_operator->GetType() == LAMBDA) {
     shared_ptr<VentureList> enumerate_arguments = ToVentureType<VentureLambda>(evaluated_operator)->formal_arguments;
     size_t index = 0;
@@ -669,7 +712,8 @@ EvaluateApplication(shared_ptr<VentureValue> evaluated_operator,
                      dynamic_pointer_cast<Node>(application_caller_ptr),
                      dynamic_pointer_cast<NodeEvaluation>(application_caller_ptr),
                      evaluation_config,
-                     "");
+                     "",
+                     memoized_procedure_order);
   } else if (evaluated_operator->GetType() == XRP_REFERENCE) {
     // Just for mem now.
     // Maybe, implement it in the future in a better way.
@@ -690,20 +734,22 @@ EvaluateApplication(shared_ptr<VentureValue> evaluated_operator,
                      dynamic_pointer_cast<Node>(application_caller_ptr),
                      dynamic_pointer_cast<NodeEvaluation>(application_caller_ptr),
                      evaluation_config,
-                     "");
+                     "",
+                     memoized_procedure_order);
   } else {
     throw std::runtime_error((string("Attempt to apply neither LAMBDA nor XRP (") + boost::lexical_cast<string>(evaluated_operator->GetType()) + string(")")).c_str());
   }
 }
 
 shared_ptr<VentureValue>
-NodeApplicationCaller::Evaluate(shared_ptr<NodeEnvironment> environment, EvaluationConfig& evaluation_config) {
+NodeApplicationCaller::Evaluate(shared_ptr<NodeEnvironment> environment, EvaluationConfig& evaluation_config, shared_ptr<MemoizedProcedureOrder> memoized_procedure_order) {
   shared_ptr<VentureValue> evaluated_operator = Evaluator(application_operator,
                                                           environment,
                                                           dynamic_pointer_cast<Node>(this->shared_from_this()),
                                                           dynamic_pointer_cast<NodeEvaluation>(this->shared_from_this()),
                                                           evaluation_config,
-                                                          "");
+                                                          "",
+                                                          memoized_procedure_order);
   assert(evaluated_operator != shared_ptr<VentureValue>());
   this->saved_evaluated_operator = evaluated_operator;
   
@@ -723,7 +769,8 @@ NodeApplicationCaller::Evaluate(shared_ptr<NodeEnvironment> environment, Evaluat
                 shared_ptr<Node>(),
                 dynamic_pointer_cast<NodeEvaluation>(this->shared_from_this()),
                 evaluation_config,
-                "args_" + boost::lexical_cast<string>(index));
+                "args_" + boost::lexical_cast<string>(index),
+                memoized_procedure_order);
     shared_ptr<NodeVariable> new_variable_node =
       shared_ptr<NodeVariable>(new NodeVariable(local_environment, binding_value, application_operands[index]));
     new_variable_node->weak_ptr_to_me = dynamic_pointer_cast<NodeVariable>(new_variable_node->shared_from_this()); // Silly.
@@ -737,7 +784,8 @@ NodeApplicationCaller::Evaluate(shared_ptr<NodeEnvironment> environment, Evaluat
                         application_operands.size(),
                         application_node,
                         dynamic_pointer_cast<NodeApplicationCaller>(this->shared_from_this()),
-                        evaluation_config);
+                        evaluation_config,
+                        memoized_procedure_order);
 }
 
 vector< shared_ptr<VentureValue> >
@@ -762,7 +810,7 @@ GetArgumentsFromEnvironment(shared_ptr<NodeEnvironment> environment,
 }
 
 shared_ptr<VentureValue>
-NodeXRPApplication::Evaluate(shared_ptr<NodeEnvironment> environment, EvaluationConfig& evaluation_config) {
+NodeXRPApplication::Evaluate(shared_ptr<NodeEnvironment> environment, EvaluationConfig& evaluation_config, shared_ptr<MemoizedProcedureOrder> memoized_procedure_order) {
   //cout << "SIZE: " << GetArgumentsFromEnvironment(environment,
   //                                dynamic_pointer_cast<NodeEvaluation>(this->shared_from_this())).size() << endl;
   vector< shared_ptr<VentureValue> > got_arguments = GetArgumentsFromEnvironment(environment, // Not efficient?
@@ -1129,7 +1177,8 @@ NodeApplicationCaller::Reevaluate(shared_ptr<VentureValue> passing_value,
                             application_operands.size(),
                             new_application_node,
                             dynamic_pointer_cast<NodeApplicationCaller>(this->shared_from_this()),
-                            local_evaluation_config);
+                            local_evaluation_config,
+                            this->application_node->memoized_procedure_order);
       reevaluation_parameters->__log_p_new += local_evaluation_config.__log_unconstrained_score;
       // Commented, because during evaluation we cannot have constrained scores
       // reevaluation_parameters->__log_p_new += local_evaluation_config.__log_constrained_score;
@@ -1290,6 +1339,17 @@ void DrawGraphDuringMH(stack< shared_ptr<Node> >& touched_nodes) {
     previous = directive;
   }
 
+  stack< shared_ptr<Node> > touched_nodes3 = touched_nodes;
+  while (!touched_nodes3.empty()) {
+    shared_ptr<Node> node = touched_nodes3.top();
+    while (dynamic_pointer_cast<NodeEvaluation>(node) != shared_ptr<NodeEvaluation>())
+    {
+      dynamic_pointer_cast<NodeEvaluation>(node)->_marked = true;
+      node = dynamic_pointer_cast<NodeEvaluation>(node)->parent.lock();
+    }
+    touched_nodes3.pop();
+  }
+
   while (!processing_queue.empty()) {
     queue< shared_ptr<Node> > temporal_queue;
     if (processing_queue.front().second == shared_ptr<Node>()) {
@@ -1323,26 +1383,36 @@ void DrawGraphDuringMH(stack< shared_ptr<Node> >& touched_nodes) {
     }
     std::deque< shared_ptr<Node> >::const_iterator already_existent_element =
       std::find(GetStackContainer(touched_nodes).begin(), GetStackContainer(touched_nodes).end(), processing_queue.front().second);
-    graph_file << "  Node" << processing_queue.front().second->GetUniqueID() << " [label=\"";
-    if (!(already_existent_element == GetStackContainer(touched_nodes).end())) {
-      int distance = std::distance(GetStackContainer(touched_nodes).begin(), already_existent_element);
-      graph_file << "[MH" << distance << "] ";
-    }
-    graph_file << "(" << processing_queue.front().second->WasEvaluated() << ") ";
-    graph_file << processing_queue.front().second->GetUniqueID() << ". ";
-    graph_file << GetNodeTypeAsString(processing_queue.front().second->GetNodeType())
-      << ": " << processing_queue.front().second->GetContent();
-    graph_file << "\\n" << processing_queue.front().second->comment;
-    graph_file << "\\n" << dynamic_pointer_cast<NodeEvaluation>(processing_queue.front().second)->node_key;
-    graph_file << "\\nCT: " << dynamic_pointer_cast<NodeEvaluation>(processing_queue.front().second)->constraint_times;
-    graph_file << "\"" << endl;
-    if (!(already_existent_element == GetStackContainer(touched_nodes).end())) {
-      graph_file << ",color=red";
-    }
-    graph_file << "]";
-    if (processing_queue.front().first != "") {
-      graph_file << "  Node" << processing_queue.front().first << " -> "
-        << "Node" << processing_queue.front().second->GetUniqueID() << endl;
+    if (!(std::find(GetStackContainer(touched_nodes).begin(), GetStackContainer(touched_nodes).end(), processing_queue.front().second) ==
+          GetStackContainer(touched_nodes).end()) ||
+        processing_queue.front().second->_marked == true)
+    {
+      graph_file << "  Node" << processing_queue.front().second->GetUniqueID() << " [label=\"";
+      if (!(already_existent_element == GetStackContainer(touched_nodes).end())) {
+        int distance = std::distance(GetStackContainer(touched_nodes).begin(), already_existent_element);
+        graph_file << "[MH" << distance << "] ";
+      }
+      graph_file << "(" << processing_queue.front().second->WasEvaluated() << ") ";
+      graph_file << processing_queue.front().second->GetUniqueID() << ". ";
+      graph_file << GetNodeTypeAsString(processing_queue.front().second->GetNodeType())
+        << ": " << processing_queue.front().second->GetContent();
+      graph_file << "\\n" << processing_queue.front().second->comment;
+      graph_file << "\\n" << dynamic_pointer_cast<NodeEvaluation>(processing_queue.front().second)->node_key;
+      graph_file << "\\nCT: " << dynamic_pointer_cast<NodeEvaluation>(processing_queue.front().second)->constraint_times;
+      graph_file << "\\nOrder: ";
+      vector<size_t> order = GetOrder(dynamic_pointer_cast<NodeEvaluation>(processing_queue.front().second));
+      for (size_t index_m = 0; index_m < order.size(); index_m++) {
+        graph_file << order[index_m] << " ";
+      }
+      graph_file << "\"" << endl;
+      if (!(already_existent_element == GetStackContainer(touched_nodes).end())) {
+        graph_file << ",color=red";
+      }
+      graph_file << "]";
+      if (processing_queue.front().first != "") {
+        graph_file << "  Node" << processing_queue.front().first << " -> "
+          << "Node" << processing_queue.front().second->GetUniqueID() << endl;
+      }
     }
 
     processing_queue.pop();

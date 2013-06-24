@@ -1,4 +1,6 @@
 
+#include "HeaderPre.h"
+
 #include "Header.h"
 #include "VentureValues.h"
 #include "VentureParser.h"
@@ -193,12 +195,12 @@ real XRP__TemplateForExtendedXRP::GetSampledLoglikelihood(vector< shared_ptr<Ven
   return logL;
 }
 
-void XRP__TemplateForExtendedXRP::Incorporate(vector< shared_ptr<VentureValue> >& arguments,
+void XRP__TemplateForExtendedXRP::Incorporate(shared_ptr<ReevaluationParameters>, shared_ptr<Node> caller, vector< shared_ptr<VentureValue> >& arguments,
                               shared_ptr<VentureValue> sampled_value) {
 
 }
 
-void XRP__TemplateForExtendedXRP::Remove(vector< shared_ptr<VentureValue> >& arguments,
+void XRP__TemplateForExtendedXRP::Remove(shared_ptr<ReevaluationParameters> reevaluation_parameters, shared_ptr<Node> caller, vector< shared_ptr<VentureValue> >& arguments,
                           shared_ptr<VentureValue> sampled_value) {
 }
 bool XRP__TemplateForExtendedXRP::IsRandomChoice() { return this->is_scorable; }

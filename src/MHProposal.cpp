@@ -7,6 +7,8 @@
 #include "MHProposal.h"
 #include "RIPL.h"
 
+int number_of_lost_nodes;
+
 bool VerifyOrderPattern(vector<size_t>& omit_pattern,
                         vector<size_t>& checking_order) {
   for (size_t index = 0; index < omit_pattern.size(); index++) {
@@ -26,7 +28,7 @@ void DeleteNode(shared_ptr<Node> node, bool old_values) {
   if (node->GetNodeType() == LOOKUP) {
     // See the notice "BAD-POINTER" in Analyzer.cpp
     if (dynamic_pointer_cast<NodeLookup>(node)->where_lookuped.lock() != shared_ptr<NodeVariable>()) {
-      // dynamic_pointer_cast<NodeLookup>(node)->where_lookuped.lock()->output_references.erase(node);
+      // dynamic_pointer_cast<NodeLookup>(node)->where_lookuped.lock()->output_references.erase(...node...);
     }
   }
   if (node->GetNodeType() == XRP_APPLICATION) {
@@ -107,10 +109,11 @@ void AddToReevaluationQueue
     }
   }
 
-  for (set< weak_ptr<Node> >::iterator iterator = current_reevaluation.reevaluation_node->output_references.begin();
+  for (multiset< weak_ptr<Node> >::iterator iterator = current_reevaluation.reevaluation_node->output_references.begin();
         iterator != current_reevaluation.reevaluation_node->output_references.end();
         iterator++)
   {
+    if (iterator->expired() == true) { number_of_lost_nodes++; continue; }
     assert(iterator->expired() == false);
     if (iterator->lock()->GetNodeType() == VARIABLE) {
 #ifdef _MSC_VER // This IF should be removed. It is here only because the GetQueueContainer returns not the deque in Unix?
@@ -122,7 +125,7 @@ void AddToReevaluationQueue
       dynamic_pointer_cast<NodeVariable>(iterator->lock())->Reevaluate(reevaluation_result->passing_value,
                                                                         current_reevaluation.reevaluation_node,
                                                                         reevaluation_parameters);
-      for (set< weak_ptr<Node> >::iterator variable_iterator =
+      for (multiset< weak_ptr<Node> >::iterator variable_iterator =
               dynamic_pointer_cast<NodeVariable>(iterator->lock())->output_references.begin();
             variable_iterator != dynamic_pointer_cast<NodeVariable>(iterator->lock())->output_references.end();
             variable_iterator++)
@@ -159,9 +162,9 @@ void AddToReevaluationQueue
             continue; // The operator is the same.
           }
           reevaluation_parameters->
-            omit_patterns.push(OmitPattern(dynamic_pointer_cast<NodeApplicationCaller>(
-                                            current_reevaluation.reevaluation_node->parent.lock())->application_node->myorder,
-                                          current_reevaluation.reevaluation_node->parent.lock()->myorder));
+            omit_patterns.push(OmitPattern(GetOrder(dynamic_pointer_cast<NodeApplicationCaller>(
+                                            current_reevaluation.reevaluation_node->parent.lock())->application_node),
+                                          GetOrder(current_reevaluation.reevaluation_node->parent.lock())));
         }
       }
       assert(current_reevaluation.reevaluation_node != shared_ptr<NodeEvaluation>());
@@ -201,13 +204,13 @@ void PropagateNewValue
       reevaluation_queue.erase(iterator_to_last_element);
     }
     if (!omit_patterns.empty()) {
-      if (VerifyOrderPattern(omit_patterns.top().omit_pattern, current_reevaluation.reevaluation_node->myorder)) {
-        if (omit_patterns.top().stop_pattern == current_reevaluation.reevaluation_node->myorder) {
+      if (VerifyOrderPattern(omit_patterns.top().omit_pattern, GetOrder(current_reevaluation.reevaluation_node))) {
+        if (omit_patterns.top().stop_pattern == GetOrder(current_reevaluation.reevaluation_node)) {
           omit_patterns.pop(); // FIXME: do not copy this condition the second time below?
         }
         continue;
       }
-      if (omit_patterns.top().stop_pattern == current_reevaluation.reevaluation_node->myorder) {
+      if (omit_patterns.top().stop_pattern == GetOrder(current_reevaluation.reevaluation_node)) {
         omit_patterns.pop();
       }
     }
@@ -292,6 +295,30 @@ void FinalizeProposal
          iterator++) {
       (iterator->first)->my_sampled_value = iterator->second;
     }
+
+    while (!reevaluation_parameters->new_memoized_procedure_orders.empty()) {
+      map< shared_ptr<NodeEvaluation>, map< shared_ptr<NodeEvaluation>, int> >::iterator iterator =
+        reevaluation_parameters->new_memoized_procedure_orders.begin();
+      
+      while (!iterator->second.empty()) {
+        map< shared_ptr<NodeEvaluation>, int>::iterator iterator2 =
+          iterator->second.begin();
+
+        if (iterator->first->memoized_procedure_order->previous_nodes.count(iterator2->first) == 0) {
+          iterator->first->memoized_procedure_order->previous_nodes[iterator2->first] = 0;
+        }
+        iterator->first->memoized_procedure_order->previous_nodes[iterator2->first] =
+          iterator->first->memoized_procedure_order->previous_nodes[iterator2->first] + iterator2->second;
+        assert(iterator->first->memoized_procedure_order->previous_nodes[iterator2->first] >= 0);
+        if (iterator->first->memoized_procedure_order->previous_nodes[iterator2->first] == 0) {
+          iterator->first->memoized_procedure_order->previous_nodes.erase(iterator2->first);
+        }
+
+        iterator->second.erase(iterator2);
+      }
+
+      reevaluation_parameters->new_memoized_procedure_orders.erase(iterator);
+    }
   }
 
   while (!reevaluation_parameters->touched_nodes.empty()) {
@@ -302,7 +329,7 @@ void FinalizeProposal
     if (current_node->GetNodeType() == VARIABLE) {
       assert(dynamic_pointer_cast<NodeVariable>(current_node)->new_value != shared_ptr<VentureValue>());
       if (mh_decision == MH_APPROVED) {
-        if (dynamic_pointer_cast<NodeVariable>(current_node)->output_references.size() == 1 &&
+        if (dynamic_pointer_cast<NodeVariable>(current_node)->output_references.size() >= 1 &&
               dynamic_pointer_cast<NodeVariable>(current_node)->output_references.begin()->lock()->GetNodeType() == XRP_APPLICATION &&
               ((dynamic_pointer_cast<NodeXRPApplication>(dynamic_pointer_cast<NodeVariable>(current_node)->output_references.begin()->lock())->xrp->xrp->GetName() != "XRP__SymmetricDirichletMultinomial_maker" && dynamic_pointer_cast<NodeXRPApplication>(dynamic_pointer_cast<NodeVariable>(current_node)->output_references.begin()->lock())->xrp->xrp->GetName() != "XRP__CRPmaker") ||
                global_environment->variables.count("fast-calc-joint-prob") != 1)) {
@@ -447,7 +474,12 @@ MHProposalResults MakeMHProposal
 {
   int proposal_unique_id = 0; // FIXME: deprecated?
 
-  //Debug// cout << "New MH" << endl;
+  number_of_lost_nodes = 0;
+
+  //cout << "New MH" << endl;
+
+  MH_iteration_number++;
+  //cout << "MH ID: " << MH_iteration_number << endl;
 
   ProposalInfo this_proposal;
   this_proposal.proposal_unique_id = proposal_unique_id; // FIXME: through constructor
@@ -566,7 +598,7 @@ MHProposalResults MakeMHProposal
     // cout << "Decline" << endl;
   }
   // cout << "***" << endl;
-
+  
   /*
   cout << "New MH decision: " << mh_decision << " " << random_choice->xrp->xrp->GetName()
        << " " << random_choice->node_key
@@ -575,8 +607,13 @@ MHProposalResults MakeMHProposal
        << " " << number_of_random_choices << " " << reevaluation_parameters->creating_random_choices.size() << " " << reevaluation_parameters->deleting_random_choices.size()
        << " " << P_new << " " << P_old << " " << Q_NewToOld << " " << Q_OldToNew << endl << endl;
   */
-
+  
   FinalizeProposal(mh_decision, reevaluation_parameters);
+
+  if (number_of_lost_nodes > 10000) {
+    throw std::runtime_error("number_of_lost_nodes > 10000");
+  }
+  //cout << "number_of_lost_nodes = " << number_of_lost_nodes << endl;
 
   return MHProposalResults(P_new, P_old);
 }
@@ -597,7 +634,7 @@ pair<real, real> AbsorbBranchProbability(shared_ptr<Node> first_node, shared_ptr
 
       vector< shared_ptr<VentureValue> > got_arguments = GetArgumentsFromEnvironment(current_node2->environment, // Not efficient?
                                       dynamic_pointer_cast<NodeEvaluation>(current_node2), true);
-      current_node2->xrp->xrp->Remove(got_arguments, current_node2->my_sampled_value);
+      current_node2->xrp->xrp->Remove(reevaluation_parameters, current_node, got_arguments, current_node2->my_sampled_value);
       
       real node_loglikelihood = current_node2->xrp->xrp->GetSampledLoglikelihood(got_arguments, current_node2->my_sampled_value);
 
@@ -639,7 +676,7 @@ void UnabsorbBranchProbability(shared_ptr<Node> first_node, shared_ptr<Reevaluat
       vector< shared_ptr<VentureValue> > got_arguments = GetArgumentsFromEnvironment(current_node2->environment, // Not efficient?
                                       dynamic_pointer_cast<NodeEvaluation>(current_node2), true);
       real node_loglikelihood = current_node2->xrp->xrp->GetSampledLoglikelihood(got_arguments, current_node2->my_sampled_value);
-      current_node2->xrp->xrp->Incorporate(got_arguments, current_node2->my_sampled_value);
+      current_node2->xrp->xrp->Incorporate(reevaluation_parameters, current_node2, got_arguments, current_node2->my_sampled_value);
       
       if (reevaluation_parameters != shared_ptr<ReevaluationParameters>()) {
         if (current_node2->xrp->xrp->IsRandomChoice()) {
@@ -660,6 +697,10 @@ void UnabsorbBranchProbability(shared_ptr<Node> first_node, shared_ptr<Reevaluat
         XRP__memoizer_map_element& mem_table_element =
           (*(dynamic_pointer_cast<XRP__memoized_procedure>(dynamic_pointer_cast<NodeXRPApplication>(current_node)->xrp->xrp)->mem_table.find(mem_table_key))).second;
         if (mem_table_element.active_uses == 1) {
+          //UnabsorbBranchProbability(mem_table_element.application_caller_node, reevaluation_parameters);
+          //mem_last_id++;
+          //reevaluation_parameters->make_blank_evaluation_for_memoized_procedure.push(
+          //  std::pair<shared_ptr<Node>, size_t>(mem_table_element.application_caller_node, mem_last_id));
           processing_queue.push(mem_table_element.application_caller_node);
         }
       }

@@ -6,12 +6,16 @@
 #include "Evaluator.h"
 #include "XRPmem.h"
 
+int mem_last_id = 0;
+
 shared_ptr<VentureValue> Evaluator(shared_ptr<NodeEvaluation> evaluation_node,
                                    shared_ptr<NodeEnvironment> environment,
                                    shared_ptr<Node> output_reference_target,
                                    shared_ptr<NodeEvaluation> caller,
                                    EvaluationConfig& evaluation_config,
-                                   string request_postfix) {
+                                   string request_postfix,
+                                   shared_ptr<MemoizedProcedureOrder> memoized_procedure_order) {
+  bool if_application = false;
   if (caller == shared_ptr<NodeEvaluation>()) { // It is directive.
     DIRECTIVE_COUNTER++;
     evaluation_node->node_key = boost::lexical_cast<string>(DIRECTIVE_COUNTER);
@@ -29,6 +33,7 @@ shared_ptr<VentureValue> Evaluator(shared_ptr<NodeEvaluation> evaluation_node,
         evaluation_node->node_key = caller->node_key + "|" + request_postfix;
       } else if (parent_node->application_node == evaluation_node || parent_node->new_application_node == evaluation_node) {
         evaluation_node->node_key = caller->node_key + "|ap";
+        if_application = true;
       } else {
         throw std::runtime_error("Unexpected situation for the 'node_key' (1).");
       }
@@ -42,19 +47,30 @@ shared_ptr<VentureValue> Evaluator(shared_ptr<NodeEvaluation> evaluation_node,
 
     evaluation_node->myorder = caller->myorder;
     if (caller->GetNodeType() == XRP_APPLICATION &&
-          dynamic_pointer_cast<NodeXRPApplication>(caller)->xrp->xrp->GetName() == "XRP__memoizer" && 1 == 2)
+          dynamic_pointer_cast<NodeXRPApplication>(caller)->xrp->xrp->GetName() == "XRP__memoizer" && 1 == 1)
     {
       size_t& my_last_evaluation_id =
         dynamic_pointer_cast<XRP__memoized_procedure>(dynamic_pointer_cast<VentureXRP>(
           dynamic_pointer_cast<NodeXRPApplication>(caller)->my_sampled_value)->xrp)->my_last_evaluation_id;
       // FIXME: lock things for multithread version?
-      evaluation_node->myorder.push_back(std::numeric_limits<size_t>::max());
+      // evaluation_node->myorder.push_back(std::numeric_limits<size_t>::max());
+      // evaluation_node->myorder.push_back(my_last_evaluation_id);
+      evaluation_node->myorder.clear();
+      mem_last_id++;
+      evaluation_node->myorder.resize(1, mem_last_id);
+      // evaluation_config.memoized_procedure_order = shared_ptr<MemoizedProcedureOrder>(new MemoizedProcedureOrder());
     } else {
-      caller->last_child_order++;
-      evaluation_node->myorder.push_back(caller->last_child_order);
+      if (if_application) {
+        evaluation_node->myorder.push_back(2);
+      } else {
+        evaluation_node->myorder.push_back(1);
+      }
+      // caller->last_child_order++;
     }
     evaluation_node->parent = caller;
   }
+
+  evaluation_node->memoized_procedure_order = memoized_procedure_order;
 
   evaluation_node->environment = environment;
   if (output_reference_target != shared_ptr<Node>()) {
@@ -64,17 +80,30 @@ shared_ptr<VentureValue> Evaluator(shared_ptr<NodeEvaluation> evaluation_node,
   if (evaluation_node->earlier_evaluation_nodes != shared_ptr<NodeEvaluation>()) {
     // Potential recursion problem (i.e. stack overflow).
     // FIXME: in the future implement via the loop.
+    throw std::runtime_error("Not supporting.");
     Evaluator(evaluation_node->earlier_evaluation_nodes,
               environment,
               shared_ptr<Node>(),
               dynamic_pointer_cast<NodeEvaluation>(evaluation_node->shared_from_this()),
               evaluation_config,
-              "..."); // FIXME: not supported!
+              "...",
+              memoized_procedure_order); // FIXME: not supported!
   }
 
   assert(evaluation_node->evaluated == false);
   evaluation_node->evaluated = true; // Not too early?
-  return evaluation_node->Evaluate(environment, evaluation_config);
+  shared_ptr<VentureValue> returning_value = evaluation_node->Evaluate(environment, evaluation_config, memoized_procedure_order);
+ 
+  // if (caller != shared_ptr<NodeEvaluation>()) {
+    // if (caller->GetNodeType() == XRP_APPLICATION &&
+          // dynamic_pointer_cast<NodeXRPApplication>(caller)->xrp->xrp->GetName() == "XRP__memoizer" && 1 == 1)
+    // {
+      // mem_last_id++;
+      // evaluation_node->memoized_procedure_order->order = mem_last_id;
+    // }
+  // }
+
+  return returning_value;
 }
 
 shared_ptr<Node> BindToEnvironment(shared_ptr<NodeEnvironment> target_environment,
@@ -239,7 +268,7 @@ ConstrainingResult ConstrainBranch(shared_ptr<NodeEvaluation> toppest_branch_nod
         vector< shared_ptr<VentureValue> > got_arguments = GetArgumentsFromEnvironment(node2->environment, // Not efficient?
                                         node2,
                                         false);
-        node2->xrp->xrp->Remove(got_arguments, node2->my_sampled_value);
+        node2->xrp->xrp->Remove(reevaluation_parameters, node2, got_arguments, node2->my_sampled_value);
         //real logscore_change = -1.0 * node2->xrp->xrp->GetSampledLoglikelihood(got_arguments, node2->my_sampled_value);
         // Assuming that if it was rescored, it saved the necessary value, i.e. there would not be necessity in
         // the forcing. Otherwise:
@@ -248,7 +277,7 @@ ConstrainingResult ConstrainBranch(shared_ptr<NodeEvaluation> toppest_branch_nod
         node2->my_sampled_value = desired_value;
         reevaluation_parameters->__log_p_new += node2->xrp->xrp->GetSampledLoglikelihood(got_arguments, node2->my_sampled_value);
         //logscore_change +=node2->xrp->xrp->GetSampledLoglikelihood(got_arguments, node2->my_sampled_value);
-        node2->xrp->xrp->Incorporate(got_arguments, node2->my_sampled_value);
+        node2->xrp->xrp->Incorporate(reevaluation_parameters, node2, got_arguments, node2->my_sampled_value);
 
         shared_ptr<ReevaluationResult> reevaluation_result =
           shared_ptr<ReevaluationResult>(

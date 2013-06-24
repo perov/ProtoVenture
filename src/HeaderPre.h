@@ -42,6 +42,7 @@ using boost::dynamic_pointer_cast;
 using std::string;
 using std::list;
 using std::set;
+using std::multiset;
 using std::map;
 using std::queue;
 using std::stack;
