@@ -1,7 +1,10 @@
+
 #ifndef VENTURE___VENTURE_VALUES_H
 #define VENTURE___VENTURE_VALUES_H
 
 #include "Header.h"
+
+struct MemoizedProcedureOrder;
 
 enum VentureDataTypes
 {

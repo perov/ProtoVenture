@@ -11,7 +11,8 @@ shared_ptr<VentureValue> Evaluator(shared_ptr<NodeEvaluation> evaluation_node,
                                    shared_ptr<Node> output_reference_target,
                                    shared_ptr<NodeEvaluation> caller,
                                    EvaluationConfig& evaluation_config,
-                                   string request_postfix);
+                                   string request_postfix,
+                                   shared_ptr<MemoizedProcedureOrder> memoized_procedure_order);
 
 shared_ptr<Node> BindToEnvironment(shared_ptr<NodeEnvironment> target_environment,
                                    shared_ptr<VentureSymbol> variable_name,
