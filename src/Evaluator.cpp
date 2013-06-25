@@ -42,13 +42,14 @@ shared_ptr<VentureValue> Evaluator(shared_ptr<NodeEvaluation> evaluation_node,
 
     evaluation_node->myorder = caller->myorder;
     if (caller->GetNodeType() == XRP_APPLICATION &&
-          dynamic_pointer_cast<NodeXRPApplication>(caller)->xrp->xrp->GetName() == "XRP__memoizer" && 1 == 2)
+          dynamic_pointer_cast<NodeXRPApplication>(caller)->xrp->xrp->GetName() == "XRP__memoizer" && 1 == 1)
     {
       size_t& my_last_evaluation_id =
         dynamic_pointer_cast<XRP__memoized_procedure>(dynamic_pointer_cast<VentureXRP>(
           dynamic_pointer_cast<NodeXRPApplication>(caller)->my_sampled_value)->xrp)->my_last_evaluation_id;
+      my_last_evaluation_id++;
       // FIXME: lock things for multithread version?
-      evaluation_node->myorder.push_back(std::numeric_limits<size_t>::max());
+      evaluation_node->myorder.push_back(my_last_evaluation_id); // (std::numeric_limits<size_t>::max());
     } else {
       caller->last_child_order++;
       evaluation_node->myorder.push_back(caller->last_child_order);
@@ -113,7 +114,10 @@ shared_ptr<VentureValue> LookupValue(shared_ptr<NodeEnvironment> environment,
           dynamic_pointer_cast<NodeLookup>(lookuper)->where_lookuped =
             inspecting_environment->variables[variable_name->GetString()];
         }
-        inspecting_environment->variables[variable_name->GetString()]->output_references.insert(lookuper);
+        if (inspecting_environment->variables[variable_name->GetString()]->output_references.count(lookuper) == 0) {
+          // If there is no dependency yet:
+            inspecting_environment->variables[variable_name->GetString()]->output_references.insert(lookuper);
+        }
       }
       if (inspecting_environment->variables[variable_name->GetString()]->new_value == shared_ptr<VentureValue>() ||
           old_values == true) {
@@ -143,7 +147,10 @@ shared_ptr<VentureValue> LookupValue(shared_ptr<NodeEnvironment> environment,
       dynamic_pointer_cast<NodeLookup>(lookuper)->where_lookuped =
         environment->local_variables[index];
     }
-    environment->local_variables[index]->output_references.insert(lookuper);
+    if (environment->local_variables[index]->output_references.count(lookuper) == 0) {
+      // If there is no dependency yet:
+      environment->local_variables[index]->output_references.insert(lookuper);
+    }
   }
   if (environment->local_variables[index]->new_value == shared_ptr<VentureValue>() ||
       old_values == true) {

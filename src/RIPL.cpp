@@ -567,7 +567,52 @@ void BindStandardElementsToGlobalEnvironment() {
 
 
 
-
+void CheckNode(shared_ptr<Node> node, size_t level) {
+  if (dynamic_pointer_cast<NodeEvaluation>(node) != shared_ptr<NodeEvaluation>()) {
+    std::multiset< weak_ptr<Node> >::iterator previous = dynamic_pointer_cast<NodeEvaluation>(node)->output_references.end();
+    for (std::multiset< weak_ptr<Node> >::iterator iterator = dynamic_pointer_cast<NodeEvaluation>(node)->output_references.begin();
+         iterator != dynamic_pointer_cast<NodeEvaluation>(node)->output_references.end();
+         iterator++)
+    {
+      if (iterator->expired())
+      {
+        throw std::runtime_error("Expired.");
+      }
+      if (previous != dynamic_pointer_cast<NodeEvaluation>(node)->output_references.end() &&
+          previous->lock() == iterator->lock())
+      {
+        throw std::runtime_error("Duplication.");
+      }
+      previous = iterator;
+      if (level < 5) {
+        CheckNode(iterator->lock(), level + 1);
+      }
+    }
+  }
+  if (dynamic_pointer_cast<NodeVariable>(node) != shared_ptr<NodeVariable>()) {
+    std::multiset< weak_ptr<Node> >::iterator previous = dynamic_pointer_cast<NodeVariable>(node)->output_references.end();
+    for (std::multiset< weak_ptr<Node> >::iterator iterator = dynamic_pointer_cast<NodeVariable>(node)->output_references.begin();
+         iterator != dynamic_pointer_cast<NodeVariable>(node)->output_references.end();
+         iterator++)
+    {
+      if (iterator->expired())
+      {
+        cout << "Expired" << endl;
+        throw std::runtime_error("Expired.");
+      }
+      if (previous != dynamic_pointer_cast<NodeVariable>(node)->output_references.end() &&
+          previous->lock() == iterator->lock())
+      {
+        cout << "Duplication" << endl;
+        throw std::runtime_error("Duplication.");
+      }
+      previous = iterator;
+      if (level < 2) {
+        CheckNode(iterator->lock(), level + 1);
+      }
+    }
+  }
+}
 
 real GetLogscoreOfDirective(shared_ptr<Node> first_node) {
   real changed_probability = log(1.0);
@@ -576,6 +621,7 @@ real GetLogscoreOfDirective(shared_ptr<Node> first_node) {
   while (!processing_queue.empty()) {
     processing_queue.front()->GetChildren(processing_queue);
     shared_ptr<Node> current_node = processing_queue.front();
+    CheckNode(current_node, 0);
     processing_queue.pop();
 
     if (current_node->GetNodeType() == XRP_APPLICATION) {

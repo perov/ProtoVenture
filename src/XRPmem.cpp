@@ -95,7 +95,7 @@ void XRP__memoized_procedure::Unsampler(vector< shared_ptr<VentureValue> >& old_
   }
   XRP__memoizer_map_element& mem_table_element =
     (*(this->mem_table.find(mem_table_key))).second;
-  mem_table_element.application_caller_node->output_references.erase(caller);
+  mem_table_element.application_caller_node->output_references.erase(mem_table_element.application_caller_node->output_references.find(caller));
   if (mem_table_element.hidden_uses == 0) {
     throw std::runtime_error("(1) Cannot do 'mem_table_element.hidden_uses--'.");
   }
@@ -135,7 +135,7 @@ void XRP__memoized_procedure::Incorporate(vector< shared_ptr<VentureValue> >& ar
 void XRP__memoized_procedure::Remove(vector< shared_ptr<VentureValue> >& arguments,
                           shared_ptr<VentureValue> sampled_value) {
   //Debug// assert(arguments.size() == 1);
-  //Debug// cout << "Removing" << arguments[0]->GetString() << endl;
+  // cout << "Removing " << " " << this << " " << XRP__memoized_procedure__MakeMapKeyFromArguments(arguments) << endl;
 
   string mem_table_key = XRP__memoized_procedure__MakeMapKeyFromArguments(arguments);
   if (this->mem_table.count(mem_table_key) == 0) {
@@ -144,8 +144,8 @@ void XRP__memoized_procedure::Remove(vector< shared_ptr<VentureValue> >& argumen
   XRP__memoizer_map_element& mem_table_element =
     (*(this->mem_table.find(mem_table_key))).second;
   if (mem_table_element.active_uses == 0) {
-    stack< shared_ptr<Node> > tmp;
-    DrawGraphDuringMH(tmp);
+    cout << "sizeof: " << global_reevaluation_parameters->touched_nodes.size() << endl;
+    DrawGraphDuringMH(global_reevaluation_parameters->touched_nodes);
     throw std::runtime_error("Cannot do 'mem_table_element.active_uses--'.");
   }
   mem_table_element.hidden_uses++;

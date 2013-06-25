@@ -7,6 +7,10 @@
 #include "MHProposal.h"
 #include "RIPL.h"
 
+int MHid = 0;
+
+shared_ptr<ReevaluationParameters> global_reevaluation_parameters;
+
 bool VerifyOrderPattern(vector<size_t>& omit_pattern,
                         vector<size_t>& checking_order) {
   for (size_t index = 0; index < omit_pattern.size(); index++) {
@@ -81,6 +85,10 @@ void TouchNode(shared_ptr<Node> node, stack< shared_ptr<Node> >& touched_nodes, 
     }
   }*/
   touched_nodes.push(node);
+  //if (dynamic_pointer_cast<NodeEvaluation>(node) != shared_ptr<NodeEvaluation>()) {
+  //  cout << "Touching. ";
+  //  PrintVector(dynamic_pointer_cast<NodeEvaluation>(node)->myorder);
+  //}
   touched_nodes2.push_back(node);
 }
 
@@ -107,7 +115,7 @@ void AddToReevaluationQueue
     }
   }
 
-  for (set< weak_ptr<Node> >::iterator iterator = current_reevaluation.reevaluation_node->output_references.begin();
+  for (std::multiset< weak_ptr<Node> >::iterator iterator = current_reevaluation.reevaluation_node->output_references.begin();
         iterator != current_reevaluation.reevaluation_node->output_references.end();
         iterator++)
   {
@@ -122,8 +130,8 @@ void AddToReevaluationQueue
       dynamic_pointer_cast<NodeVariable>(iterator->lock())->Reevaluate(reevaluation_result->passing_value,
                                                                         current_reevaluation.reevaluation_node,
                                                                         reevaluation_parameters);
-      for (set< weak_ptr<Node> >::iterator variable_iterator =
-              dynamic_pointer_cast<NodeVariable>(iterator->lock())->output_references.begin();
+      for (std::multiset< weak_ptr<Node> >::iterator variable_iterator =
+            dynamic_pointer_cast<NodeVariable>(iterator->lock())->output_references.begin();
             variable_iterator != dynamic_pointer_cast<NodeVariable>(iterator->lock())->output_references.end();
             variable_iterator++)
       {
@@ -162,6 +170,7 @@ void AddToReevaluationQueue
             omit_patterns.push(OmitPattern(dynamic_pointer_cast<NodeApplicationCaller>(
                                             current_reevaluation.reevaluation_node->parent.lock())->application_node->myorder,
                                           current_reevaluation.reevaluation_node->parent.lock()->myorder));
+          //cout << "PushingOmitPattern. "; PrintVector(dynamic_pointer_cast<NodeApplicationCaller>(current_reevaluation.reevaluation_node->parent.lock())->application_node->myorder);
         }
       }
       assert(current_reevaluation.reevaluation_node != shared_ptr<NodeEvaluation>());
@@ -203,11 +212,13 @@ void PropagateNewValue
     if (!omit_patterns.empty()) {
       if (VerifyOrderPattern(omit_patterns.top().omit_pattern, current_reevaluation.reevaluation_node->myorder)) {
         if (omit_patterns.top().stop_pattern == current_reevaluation.reevaluation_node->myorder) {
+          //cout << "PoppingOmitPattern. "; PrintVector(omit_patterns.top().omit_pattern);
           omit_patterns.pop(); // FIXME: do not copy this condition the second time below?
         }
         continue;
       }
       if (omit_patterns.top().stop_pattern == current_reevaluation.reevaluation_node->myorder) {
+        //cout << "PoppingOmitPattern. "; PrintVector(omit_patterns.top().omit_pattern);
         omit_patterns.pop();
       }
     }
@@ -217,11 +228,13 @@ void PropagateNewValue
       std::find(GetStackContainer(touched_nodes).begin(), GetStackContainer(touched_nodes).end(), current_reevaluation.reevaluation_node);
     if (!(already_existent_element == GetStackContainer(touched_nodes).end())) {
       int distance = std::distance(GetStackContainer(touched_nodes).begin(), already_existent_element);
+      cout << "sizeof: " << touched_nodes.size() << endl;
       //cout << "Pam: " << distance << endl;
       DrawGraphDuringMH(touched_nodes);
     }
 #endif
 #endif
+
 #ifdef _MSC_VER // This IF should be removed. It is here only because the GetQueueContainer returns not the deque in Unix?
     assert(std::find(GetStackContainer(touched_nodes).begin(), GetStackContainer(touched_nodes).end(), current_reevaluation.reevaluation_node)
       == GetStackContainer(touched_nodes).end());
@@ -289,7 +302,8 @@ void FinalizeProposal
            reevaluation_parameters->new_values_for_memoized_procedures.begin();
          iterator !=
            reevaluation_parameters->new_values_for_memoized_procedures.end();
-         iterator++) {
+         iterator++)
+    {
       (iterator->first)->my_sampled_value = iterator->second;
     }
   }
@@ -298,11 +312,14 @@ void FinalizeProposal
     shared_ptr<Node> current_node = reevaluation_parameters->touched_nodes.top();
     current_node->already_propagated = shared_ptr<VentureValue>();
     reevaluation_parameters->touched_nodes.pop();
-    if (current_node->was_deleted == true) { continue; } // FIXME: Why do we need it?
+    if (current_node->was_deleted == true) {
+      throw std::runtime_error("Just checking.");
+      continue;
+    } // FIXME: Why do we need it?
     if (current_node->GetNodeType() == VARIABLE) {
       assert(dynamic_pointer_cast<NodeVariable>(current_node)->new_value != shared_ptr<VentureValue>());
       if (mh_decision == MH_APPROVED) {
-        if (dynamic_pointer_cast<NodeVariable>(current_node)->output_references.size() == 1 &&
+        if (dynamic_pointer_cast<NodeVariable>(current_node)->output_references.size() >= 1 &&
               dynamic_pointer_cast<NodeVariable>(current_node)->output_references.begin()->lock()->GetNodeType() == XRP_APPLICATION &&
               ((dynamic_pointer_cast<NodeXRPApplication>(dynamic_pointer_cast<NodeVariable>(current_node)->output_references.begin()->lock())->xrp->xrp->GetName() != "XRP__SymmetricDirichletMultinomial_maker" && dynamic_pointer_cast<NodeXRPApplication>(dynamic_pointer_cast<NodeVariable>(current_node)->output_references.begin()->lock())->xrp->xrp->GetName() != "XRP__CRPmaker") ||
                global_environment->variables.count("fast-calc-joint-prob") != 1)) {
@@ -340,8 +357,10 @@ void FinalizeProposal
       }
 
       if (dynamic_pointer_cast<NodeApplicationCaller>(current_node)->new_application_node != shared_ptr<NodeEvaluation>()) {
-        UnabsorbBranchProbability(dynamic_pointer_cast<NodeApplicationCaller>(current_node)->application_node, shared_ptr<ReevaluationParameters>());
-        
+        if (dynamic_pointer_cast<NodeApplicationCaller>(current_node)->application_node->already_absorbed == MHid) {
+          UnabsorbBranchProbability(dynamic_pointer_cast<NodeApplicationCaller>(current_node)->application_node, shared_ptr<ReevaluationParameters>());
+        }
+
         if (mh_decision == MH_DECLINED) {
           if (current_node->constraint_times > 0) {
             FindConstrainingNode(dynamic_pointer_cast<NodeApplicationCaller>(current_node)->new_application_node, -1 * current_node->constraint_times, false);
@@ -449,6 +468,9 @@ MHProposalResults MakeMHProposal
 
   //Debug// cout << "New MH" << endl;
 
+  MHid++;
+  cout << "NewMH# " << MHid << endl;
+
   ProposalInfo this_proposal;
   this_proposal.proposal_unique_id = proposal_unique_id; // FIXME: through constructor
   this_proposal.request_to_terminate = false; // FIXME: through constructor
@@ -499,6 +521,9 @@ MHProposalResults MakeMHProposal
       touched_nodes2,
       this_proposal,
       omit_patterns));
+
+  global_reevaluation_parameters =
+    reevaluation_parameters;
   
   reevaluation_parameters->we_are_in_enumeration = proposing_value != shared_ptr<VentureValue>();
   reevaluation_parameters->proposing_value_for_this_proposal = proposing_value;
@@ -567,14 +592,14 @@ MHProposalResults MakeMHProposal
   }
   // cout << "***" << endl;
 
-  /*
+  ///*
   cout << "New MH decision: " << mh_decision << " " << random_choice->xrp->xrp->GetName()
        << " " << random_choice->node_key
        << " " << random_choice->my_sampled_value->GetString()
        << " " << dynamic_pointer_cast<NodeXRPApplication>(dynamic_pointer_cast<NodeApplicationCaller>(random_choice->parent.lock())->new_application_node)->my_sampled_value->GetString()
        << " " << number_of_random_choices << " " << reevaluation_parameters->creating_random_choices.size() << " " << reevaluation_parameters->deleting_random_choices.size()
        << " " << P_new << " " << P_old << " " << Q_NewToOld << " " << Q_OldToNew << endl << endl;
-  */
+  //*/
 
   FinalizeProposal(mh_decision, reevaluation_parameters);
 
@@ -583,13 +608,29 @@ MHProposalResults MakeMHProposal
 
 // Returns pair<logP_constraint, logP_unconstraint>
 pair<real, real> AbsorbBranchProbability(shared_ptr<Node> first_node, shared_ptr<ReevaluationParameters> reevaluation_parameters) {
+  // cout << "Absorbing from. ";
+  // PrintVector(dynamic_pointer_cast<NodeEvaluation>(first_node)->myorder);
   real constraint_loglikelihood = log(1.0);
   real unconstraint_loglikelihood = log(1.0);
   queue< shared_ptr<Node> > processing_queue;
   processing_queue.push(first_node);
   while (!processing_queue.empty()) {
-    processing_queue.front()->GetChildren(processing_queue);
+    processing_queue.front()->GetChildren(processing_queue, 1);
     shared_ptr<Node> current_node = processing_queue.front();
+    // cout << "Currently absorbing. ";
+    // cout << current_node->GetNodeType() << " ";
+    if (dynamic_pointer_cast<NodeEvaluation>(current_node)->myorder.size() == 0 &&
+        dynamic_pointer_cast<NodeEvaluation>(current_node)->evaluated == true)
+    {
+      throw std::runtime_error("Very strange: empty order.");
+    }
+    //PrintVector(dynamic_pointer_cast<NodeEvaluation>(current_node)->myorder);
+    if (current_node->already_absorbed == MHid) {
+      cout << "sizeof: " << global_reevaluation_parameters->touched_nodes.size() << endl;
+      DrawGraphDuringMH(global_reevaluation_parameters->touched_nodes);
+      throw std::runtime_error("Already was absorbed!");
+    }
+    current_node->already_absorbed = MHid;
     processing_queue.pop();
 
     if (current_node->GetNodeType() == XRP_APPLICATION) {
@@ -605,7 +646,11 @@ pair<real, real> AbsorbBranchProbability(shared_ptr<Node> first_node, shared_ptr
         if (current_node2->constraint_times > 0) {
           constraint_loglikelihood += node_loglikelihood;
         } else {
-          reevaluation_parameters->deleting_random_choices.insert(current_node2);
+          if (reevaluation_parameters->creating_random_choices.count(current_node2) == 1) {
+            reevaluation_parameters->creating_random_choices.erase(current_node2);
+          } else {
+            reevaluation_parameters->deleting_random_choices.insert(current_node2);
+          }
           unconstraint_loglikelihood += node_loglikelihood;
         }
       }
@@ -629,9 +674,14 @@ void UnabsorbBranchProbability(shared_ptr<Node> first_node, shared_ptr<Reevaluat
   queue< shared_ptr<Node> > processing_queue;
   processing_queue.push(first_node);
   while (!processing_queue.empty()) {
-    processing_queue.front()->GetChildren(processing_queue);
+    processing_queue.front()->GetChildren(processing_queue, 2);
     shared_ptr<Node> current_node = processing_queue.front();
     processing_queue.pop();
+    if (current_node->already_absorbed != MHid) {
+      continue;
+    }
+    assert(current_node->already_absorbed == MHid);
+    current_node->already_absorbed = -1;
 
     if (current_node->GetNodeType() == XRP_APPLICATION) {
       shared_ptr<NodeXRPApplication> current_node2 = dynamic_pointer_cast<NodeXRPApplication>(current_node);
