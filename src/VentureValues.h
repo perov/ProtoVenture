@@ -1,4 +1,3 @@
-
 #ifndef VENTURE___VENTURE_VALUES_H
 #define VENTURE___VENTURE_VALUES_H
 
@@ -6,7 +5,8 @@
 
 enum VentureDataTypes
 {
-  UNDEFINED_TYPE, BOOLEAN, COUNT, REAL, PROBABILITY, ATOM, SIMPLEXPOINT, SMOOTHEDCOUNT, NIL, LIST, SYMBOL, LAMBDA, XRP_REFERENCE, NODE, PYTHON_OBJECT
+  UNDEFINED_TYPE, BOOLEAN, COUNT, REAL, PROBABILITY, ATOM, SIMPLEXPOINT, SMOOTHEDCOUNT, NIL, LIST, SYMBOL, LAMBDA, XRP_REFERENCE, NODE, PYTHON_OBJECT,
+  SMOOTHED_COUNT_VECTOR, STRING
 
 #ifdef VENTURE__FLAG__COMPILE_WITH_ZMQ
   , ZMQ, EXTERNALXRP
@@ -133,6 +133,20 @@ struct VentureSmoothedCount : public VentureValue {
   real data;
 };
 
+struct VentureSmoothedCountVector : public VentureValue {
+  VentureSmoothedCountVector(vector<real>&);
+  static void CheckMyData(VentureValue* venture_value);
+  // Question: where would be the type transformation happen?
+  //           Before this function, it seems?
+  virtual VentureDataTypes GetType();
+  virtual bool CompareByValue(shared_ptr<VentureValue>);
+  virtual string GetString();
+  virtual PyObject* GetAsPythonObject();
+  ~VentureSmoothedCountVector();
+
+  vector<real> data;
+};
+
 struct VentureList;
 
 extern shared_ptr<VentureList> const NIL_INSTANCE;
@@ -223,7 +237,7 @@ shared_ptr<VentureValue> GetNth(shared_ptr<VentureList>, size_t);
 
 void AddToList(shared_ptr<VentureList>, shared_ptr<VentureValue>);
 
-shared_ptr<VentureList> AddFirst(shared_ptr<VentureValue>, shared_ptr<VentureList>);
+shared_ptr<VentureList> Cons(shared_ptr<VentureValue>, shared_ptr<VentureList>);
 
 size_t GetSize(shared_ptr<VentureList> list);
 
@@ -243,6 +257,19 @@ struct VenturePythonObject : public VentureValue {
   PyObject* python_object;
 };
   
+// TMP.
+struct VentureString : public VentureValue {
+  VentureString(string data) : data(data) {}
+  virtual VentureDataTypes GetType() { return STRING; }
+  virtual bool CompareByValue(shared_ptr<VentureValue> another) {
+    return ToVentureType<VentureString>(another)->data == data;
+  } // We really do not need this function?
+  virtual string GetString() { return data; }
+  virtual PyObject* GetAsPythonObject() { return Py_BuildValue("s", data.c_str()); }
+
+  string data;
+};
+
 #ifdef VENTURE__FLAG__COMPILE_WITH_ZMQ
   struct VentureExternalXRPObject : public VentureValue {
     VentureExternalXRPObject(const int, void *);

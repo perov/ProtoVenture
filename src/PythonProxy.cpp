@@ -67,8 +67,6 @@ bool ConvertPythonObjectToVentureValue
   (PyObject* python_object,
    shared_ptr<VentureValue>* pointer_to_shared_pointer)
 {
-  // Old code to delete
-  /*
   PyObject *suger_processing__lisp_parser_module__name;
   PyObject *suger_processing__lisp_parser_module;
   PyObject *suger_processing__process_sugars;
@@ -97,27 +95,30 @@ bool ConvertPythonObjectToVentureValue
   Py_DECREF(suger_processing__process_sugars);
   Py_DECREF(suger_processing__process_sugars__arguments);
   if (python_object_changed == NULL) {
+    // Assuming that Python raised some error.
+    // Pass this error further.
     throw handling_python_error();
+    /* Old code to delete:
+      PyObject* error_string__as_Python_object = PyObject_Str(PyExc_Exception);
+      if (error_string__as_Python_object == NULL) {
+        throw std::runtime_error("The function 'venture.lisp_parser.read' has raised an error (or was not evaluated for some other reason). Cannot get the error message.");
+      }
+      const char* error_string = PyString_AsString(error_string__as_Python_object);
+      Py_DECREF(error_string__as_Python_object);
+      throw std::runtime_error("The function 'venture.lisp_parser.read' has raised an error (or was not evaluated for some other reason). The error message: " + string(error_string));
+    */
   }
 
   ConvertPythonObjectToVentureValue_internal(python_object_changed, pointer_to_shared_pointer);
   
   Py_DECREF(python_object_changed);
   return true;
-  */
-  
-  // new code for the new python stack
-  ConvertPythonObjectToVentureValue_internal(python_object, pointer_to_shared_pointer);
-  return true;
 }
-
 
 bool ConvertPythonObjectToVentureValue_internal
   (PyObject* python_object,
    shared_ptr<VentureValue>* pointer_to_shared_pointer)
 {
-  // old shizzle not needed with the new python stack
-  /*
   PyObject *suger_processing__sugars_processor_module__name;
   PyObject *suger_processing__sugars_processor_module;
   PyObject *suger_processing__process_sugars;
@@ -146,13 +147,19 @@ bool ConvertPythonObjectToVentureValue_internal
   Py_DECREF(suger_processing__process_sugars);
   Py_DECREF(suger_processing__process_sugars__arguments);
   if (python_object == NULL) {
+    // Assuming that Python raised some error.
+    // Pass this error further.
     throw handling_python_error();
+    /* Old code to delete:
+      PyObject* error_string__as_Python_object = PyObject_Str(PyExc_Exception);
+      if (error_string__as_Python_object == NULL) {
+        throw std::runtime_error("The function 'venture.sugars_processor.process_sugars' has raised an error (or was not evaluated for some other reason). Cannot get the error message.");
+      }
+      const char* error_string = PyString_AsString(error_string__as_Python_object);
+      Py_DECREF(error_string__as_Python_object);
+      throw std::runtime_error("The function 'venture.sugars_processor.process_sugars' has raised an error (or was not evaluated for some other reason). The error message: " + string(error_string));
+    */
   }
-  */
-
-  // new shizzle for the new python stack
-  Py_INCREF(python_object);
-
 
   if (PyString_Check(python_object)) {
     char* string_as_chars = PyString_AsString(python_object);
@@ -347,11 +354,9 @@ ForPython__continuous_inference_status(PyObject *self, PyObject *args)
     return NULL; // ReturnInferenceIfNecessary(); ?
   }
   if (continuous_inference_status == 0) {
-    Py_INCREF(Py_False);
-    return Py_False;
+    return Py_BuildValue("b", false);
   } else {
-    Py_INCREF(Py_True); 
-    return Py_True;
+    return Py_BuildValue("b", true);
   }
 } catch(handling_python_error&) { return NULL; } catch(std::runtime_error& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }
 

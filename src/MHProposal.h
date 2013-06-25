@@ -8,6 +8,8 @@
 #include "XRPCore.h"
 #include "Utilities.h"
 
+extern int MHid;
+
 struct MHProposalResults {
   MHProposalResults(real logscore_PNew, real logscore_POld) // Should be in the MHProposal.h?
     : logscore_PNew(logscore_PNew),

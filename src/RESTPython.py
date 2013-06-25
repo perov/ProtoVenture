@@ -91,6 +91,43 @@ import venture_engine
 # print venture_engine.report_value(2)
 # print venture_engine.report_value(3)
 
+ripl = venture_engine
+import venture.utils
+venture.utils.load_to_RIPL(
+  ripl,
+  open('C:/Temp/serialized_model.lisp').read())
+# venture.utils.load_to_RIPL(
+  # ripl,
+  # """
+  # [ASSUME a (flip)]
+  # [ASSUME b (mem (lambda () (+ a c)))]
+  # [ASSUME c a]
+  # [PREDICT (b)]
+  # """
+# )
+# venture.utils.load_to_RIPL(
+  # ripl,
+  # """
+  # [ASSUME a (flip)]
+  # [ASSUME b (mem (lambda (x) (if a (flip) (flip))))]
+  # [PREDICT (b a)]
+  # """
+# )
+# for i in range(1000):
+  # print "Starting to calculate the logscore"
+  # ripl.logscore()
+  # print "Stopping to calculate the logscore"
+  # print "Starting to perform one inference iteration"
+  # ripl.infer(1)
+  # print "Stopping to perform one inference iteration"
+# ripl.infer(1000)
+
+# sys.path.append("C:/pcp/20November2012/VentureAlphaOld/SourceCode/Venture/src")
+# ripl.assume("test1", "(load-python-function str[testing_python_functions] str[test1] false)")
+# ripl.assume("test2", "(load-python-function str[testing_python_functions] str[test2] true)")
+# print ripl.predict("(test1)")
+# print ripl.predict("(test2 151)")
+
 # Just for compatibility
 class lisp_parser_Class:
   def parse(__self__, what_to_parse):

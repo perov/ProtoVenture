@@ -1,4 +1,3 @@
-
 #include "HeaderPre.h"
 #include "Header.h"
 #include "VentureValues.h"
@@ -188,7 +187,6 @@ shared_ptr<VentureValue> Primitive__SimplexPoint::Sampler(vector< shared_ptr<Ven
 string Primitive__SimplexPoint::GetName() {return "Primitive__SimplexPoint";}
 
 shared_ptr<VentureValue> Primitive__List::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
-  
   if (arguments.size() == 0) {
     return NIL_INSTANCE;
   }
@@ -223,7 +221,7 @@ shared_ptr<VentureValue> Primitive__Cons::Sampler(vector< shared_ptr<VentureValu
   if (arguments.size() != 2) {
     throw std::runtime_error("Wrong number of arguments.");
   }
-  return AddFirst(arguments[0], ToVentureType<VentureList>(arguments[1]));
+  return Cons(arguments[0], ToVentureType<VentureList>(arguments[1]));
 }
 string Primitive__Cons::GetName() { return "Primitive__Cons"; }
 
@@ -319,17 +317,6 @@ shared_ptr<VentureValue> Primitive__IntegerMinus::Sampler(vector< shared_ptr<Ven
 }
 string Primitive__IntegerMinus::GetName() { return "Primitive__IntegerMinus"; }
 
-shared_ptr<VentureValue> Primitive__IntegerDivide::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
-  if (arguments.size() != 2) {
-    throw std::runtime_error("Wrong number of arguments.");
-  }
-  shared_ptr<VentureCount> result = shared_ptr<VentureCount>(new VentureCount(0));
-  result->data
-    = arguments[0]->GetInteger() /
-        arguments[1]->GetInteger();
-  return result;
-}
-string Primitive__IntegerDivide::GetName() { return "Primitive__IntegerDivide"; }
 
 
 
@@ -427,3 +414,100 @@ shared_ptr<VentureValue> Primitive_LoadPythonShellModule::Sampler(vector< shared
   return shared_ptr<VentureBoolean>(new VentureBoolean(true));
 }
 string Primitive_LoadPythonShellModule::GetName() { return "Primitive_LoadPythonShellModule"; }
+
+
+
+shared_ptr<VentureValue> Primitive__SCVPlusSCV::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+  if (arguments.size() != 2) {
+    throw std::runtime_error("Wrong number of arguments.");
+  }
+  if (ToVentureType<VentureSmoothedCountVector>(arguments[0])->data.size() != ToVentureType<VentureSmoothedCountVector>(arguments[1])->data.size()) {
+    throw std::runtime_error("Smoothed count vectors should have the same size.");
+  }
+  vector<real> new_vector_elements(ToVentureType<VentureSmoothedCountVector>(arguments[0])->data.size());
+  for (size_t index = 0; index < ToVentureType<VentureSmoothedCountVector>(arguments[0])->data.size(); index++) {
+    new_vector_elements[index] =
+      ToVentureType<VentureSmoothedCountVector>(arguments[0])->data[index] +
+        ToVentureType<VentureSmoothedCountVector>(arguments[1])->data[index];
+  }
+  return shared_ptr<VentureSmoothedCountVector>(new VentureSmoothedCountVector(new_vector_elements));
+}
+string Primitive__SCVPlusSCV::GetName() { return "Primitive__SCVPlusSCV"; }
+
+shared_ptr<VentureValue> Primitive__SCVMultiplyScalar::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+  if (arguments.size() != 2) {
+    throw std::runtime_error("Wrong number of arguments.");
+  }
+  vector<real> new_vector_elements(ToVentureType<VentureSmoothedCountVector>(arguments[0])->data.size());
+  for (size_t index = 0; index < ToVentureType<VentureSmoothedCountVector>(arguments[0])->data.size(); index++) {
+    new_vector_elements[index] =
+      ToVentureType<VentureSmoothedCountVector>(arguments[0])->data[index] *
+        arguments[1]->GetReal();
+  }
+  return shared_ptr<VentureSmoothedCountVector>(new VentureSmoothedCountVector(new_vector_elements));
+}
+string Primitive__SCVMultiplyScalar::GetName() { return "Primitive__SCVMultiplyScalar"; }
+
+shared_ptr<VentureValue> Primitive__SCV::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+  if (arguments.size() != 1) {
+    throw std::runtime_error("Wrong number of arguments.");
+  }
+  // Write a better error if argument is not a simplex point! Support more types?
+  vector<real> new_vector_elements(ToVentureType<VentureSimplexPoint>(arguments[0])->data.size());
+  for (size_t index = 0; index < new_vector_elements.size(); index++) {
+    new_vector_elements[index] = ToVentureType<VentureSimplexPoint>(arguments[0])->data[index];
+  }
+  return shared_ptr<VentureSmoothedCountVector>(new VentureSmoothedCountVector(new_vector_elements));
+}
+string Primitive__SCV::GetName() { return "Primitive__SCV"; }
+
+shared_ptr<VentureValue> Primitive__RepeatSCV::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+  if (arguments.size() != 2) {
+    throw std::runtime_error("Wrong number of arguments.");
+  }
+  // Not efficient, make with vector(..., ...)!
+  vector<real> new_vector_elements(arguments[1]->GetInteger());
+  for (size_t index = 0; index < arguments[1]->GetInteger(); index++) {
+    new_vector_elements[index] = arguments[0]->GetReal();
+  }
+  return shared_ptr<VentureSmoothedCountVector>(new VentureSmoothedCountVector(new_vector_elements));
+}
+string Primitive__RepeatSCV::GetName() { return "Primitive__RepeatSCV"; }
+
+
+
+
+
+shared_ptr<VentureValue> Primitive__LoadPythonFunction::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config)
+{
+  shared_ptr<XRP> new_function = shared_ptr<XRP>(new ERP__PythonFunctionTemplate());
+  dynamic_pointer_cast<ERP__PythonFunctionTemplate>(new_function)->module_name = arguments[0]->GetString();
+  dynamic_pointer_cast<ERP__PythonFunctionTemplate>(new_function)->function_name = arguments[1]->GetString();
+  dynamic_pointer_cast<ERP__PythonFunctionTemplate>(new_function)->if_stochastic = ToVentureType<VentureBoolean>(arguments[2])->data;
+  return shared_ptr<VentureXRP>(new VentureXRP(new_function));
+}
+string Primitive__LoadPythonFunction::GetName() {
+  return "Primitive__LoadPythonFunction";
+}
+
+#include "PythonProxy.h"
+
+real ERP__PythonFunctionTemplate::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
+                                 shared_ptr<VentureValue> sampled_value)
+{
+  if (this->if_stochastic == true) {
+    vector< shared_ptr<VentureValue> > new_arguments = arguments;
+    new_arguments.push_back(sampled_value);
+    return PyFloat_AsDouble(ExecutePythonFunction(this->module_name, this->function_name + "_logscore", new_arguments)->GetAsPythonObject());
+  } else {
+    return log(1.0);
+  }
+}
+shared_ptr<VentureValue> ERP__PythonFunctionTemplate::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+  vector< shared_ptr<VentureValue> > new_arguments = arguments;
+  new_arguments.insert(new_arguments.begin(), shared_ptr<VentureString>(new VentureString(this->function_name)));
+  return ExecutePythonFunction(this->module_name, this->function_name, arguments);
+}
+string ERP__PythonFunctionTemplate::GetName() {
+  return "ERP__PythonFunctionTemplate";
+}

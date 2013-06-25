@@ -1,4 +1,3 @@
-
 #include "HeaderPre.h"
 #include "Header.h"
 #include "VentureParser.h"
@@ -56,7 +55,9 @@ string Node::GetUniqueID() {
 
 Node::Node()
   : was_deleted(false),
-    constraint_times(0)
+    constraint_times(0),
+    _marked(false),
+    already_absorbed(-1)
 {
   //unique_id = ++NEXT_UNIQUE_ID; // FIXME: make transaction free!
 }
@@ -91,7 +92,7 @@ NodeXRPApplication::~NodeXRPApplication() { this->DeleteNode(); }
 
 VentureDataTypes Node::GetType() { return NODE; }
 NodeTypes Node::GetNodeType() { return UNDEFINED_NODE; }
-void Node::GetChildren(queue< shared_ptr<Node> >& processing_queue) {
+void Node::GetChildren(queue< shared_ptr<Node> >& processing_queue, size_t absorbing_parameter) {
   throw std::runtime_error("Should not be called (3).");
 };
 
@@ -128,7 +129,7 @@ NodeTypes NodeVariable::GetNodeType() { return VARIABLE; }
 void NodeVariable::DeleteNode() {
   if (this->binding_node.expired() == false) { // If it is not the global environment's initially bound variable?
     assert(this->binding_node.lock()->output_references.count(this->weak_ptr_to_me) == 1);
-    this->binding_node.lock()->output_references.erase(this->weak_ptr_to_me);
+    this->binding_node.lock()->output_references.erase(this->binding_node.lock()->output_references.find(this->weak_ptr_to_me));
   }
 }
 
@@ -208,7 +209,7 @@ bool ReevaluationOrderComparer::operator()(const ReevaluationEntry& first, const
 NodeTypes NodeDirectiveAssume::GetNodeType() { return DIRECTIVE_ASSUME; }
 NodeDirectiveAssume::NodeDirectiveAssume(shared_ptr<VentureSymbol> name, shared_ptr<NodeEvaluation> expression)
   : name(name), expression(expression) {}
-void NodeDirectiveAssume::GetChildren(queue< shared_ptr<Node> >& processing_queue) {
+void NodeDirectiveAssume::GetChildren(queue< shared_ptr<Node> >& processing_queue, size_t absorbing_parameter) {
   if (earlier_evaluation_nodes != shared_ptr<NodeEvaluation>()) {
     processing_queue.push(earlier_evaluation_nodes);
   }
@@ -230,7 +231,7 @@ void NodeDirectiveAssume::DeleteNode() {
 NodeTypes NodeDirectivePredict::GetNodeType() { return DIRECTIVE_PREDICT; }
 NodeDirectivePredict::NodeDirectivePredict(shared_ptr<NodeEvaluation> expression)
   : expression(expression) {}
-void NodeDirectivePredict::GetChildren(queue< shared_ptr<Node> >& processing_queue) {
+void NodeDirectivePredict::GetChildren(queue< shared_ptr<Node> >& processing_queue, size_t absorbing_parameter) {
   if (earlier_evaluation_nodes != shared_ptr<NodeEvaluation>()) {
     processing_queue.push(earlier_evaluation_nodes);
   }
@@ -262,7 +263,7 @@ void NodeDirectivePredict::DeleteNode() {
 NodeTypes NodeDirectiveObserve::GetNodeType() { return DIRECTIVE_OBSERVE; }
 NodeDirectiveObserve::NodeDirectiveObserve(shared_ptr<NodeEvaluation> expression, shared_ptr<VentureValue> observed_value)
   : expression(expression), observed_value(observed_value) {}
-void NodeDirectiveObserve::GetChildren(queue< shared_ptr<Node> >& processing_queue) {
+void NodeDirectiveObserve::GetChildren(queue< shared_ptr<Node> >& processing_queue, size_t absorbing_parameter) {
   if (earlier_evaluation_nodes != shared_ptr<NodeEvaluation>()) {
     processing_queue.push(earlier_evaluation_nodes);
   }
@@ -292,9 +293,11 @@ NodeTypes NodeSelfEvaluating::GetNodeType() { return SELF_EVALUATING; }
 NodeSelfEvaluating::NodeSelfEvaluating(shared_ptr<VentureValue> value)
   : value(value) {}
 shared_ptr<NodeEvaluation> NodeSelfEvaluating::clone() const {
-  return shared_ptr<NodeSelfEvaluating>(new NodeSelfEvaluating(this->value));
+  shared_ptr<NodeEvaluation> new_node = shared_ptr<NodeSelfEvaluating>(new NodeSelfEvaluating(this->value));
+  new_node->comment = this->comment;
+  return new_node;
 }
-void NodeSelfEvaluating::GetChildren(queue< shared_ptr<Node> >& processing_queue) {
+void NodeSelfEvaluating::GetChildren(queue< shared_ptr<Node> >& processing_queue, size_t absorbing_parameter) {
   if (earlier_evaluation_nodes != shared_ptr<NodeEvaluation>()) {
     processing_queue.push(earlier_evaluation_nodes);
   }
@@ -322,9 +325,11 @@ NodeLambdaCreator::NodeLambdaCreator(shared_ptr<VentureList> arguments, shared_p
 
 }
 shared_ptr<NodeEvaluation> NodeLambdaCreator::clone() const {
-  return shared_ptr<NodeLambdaCreator>(new NodeLambdaCreator(this->arguments, this->expressions->clone()));
+  shared_ptr<NodeEvaluation> new_node = shared_ptr<NodeLambdaCreator>(new NodeLambdaCreator(this->arguments, this->expressions->clone()));
+  new_node->comment = this->comment;
+  return new_node;
 }
-void NodeLambdaCreator::GetChildren(queue< shared_ptr<Node> >& processing_queue) {
+void NodeLambdaCreator::GetChildren(queue< shared_ptr<Node> >& processing_queue, size_t absorbing_parameter) {
   if (earlier_evaluation_nodes != shared_ptr<NodeEvaluation>()) {
     processing_queue.push(earlier_evaluation_nodes);
   }
@@ -346,9 +351,10 @@ NodeLookup::NodeLookup(shared_ptr<VentureSymbol> symbol)
 shared_ptr<NodeEvaluation> NodeLookup::clone() const {
   shared_ptr<NodeLookup> new_lookup_node = shared_ptr<NodeLookup>(new NodeLookup(this->symbol));
   new_lookup_node->weak_ptr_to_me = dynamic_pointer_cast<NodeLookup>(new_lookup_node->shared_from_this());
+  new_lookup_node->comment = this->comment;
   return new_lookup_node;
 }
-void NodeLookup::GetChildren(queue< shared_ptr<Node> >& processing_queue) {
+void NodeLookup::GetChildren(queue< shared_ptr<Node> >& processing_queue, size_t absorbing_parameter) {
   if (earlier_evaluation_nodes != shared_ptr<NodeEvaluation>()) {
     processing_queue.push(earlier_evaluation_nodes);
   }
@@ -358,7 +364,7 @@ void NodeLookup::DeleteNode() {
   if (this->evaluated == true) {
     if (this->where_lookuped.expired() == false) { // FIXME: using "expired" here is not conceptually correct. Here we check if where_lookuped == weak_ptr<...>(). How to check it better?
       assert(this->where_lookuped.lock()->output_references.count(this->weak_ptr_to_me) == 1);
-      this->where_lookuped.lock()->output_references.erase(this->weak_ptr_to_me);
+      this->where_lookuped.lock()->output_references.erase(this->where_lookuped.lock()->output_references.find(this->weak_ptr_to_me));
     } else {
       // Otherwise it means that we throw an exception when there is no bound variable.
       //
@@ -393,9 +399,10 @@ shared_ptr<NodeEvaluation> NodeApplicationCaller::clone() const {
     NodeApplicationCaller_new->application_operands.push_back(
       shared_ptr<NodeEvaluation>(application_operands[index]->clone()));
   }
+  NodeApplicationCaller_new->comment = this->comment;
   return NodeApplicationCaller_new;
 }
-void NodeApplicationCaller::GetChildren(queue< shared_ptr<Node> >& processing_queue) {
+void NodeApplicationCaller::GetChildren(queue< shared_ptr<Node> >& processing_queue, size_t absorbing_parameter) {
   if (earlier_evaluation_nodes != shared_ptr<NodeEvaluation>()) {
     processing_queue.push(earlier_evaluation_nodes);
   }
@@ -415,8 +422,26 @@ void NodeApplicationCaller::GetChildren(queue< shared_ptr<Node> >& processing_qu
       assert(false);
     }
     //assert(application_node.get() != 0);
-    if (application_node.get() != 0) {
-      processing_queue.push(application_node);
+    if (absorbing_parameter == 0) {
+      if (application_node.get() != 0) {
+        processing_queue.push(application_node);
+      }
+    }
+    if (absorbing_parameter == 1) { // Absorbing.
+      if (new_application_node.get() != 0) {
+        processing_queue.push(new_application_node);
+      } else if (application_node.get() != 0) {
+        processing_queue.push(application_node);
+      }
+    }
+    if (absorbing_parameter == 2) {
+      if (new_application_node.get() != 0 && new_application_node->already_absorbed == MHid) {
+        processing_queue.push(new_application_node);
+      } else if (application_node.get() != 0 && application_node->already_absorbed == MHid) {
+        processing_queue.push(application_node);
+      } else {
+        // throw std::runtime_error("Unabsorbing, but cannot find absorbed node.");
+      }
     }
   }
 };
@@ -435,7 +460,7 @@ NodeXRPApplication::NodeXRPApplication(shared_ptr<VentureXRP> xrp)
   : xrp(xrp)
 {}
 // It should not have clone() method?
-void NodeXRPApplication::GetChildren(queue< shared_ptr<Node> >& processing_queue) {
+void NodeXRPApplication::GetChildren(queue< shared_ptr<Node> >& processing_queue, size_t absorbing_parameter) {
   if (earlier_evaluation_nodes != shared_ptr<NodeEvaluation>()) {
     processing_queue.push(earlier_evaluation_nodes);
   }
@@ -444,7 +469,7 @@ void NodeXRPApplication::GetChildren(queue< shared_ptr<Node> >& processing_queue
 void NodeXRPApplication::DeleteNode() {
   assert(this->xrp != shared_ptr<VentureXRP>() &&
            this->xrp->xrp != shared_ptr<XRP>());
-
+  
   assert(!(weak_ptr_to_me._empty())); // FIXME: Only Boost thing?
 
   // FIXME: GetArgumentsFromEnvironment should be called without adding lookup references!
@@ -486,7 +511,8 @@ shared_ptr<NodeEvaluation> AnalyzeExpression(shared_ptr<VentureValue> expression
       expression->GetType() == ATOM ||
       expression->GetType() == SIMPLEXPOINT ||
       expression->GetType() == SMOOTHEDCOUNT ||
-      expression->GetType() == NIL) // As in Scheme and Lisp?.
+      expression->GetType() == NIL ||
+      expression->GetType() == STRING) // As in Scheme and Lisp?.
   {
     shared_ptr<NodeEvaluation> new_self_evaluation = shared_ptr<NodeEvaluation>(new NodeSelfEvaluating(expression));
     new_self_evaluation->comment = expression->GetString();
@@ -750,6 +776,8 @@ GetArgumentsFromEnvironment(shared_ptr<NodeEnvironment> environment,
       dynamic_pointer_cast<NodeApplicationCaller>(caller->parent.lock())->new_application_node == caller) {
     assert(environment == caller->environment);
     environment = dynamic_pointer_cast<NodeApplicationCaller>(caller->parent.lock())->application_node->environment;
+    // Not to add output references:
+    caller = shared_ptr<NodeEvaluation>();
   }
   vector< shared_ptr<VentureValue> > arguments;
   for (size_t index = 0; index < environment->local_variables.size(); index++) {
@@ -843,6 +871,7 @@ NodeApplicationCaller::Reevaluate__TryToRescore(shared_ptr<VentureValue> passing
   shared_ptr<NodeEnvironment> local_environment = shared_ptr<NodeEnvironment>(new NodeEnvironment(this->application_node->environment->parent_environment.lock()));
   CopyLocalEnvironmentByContent(this->application_node->environment, local_environment, application_operands);
     
+  assert(this->new_application_node == shared_ptr<NodeXRPApplication>());
   this->new_application_node =
     shared_ptr<NodeXRPApplication>(
       new NodeXRPApplication(*dynamic_pointer_cast<NodeXRPApplication>(this->application_node)));
@@ -853,6 +882,7 @@ NodeApplicationCaller::Reevaluate__TryToRescore(shared_ptr<VentureValue> passing
   dynamic_pointer_cast<NodeXRPApplication>(this->new_application_node)->xrp = xrp_reference;
   dynamic_pointer_cast<NodeXRPApplication>(this->new_application_node)->environment = local_environment;
   dynamic_pointer_cast<NodeXRPApplication>(this->new_application_node)->constraint_times = 0; // Because it would be constraint soon by separate operation.
+  dynamic_pointer_cast<NodeXRPApplication>(this->new_application_node)->already_absorbed = -1;
   
   if (passing_value != shared_ptr<VentureValue>()) {
     dynamic_pointer_cast<NodeXRPApplication>(this->new_application_node)->my_sampled_value = passing_value;
@@ -1057,7 +1087,12 @@ NodeApplicationCaller::Reevaluate(shared_ptr<VentureValue> passing_value,
     value_for_constraining = UnconstrainBranch(this->application_node, this->constraint_times, reevaluation_parameters);
     //cout << "Unconstraining value: " << value_for_constraining->GetString() << endl;
   }
-  
+
+  if (this->already_absorbed == MHid) {
+    throw std::runtime_error("The node, which is calling the AbsorbBranchProbability, already was absorbed by somebody!");
+  }
+  //cout << "Absorb call from. ";
+  //PrintVector(this->myorder);
   pair<real, real> branch_loglikelihoods = AbsorbBranchProbability(this->application_node, reevaluation_parameters);
   
   reevaluation_parameters->__log_p_old += branch_loglikelihoods.first; // logP_constraint
@@ -1290,6 +1325,17 @@ void DrawGraphDuringMH(stack< shared_ptr<Node> >& touched_nodes) {
     previous = directive;
   }
 
+  stack< shared_ptr<Node> > touched_nodes3 = touched_nodes;
+  while (!touched_nodes3.empty()) {
+    shared_ptr<Node> node = touched_nodes3.top();
+    while (dynamic_pointer_cast<NodeEvaluation>(node) != shared_ptr<NodeEvaluation>())
+    {
+      dynamic_pointer_cast<NodeEvaluation>(node)->_marked = true;
+      node = dynamic_pointer_cast<NodeEvaluation>(node)->parent.lock();
+    }
+    touched_nodes3.pop();
+  }
+
   while (!processing_queue.empty()) {
     queue< shared_ptr<Node> > temporal_queue;
     if (processing_queue.front().second == shared_ptr<Node>()) {
@@ -1323,26 +1369,36 @@ void DrawGraphDuringMH(stack< shared_ptr<Node> >& touched_nodes) {
     }
     std::deque< shared_ptr<Node> >::const_iterator already_existent_element =
       std::find(GetStackContainer(touched_nodes).begin(), GetStackContainer(touched_nodes).end(), processing_queue.front().second);
-    graph_file << "  Node" << processing_queue.front().second->GetUniqueID() << " [label=\"";
-    if (!(already_existent_element == GetStackContainer(touched_nodes).end())) {
-      int distance = std::distance(GetStackContainer(touched_nodes).begin(), already_existent_element);
-      graph_file << "[MH" << distance << "] ";
-    }
-    graph_file << "(" << processing_queue.front().second->WasEvaluated() << ") ";
-    graph_file << processing_queue.front().second->GetUniqueID() << ". ";
-    graph_file << GetNodeTypeAsString(processing_queue.front().second->GetNodeType())
-      << ": " << processing_queue.front().second->GetContent();
-    graph_file << "\\n" << processing_queue.front().second->comment;
-    graph_file << "\\n" << dynamic_pointer_cast<NodeEvaluation>(processing_queue.front().second)->node_key;
-    graph_file << "\\nCT: " << dynamic_pointer_cast<NodeEvaluation>(processing_queue.front().second)->constraint_times;
-    graph_file << "\"" << endl;
-    if (!(already_existent_element == GetStackContainer(touched_nodes).end())) {
-      graph_file << ",color=red";
-    }
-    graph_file << "]";
-    if (processing_queue.front().first != "") {
-      graph_file << "  Node" << processing_queue.front().first << " -> "
-        << "Node" << processing_queue.front().second->GetUniqueID() << endl;
+    if (!(std::find(GetStackContainer(touched_nodes).begin(), GetStackContainer(touched_nodes).end(), processing_queue.front().second) ==
+          GetStackContainer(touched_nodes).end()) ||
+        processing_queue.front().second->_marked == true)
+    {
+      graph_file << "  Node" << processing_queue.front().second->GetUniqueID() << " [label=\"";
+      if (!(already_existent_element == GetStackContainer(touched_nodes).end())) {
+        int distance = std::distance(GetStackContainer(touched_nodes).begin(), already_existent_element);
+        graph_file << "[MH" << distance << "] ";
+      }
+      graph_file << "(" << processing_queue.front().second->WasEvaluated() << ") ";
+      graph_file << processing_queue.front().second->GetUniqueID() << ". ";
+      graph_file << GetNodeTypeAsString(processing_queue.front().second->GetNodeType())
+        << ": " << processing_queue.front().second->GetContent();
+      graph_file << "\\n" << processing_queue.front().second->comment;
+      graph_file << "\\n" << dynamic_pointer_cast<NodeEvaluation>(processing_queue.front().second)->node_key;
+      graph_file << "\\nCT: " << dynamic_pointer_cast<NodeEvaluation>(processing_queue.front().second)->constraint_times;
+      graph_file << "\\nOrder: ";
+      vector<size_t> order = dynamic_pointer_cast<NodeEvaluation>(processing_queue.front().second)->myorder;
+      for (size_t index_m = 0; index_m < order.size(); index_m++) {
+        graph_file << order[index_m] << " ";
+      }
+      graph_file << "\"" << endl;
+      if (!(already_existent_element == GetStackContainer(touched_nodes).end())) {
+        graph_file << ",color=red";
+      }
+      graph_file << "]";
+      if (processing_queue.front().first != "") {
+        graph_file << "  Node" << processing_queue.front().first << " -> "
+          << "Node" << processing_queue.front().second->GetUniqueID() << endl;
+      }
     }
 
     processing_queue.pop();
@@ -1400,4 +1456,12 @@ shared_ptr<NodeXRPApplication> GetRandomRandomChoice() {
 NodeConstainingTemplate::NodeConstainingTemplate()
 {
   
+}
+
+void PrintVector(vector<size_t> input) {
+  cout << "Printing a vector:";
+  for (size_t index = 0; index < input.size(); index++) {
+    cout << " " << input[index];
+  }
+  cout << endl;
 }

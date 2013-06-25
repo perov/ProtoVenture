@@ -1,3 +1,4 @@
+
 #include "HeaderPre.h"
 #include "Header.h"
 
@@ -45,7 +46,7 @@ void InitGSL() {
   random_generator = gsl_rng_alloc(gsl_rng_mt19937);
   unsigned long seed = static_cast<unsigned long>(time(NULL)); // time(NULL)
   if (false) {
-    seed = 1362378824;
+    seed = 1362378859;
     cout << "WARNING: RANDOM SEED is not random!" << endl;
   }
   cout << "Current seed: " << seed << endl;
@@ -73,15 +74,6 @@ PyMODINIT_FUNC init_engine(void) {
   // PyRun_SimpleString("from venture.sugars_processor import process_sugars");
   PyRun_SimpleString("import venture.sugars_processor");
   Py_InitModule("_engine", MethodsForPythons);
-}
-
-
-// This one is for the new python stack
-PyMODINIT_FUNC init_cpp_engine_extension(void) {
-  ShowAnnouncement();
-  InitGSL();
-  InitRIPL();
-  Py_InitModule("_cpp_engine_extension", MethodsForPythons);
 }
 
 int main(int argc, char *argv[])
@@ -148,8 +140,8 @@ int main(int argc, char *argv[])
   PyRun_SimpleString("import os.path");
   PyRun_SimpleString((string("if os.path.exists(\"RESTPython.py\"):\n") +
                              "  execfile(\"RESTPython.py\")\n" +
-                             "elif os.path.exists(\"C:/Users/Yura Perov/workspace/VentureAlpha/src/RESTPython.py\"):\n" +
-                             "  execfile(\"C:/Users/Yura Perov/workspace/VentureAlpha/src/RESTPython.py\")\n" +
+                             "elif os.path.exists(\"C:/pcp/20November2012/VentureAlphaOld/SourceCode/Venture/src/RESTPython.py\"):\n" +
+                             "  execfile(\"C:/pcp/20November2012/VentureAlphaOld/SourceCode/Venture/src/RESTPython.py\")\n" +
                              "elif os.path.exists(\"/usr/venture/RESTPython.py\"):\n" +
                              "  execfile(\"/usr/venture/RESTPython.py\")\n" +
                              "else:\n" +

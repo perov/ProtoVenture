@@ -1,4 +1,3 @@
-
 #include "HeaderPre.h"
 #include "XRPs.h"
 
@@ -332,3 +331,28 @@ void XRP__SampleFromSet::Remove(vector< shared_ptr<VentureValue> >& arguments,
 bool XRP__SampleFromSet::IsRandomChoice() { return true; }
 bool XRP__SampleFromSet::CouldBeRescored() { return false; }
 string XRP__SampleFromSet::GetName() { return "XRP__SampleFromSet"; }
+
+
+
+shared_ptr<VentureValue> XRP__Gensym::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+  next_atom_id++;
+  return shared_ptr<VentureAtom>(new VentureAtom(next_atom_id));
+}
+
+real XRP__Gensym::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
+                                      shared_ptr<VentureValue> sampled_value) {
+  return log(1.0);
+}
+
+void XRP__Gensym::Incorporate(vector< shared_ptr<VentureValue> >& arguments,
+                              shared_ptr<VentureValue> sampled_value) {
+
+}
+
+void XRP__Gensym::Remove(vector< shared_ptr<VentureValue> >& arguments,
+                          shared_ptr<VentureValue> sampled_value) {
+
+}
+bool XRP__Gensym::IsRandomChoice() { return false; }
+bool XRP__Gensym::CouldBeRescored() { return false; }
+string XRP__Gensym::GetName() { return "XRP__CRPsampler"; }
