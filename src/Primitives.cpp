@@ -473,3 +473,41 @@ shared_ptr<VentureValue> Primitive__RepeatSCV::Sampler(vector< shared_ptr<Ventur
   return shared_ptr<VentureSmoothedCountVector>(new VentureSmoothedCountVector(new_vector_elements));
 }
 string Primitive__RepeatSCV::GetName() { return "Primitive__RepeatSCV"; }
+
+
+
+
+
+shared_ptr<VentureValue> Primitive__LoadPythonFunction::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config)
+{
+  shared_ptr<XRP> new_function = shared_ptr<XRP>(new ERP__PythonFunctionTemplate());
+  dynamic_pointer_cast<ERP__PythonFunctionTemplate>(new_function)->module_name = arguments[0]->GetString();
+  dynamic_pointer_cast<ERP__PythonFunctionTemplate>(new_function)->function_name = arguments[1]->GetString();
+  dynamic_pointer_cast<ERP__PythonFunctionTemplate>(new_function)->if_stochastic = ToVentureType<VentureBoolean>(arguments[2])->data;
+  return shared_ptr<VentureXRP>(new VentureXRP(new_function));
+}
+string Primitive__LoadPythonFunction::GetName() {
+  return "Primitive__LoadPythonFunction";
+}
+
+#include "PythonProxy.h"
+
+real ERP__PythonFunctionTemplate::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
+                                 shared_ptr<VentureValue> sampled_value)
+{
+  if (this->if_stochastic == true) {
+    vector< shared_ptr<VentureValue> > new_arguments = arguments;
+    new_arguments.push_back(sampled_value);
+    return PyFloat_AsDouble(ExecutePythonFunction(this->module_name, this->function_name + "_logscore", new_arguments)->GetAsPythonObject());
+  } else {
+    return log(1.0);
+  }
+}
+shared_ptr<VentureValue> ERP__PythonFunctionTemplate::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+  vector< shared_ptr<VentureValue> > new_arguments = arguments;
+  new_arguments.insert(new_arguments.begin(), shared_ptr<VentureString>(new VentureString(this->function_name)));
+  return ExecutePythonFunction(this->module_name, this->function_name, arguments);
+}
+string ERP__PythonFunctionTemplate::GetName() {
+  return "ERP__PythonFunctionTemplate";
+}

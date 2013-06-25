@@ -122,6 +122,12 @@ venture.utils.load_to_RIPL(
   # print "Stopping to perform one inference iteration"
 # ripl.infer(1000)
 
+# sys.path.append("C:/pcp/20November2012/VentureAlphaOld/SourceCode/Venture/src")
+# ripl.assume("test1", "(load-python-function str[testing_python_functions] str[test1] false)")
+# ripl.assume("test2", "(load-python-function str[testing_python_functions] str[test2] true)")
+# print ripl.predict("(test1)")
+# print ripl.predict("(test2 151)")
+
 # Just for compatibility
 class lisp_parser_Class:
   def parse(__self__, what_to_parse):
