@@ -22,9 +22,9 @@ class XRP__TemplateForExtendedXRP : public XRP {
   virtual shared_ptr<VentureValue> Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config);
   virtual real GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >&,
                                        shared_ptr<VentureValue>);
-  virtual void Incorporate(shared_ptr<ReevaluationParameters>, shared_ptr<Node> caller, vector< shared_ptr<VentureValue> >& arguments,
+  virtual void Incorporate(vector< shared_ptr<VentureValue> >&,
                                 shared_ptr<VentureValue>);
-  virtual void Remove(shared_ptr<ReevaluationParameters> reevaluation_parameters, shared_ptr<Node> caller, vector< shared_ptr<VentureValue> >& arguments,
+  virtual void Remove(vector< shared_ptr<VentureValue> >&,
                            shared_ptr<VentureValue>);
 
 public:

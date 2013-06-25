@@ -300,7 +300,7 @@ ForPython__forget(PyObject *self, PyObject *args)
 
 PyObject*
 ForPython__infer(PyObject *self, PyObject *args)
-{ //try {
+{ try {
   PauseInference();
   int number_of_required_inferences;
   if(!PyArg_ParseTuple(args, "i:infer", &number_of_required_inferences)) {
@@ -324,7 +324,7 @@ ForPython__infer(PyObject *self, PyObject *args)
   ReturnInferenceIfNecessary();
   Py_INCREF(Py_None);
   return Py_None;
-} //catch(handling_python_error&) { return NULL; } catch(std::runtime_error& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }
+} catch(handling_python_error&) { return NULL; } catch(std::runtime_error& e) { PyErr_SetString(PyExc_Exception, e.what()); return NULL; } }
 
 PyObject*
 ForPython__start_continuous_inference(PyObject *self, PyObject *args)

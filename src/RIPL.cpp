@@ -264,8 +264,7 @@ bool ExecuteDirective(string& directive_as_string,
             shared_ptr<Node>(),
             shared_ptr<NodeEvaluation>(),
             tmp_evaluation_config,
-            "",
-            shared_ptr<MemoizedProcedureOrder>());
+            "");
   // directive_node->earlier_evaluation_nodes = last_directive_node;
   
   return tmp_evaluation_config.unsatisfied_constraint;
@@ -589,7 +588,7 @@ real GetLogscoreOfDirective(shared_ptr<Node> first_node) {
         throw std::runtime_error("Removing from unevaluated!");
       }
 
-      current_node2->xrp->xrp->Remove(shared_ptr<ReevaluationParameters>(), current_node2, got_arguments, current_node2->my_sampled_value);
+      current_node2->xrp->xrp->Remove(got_arguments, current_node2->my_sampled_value);
       changed_probability += current_node2->xrp->xrp->GetSampledLoglikelihood(got_arguments, current_node2->my_sampled_value);
 
       if (current_node->GetNodeType() == XRP_APPLICATION &&
@@ -621,7 +620,7 @@ void RestoreDirective(shared_ptr<Node> first_node) {
       vector< shared_ptr<VentureValue> > got_arguments = GetArgumentsFromEnvironment(current_node2->environment, // Not efficient?
                                       dynamic_pointer_cast<NodeEvaluation>(current_node2), true);
       
-      current_node2->xrp->xrp->Incorporate(shared_ptr<ReevaluationParameters>(), current_node2, got_arguments, current_node2->my_sampled_value);
+      current_node2->xrp->xrp->Incorporate(got_arguments, current_node2->my_sampled_value);
 
       if (current_node->GetNodeType() == XRP_APPLICATION &&
             dynamic_pointer_cast<NodeXRPApplication>(current_node)->xrp->xrp->GetName() == "XRP__memoized_procedure")

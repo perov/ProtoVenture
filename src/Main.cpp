@@ -13,8 +13,6 @@
 #include "Primitives.h"
 #include "PythonProxy.h"
 
-size_t MH_iteration_number = 0;
-
 int difference_of_CRPs_operations;
 
 /*
@@ -47,8 +45,8 @@ bool need_to_return_inference;
 void InitGSL() {
   random_generator = gsl_rng_alloc(gsl_rng_mt19937);
   unsigned long seed = static_cast<unsigned long>(time(NULL)); // time(NULL)
-  if (true) {
-    seed = 1372044364;
+  if (false) {
+    seed = 1362378824;
     cout << "WARNING: RANDOM SEED is not random!" << endl;
   }
   cout << "Current seed: " << seed << endl;
@@ -142,8 +140,8 @@ int main(int argc, char *argv[])
   PyRun_SimpleString("import os.path");
   PyRun_SimpleString((string("if os.path.exists(\"RESTPython.py\"):\n") +
                              "  execfile(\"RESTPython.py\")\n" +
-                             "elif os.path.exists(\"C:/pcp/20November2012/VentureAlphaOld/SourceCode/Venture/src/RESTPython.py\"):\n" +
-                             "  execfile(\"C:/pcp/20November2012/VentureAlphaOld/SourceCode/Venture/src/RESTPython.py\")\n" +
+                             "elif os.path.exists(\"C:/Users/Yura Perov/workspace/VentureAlpha/src/RESTPython.py\"):\n" +
+                             "  execfile(\"C:/Users/Yura Perov/workspace/VentureAlpha/src/RESTPython.py\")\n" +
                              "elif os.path.exists(\"/usr/venture/RESTPython.py\"):\n" +
                              "  execfile(\"/usr/venture/RESTPython.py\")\n" +
                              "else:\n" +

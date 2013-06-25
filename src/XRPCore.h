@@ -84,8 +84,6 @@ struct ReevaluationParameters : public boost::enable_shared_from_this<Reevaluati
   set< shared_ptr<NodeXRPApplication> > deleting_random_choices;
   
   map< shared_ptr<NodeXRPApplication>, shared_ptr<VentureValue> > new_values_for_memoized_procedures;
-  
-  map< shared_ptr<NodeEvaluation>, map< shared_ptr<NodeEvaluation>, int> > new_memoized_procedure_orders;
 };
 
 struct EvaluationConfig;
@@ -94,9 +92,9 @@ public: // Should be private.
   virtual shared_ptr<VentureValue> Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config);
   virtual real GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >&,
                                        shared_ptr<VentureValue>);
-  virtual void Incorporate(shared_ptr<ReevaluationParameters>, shared_ptr<Node> caller, vector< shared_ptr<VentureValue> >& arguments,
+  virtual void Incorporate(vector< shared_ptr<VentureValue> >&,
                                 shared_ptr<VentureValue>);
-  virtual void Remove(shared_ptr<ReevaluationParameters> reevaluation_parameters, shared_ptr<Node> caller, vector< shared_ptr<VentureValue> >& arguments,
+  virtual void Remove(vector< shared_ptr<VentureValue> >&,
                            shared_ptr<VentureValue>);
                            
 public:

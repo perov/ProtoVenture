@@ -19,11 +19,11 @@ real XRP__memoizer::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& 
   return log(1.0); // ?
 }
 
-void XRP__memoizer::Incorporate(shared_ptr<ReevaluationParameters>, shared_ptr<Node> caller, vector< shared_ptr<VentureValue> >& arguments,
+void XRP__memoizer::Incorporate(vector< shared_ptr<VentureValue> >& arguments,
                               shared_ptr<VentureValue> sampled_value) {
 }
 
-void XRP__memoizer::Remove(shared_ptr<ReevaluationParameters> reevaluation_parameters, shared_ptr<Node> caller, vector< shared_ptr<VentureValue> >& arguments,
+void XRP__memoizer::Remove(vector< shared_ptr<VentureValue> >& arguments,
                           shared_ptr<VentureValue> sampled_value) {
 }
 bool XRP__memoizer::IsRandomChoice() { return false; }
@@ -72,8 +72,7 @@ shared_ptr<VentureValue> XRP__memoized_procedure::Sampler(vector< shared_ptr<Ven
                 caller,
                 this->maker.lock(), // FIXME: Is it okay?
                 evaluation_config,
-                mem_table_key,
-                shared_ptr<MemoizedProcedureOrder>(new MemoizedProcedureOrder()));
+                mem_table_key);
   } else {
     // cout << "*** Restoring the mem node " << mem_table_key << endl;
     // Adding the output reference link by hand.
@@ -96,7 +95,7 @@ void XRP__memoized_procedure::Unsampler(vector< shared_ptr<VentureValue> >& old_
   }
   XRP__memoizer_map_element& mem_table_element =
     (*(this->mem_table.find(mem_table_key))).second;
-  mem_table_element.application_caller_node->output_references.erase(mem_table_element.application_caller_node->output_references.find(caller));
+  mem_table_element.application_caller_node->output_references.erase(caller);
   if (mem_table_element.hidden_uses == 0) {
     throw std::runtime_error("(1) Cannot do 'mem_table_element.hidden_uses--'.");
   }
@@ -111,36 +110,17 @@ real XRP__memoized_procedure::GetSampledLoglikelihood(vector< shared_ptr<Venture
   return log(1.0); // ?
 }
 
-void XRP__memoized_procedure::Incorporate(shared_ptr<ReevaluationParameters> reevaluation_parameters, shared_ptr<Node> caller, vector< shared_ptr<VentureValue> >& arguments,
+void XRP__memoized_procedure::Incorporate(vector< shared_ptr<VentureValue> >& arguments,
                               shared_ptr<VentureValue> sampled_value) {
+  //Debug// assert(arguments.size() == 1);
+  //Debug// cout << "Incorporating" << arguments[0]->GetString() << endl;
+
   string mem_table_key = XRP__memoized_procedure__MakeMapKeyFromArguments(arguments);
   if (this->mem_table.count(mem_table_key) == 0) {
     throw std::runtime_error("Cannot find the necessary key in the mem table.");
   }
   XRP__memoizer_map_element& mem_table_element =
     (*(this->mem_table.find(mem_table_key))).second;
-  
-  if (reevaluation_parameters == shared_ptr<ReevaluationParameters>()) {
-    if (mem_table_element.application_caller_node->memoized_procedure_order->previous_nodes.count(dynamic_pointer_cast<NodeEvaluation>(caller)) == 0) {
-      mem_table_element.application_caller_node->memoized_procedure_order->previous_nodes[dynamic_pointer_cast<NodeEvaluation>(caller)] = 0;
-    }
-    mem_table_element.application_caller_node->memoized_procedure_order->previous_nodes[dynamic_pointer_cast<NodeEvaluation>(caller)] =
-      mem_table_element.application_caller_node->memoized_procedure_order->previous_nodes[dynamic_pointer_cast<NodeEvaluation>(caller)] + 1;
-  } else {
-    if (reevaluation_parameters->new_memoized_procedure_orders[mem_table_element.application_caller_node].count(dynamic_pointer_cast<NodeEvaluation>(caller)) == 0) {
-      reevaluation_parameters->new_memoized_procedure_orders[mem_table_element.application_caller_node][dynamic_pointer_cast<NodeEvaluation>(caller)] = 0;
-    }
-    reevaluation_parameters->new_memoized_procedure_orders[mem_table_element.application_caller_node][dynamic_pointer_cast<NodeEvaluation>(caller)] =
-      reevaluation_parameters->new_memoized_procedure_orders[mem_table_element.application_caller_node][dynamic_pointer_cast<NodeEvaluation>(caller)] + 1;
-  }
-
-  //if (caller->memoized_procedure_order != shared_ptr<MemoizedProcedureOrder>()) {
-    //assert(mem_table_element.application_caller_node->memoized_procedure_order != caller->memoized_procedure_order);
-    //mem_table_element.application_caller_node->memoized_procedure_order->previous_orders.insert(caller->memoized_procedure_order);
-    // CheckOutputs(reevaluation_parameters, mem_table_element.application_caller_node->memoized_procedure_order);
-  //}
-
-  // cout << mem_table_element.active_uses << " " << mem_table_element.hidden_uses << endl;
   if (mem_table_element.hidden_uses == 0) {
     stack< shared_ptr<Node> > tmp;
     DrawGraphDuringMH(tmp);
@@ -152,40 +132,20 @@ void XRP__memoized_procedure::Incorporate(shared_ptr<ReevaluationParameters> ree
 
 #include "RIPL.h" // For DrawGraphDuringMH. Delete after.
 
-void XRP__memoized_procedure::Remove(shared_ptr<ReevaluationParameters> reevaluation_parameters, shared_ptr<Node> caller, vector< shared_ptr<VentureValue> >& arguments,
+void XRP__memoized_procedure::Remove(vector< shared_ptr<VentureValue> >& arguments,
                           shared_ptr<VentureValue> sampled_value) {
+  //Debug// assert(arguments.size() == 1);
+  //Debug// cout << "Removing" << arguments[0]->GetString() << endl;
+
   string mem_table_key = XRP__memoized_procedure__MakeMapKeyFromArguments(arguments);
   if (this->mem_table.count(mem_table_key) == 0) {
     throw std::runtime_error("Cannot find the necessary key in the mem table.");
   }
   XRP__memoizer_map_element& mem_table_element =
     (*(this->mem_table.find(mem_table_key))).second;
-  
-  if (caller != shared_ptr<Node>()) {
-    if (reevaluation_parameters == shared_ptr<ReevaluationParameters>()) {
-      mem_table_element.application_caller_node->memoized_procedure_order->previous_nodes[dynamic_pointer_cast<NodeEvaluation>(caller)] =
-        mem_table_element.application_caller_node->memoized_procedure_order->previous_nodes[dynamic_pointer_cast<NodeEvaluation>(caller)] - 1;
-      if (mem_table_element.application_caller_node->memoized_procedure_order->previous_nodes[dynamic_pointer_cast<NodeEvaluation>(caller)] == 0) {
-        mem_table_element.application_caller_node->memoized_procedure_order->previous_nodes.erase(dynamic_pointer_cast<NodeEvaluation>(caller));
-      }
-    } else {
-      if (reevaluation_parameters->new_memoized_procedure_orders[mem_table_element.application_caller_node].count(dynamic_pointer_cast<NodeEvaluation>(caller)) == 0) {
-        reevaluation_parameters->new_memoized_procedure_orders[mem_table_element.application_caller_node][dynamic_pointer_cast<NodeEvaluation>(caller)] = 0;
-      }
-      reevaluation_parameters->new_memoized_procedure_orders[mem_table_element.application_caller_node][dynamic_pointer_cast<NodeEvaluation>(caller)] =
-        reevaluation_parameters->new_memoized_procedure_orders[mem_table_element.application_caller_node][dynamic_pointer_cast<NodeEvaluation>(caller)] - 1;
-    }
-  }
-
-  //if (caller != shared_ptr<Node>() && caller->memoized_procedure_order != shared_ptr<MemoizedProcedureOrder>()) {
-    //mem_table_element.application_caller_node->memoized_procedure_order->previous_orders.erase(
-    //  mem_table_element.application_caller_node->memoized_procedure_order->previous_orders.find(caller->memoized_procedure_order));
-  //}
-
-  // cout << mem_table_element.active_uses << " " << mem_table_element.hidden_uses << endl;
   if (mem_table_element.active_uses == 0) {
-    int a = 5;
-    DrawGraphDuringMH(reevaluation_parameters->touched_nodes);
+    stack< shared_ptr<Node> > tmp;
+    DrawGraphDuringMH(tmp);
     throw std::runtime_error("Cannot do 'mem_table_element.active_uses--'.");
   }
   mem_table_element.hidden_uses++;

@@ -1,11 +1,11 @@
 #include "HeaderPre.h"
 #include "ERPs.h"
 
-void ERP::Incorporate(shared_ptr<ReevaluationParameters>, shared_ptr<Node> caller, vector< shared_ptr<VentureValue> >& arguments,
+void ERP::Incorporate(vector< shared_ptr<VentureValue> >& arguments,
                   shared_ptr<VentureValue> sampled_value) { // inline?
 
 }
-void ERP::Remove(shared_ptr<ReevaluationParameters> reevaluation_parameters, shared_ptr<Node> caller, vector< shared_ptr<VentureValue> >& arguments,
+void ERP::Remove(vector< shared_ptr<VentureValue> >& arguments,
             shared_ptr<VentureValue> sampled_value) { // inline?
 
 }

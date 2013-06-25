@@ -78,7 +78,7 @@ XRP::Sample(vector< shared_ptr<VentureValue> >& arguments,
   }
   
   //Debug// cout << "Incorporate from " << caller << endl;
-  Incorporate(evaluation_config.reevaluation_config_ptr, caller, arguments, new_sample);
+  Incorporate(arguments, new_sample);
 
   if (evaluation_config.in_proposal == true) {
     if (this->GetName() == "XRP__memoized_procedure") {
@@ -88,9 +88,6 @@ XRP::Sample(vector< shared_ptr<VentureValue> >& arguments,
       //cout << "active uses: " << mem_table_element.active_uses << " | " << evaluation_config.in_proposal << endl;
       if (mem_table_element.active_uses == 1 && mem_table_element.hidden_uses > 0) {
         UnabsorbBranchProbability(mem_table_element.application_caller_node, evaluation_config.reevaluation_config_ptr);
-        //mem_last_id++;
-        //evaluation_config.reevaluation_config_ptr->make_blank_evaluation_for_memoized_procedure.push(
-        //  std::pair<shared_ptr<Node>, size_t>(mem_table_element.application_caller_node, mem_last_id));
       }
     }
   }
@@ -129,7 +126,7 @@ XRP::RescorerResampler(vector< shared_ptr<VentureValue> >& old_arguments,
   }
   //cout << "Pam: " << arguments_are_different << " " << forced_resampling << " " << sampled_value_has_changed << " " << this->GetName() << endl;
   if (arguments_are_different == false && !forced_resampling && !sampled_value_has_changed) {
-    Incorporate(reevaluation_parameters, caller, new_arguments, caller->my_sampled_value);
+    Incorporate(new_arguments, caller->my_sampled_value);
     
     return shared_ptr<RescorerResamplerResult>(
       new RescorerResamplerResult(shared_ptr<VentureValue>(),
@@ -173,7 +170,7 @@ XRP::RescorerResampler(vector< shared_ptr<VentureValue> >& old_arguments,
 
     evaluation_config.__log_unconstrained_score += new_loglikelihood;
     
-    Incorporate(reevaluation_parameters, caller, new_arguments, new_sample);
+    Incorporate(new_arguments, new_sample);
     
     if (this->GetName() == "XRP__memoized_procedure") {
       string mem_table_key = XRP__memoized_procedure__MakeMapKeyFromArguments(new_arguments);
@@ -182,9 +179,6 @@ XRP::RescorerResampler(vector< shared_ptr<VentureValue> >& old_arguments,
       //cout << "active uses: " << mem_table_element.active_uses << " | " << evaluation_config.in_proposal << endl;
       if (mem_table_element.active_uses == 1 && mem_table_element.hidden_uses > 0) {
         UnabsorbBranchProbability(mem_table_element.application_caller_node, reevaluation_parameters);
-        //mem_last_id++;
-        //evaluation_config.reevaluation_config_ptr->make_blank_evaluation_for_memoized_procedure.push(
-        //  std::pair<shared_ptr<Node>, size_t>(mem_table_element.application_caller_node, mem_last_id));
       }
     }
 
@@ -203,7 +197,7 @@ XRP::RescorerResampler(vector< shared_ptr<VentureValue> >& old_arguments,
     
     evaluation_config.__log_unconstrained_score += new_loglikelihood;
     
-    Incorporate(reevaluation_parameters, caller, new_arguments, caller->my_sampled_value);
+    Incorporate(new_arguments, caller->my_sampled_value);
     
     return shared_ptr<RescorerResamplerResult>(
       new RescorerResamplerResult(shared_ptr<VentureValue>(),
@@ -222,11 +216,11 @@ real XRP::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& arguments,
                                       shared_ptr<VentureValue> sampled_value) {
   throw std::runtime_error("It should not happen.");
 } // Should be just ";"?
-void XRP::Incorporate(shared_ptr<ReevaluationParameters>, shared_ptr<Node> caller, vector< shared_ptr<VentureValue> >& arguments,
+void XRP::Incorporate(vector< shared_ptr<VentureValue> >& arguments,
                               shared_ptr<VentureValue> sampled_value) {
   throw std::runtime_error("It should not happen.");
 } // Should be just ";"?
-void XRP::Remove(shared_ptr<ReevaluationParameters> reevaluation_parameters, shared_ptr<Node> caller, vector< shared_ptr<VentureValue> >& arguments,
+void XRP::Remove(vector< shared_ptr<VentureValue> >& arguments,
                           shared_ptr<VentureValue> sampled_value) {
   throw std::runtime_error("It should not happen.");
 } // Should be just ";"?
