@@ -1,4 +1,3 @@
-
 #include "HeaderPre.h"
 #include "Header.h"
 #include "VentureValues.h"
@@ -126,7 +125,7 @@ XRP::RescorerResampler(vector< shared_ptr<VentureValue> >& old_arguments,
   }
   if (arguments_are_different == true) {
     if (XRP__memoized_procedure__MakeMapKeyFromArguments(old_arguments) == XRP__memoized_procedure__MakeMapKeyFromArguments(new_arguments)) {
-      throw std::runtime_error("This should not happen (arguments are different, but 'hash' function from them is not).");
+      // throw std::runtime_error("This should not happen (arguments are different, but 'hash' function from them is not).");
     }
   }
   //cout << "Pam: " << arguments_are_different << " " << forced_resampling << " " << sampled_value_has_changed << " " << this->GetName() << endl;
