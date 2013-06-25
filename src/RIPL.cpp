@@ -1,3 +1,4 @@
+
 #include "HeaderPre.h"
 #include "Header.h"
 #include "RIPL.h"
@@ -288,39 +289,39 @@ void BindStandardElementsToGlobalEnvironment() {
 
 #ifdef VENTURE__FLAG__COMPILE_WITH_ZMQ
   BindToEnvironment(global_environment,
-                    shared_ptr<VentureSymbol>(new VentureSymbol("load-remote-xrp")), // Make just via the std::string?
+                    shared_ptr<VentureSymbol>(new VentureSymbol("load_remote_xrp")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__LoadRemoteXRP()))));
 #endif
 
   // Deprecated, should be deleted:
   BindToEnvironment(global_environment,
-                    shared_ptr<VentureSymbol>(new VentureSymbol("compare-images")), // Make just via the std::string?
+                    shared_ptr<VentureSymbol>(new VentureSymbol("compare_images")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new ERP__CompareImages()))));
   BindToEnvironment(global_environment,
-                    shared_ptr<VentureSymbol>(new VentureSymbol("new-set")), // Make just via the std::string?
+                    shared_ptr<VentureSymbol>(new VentureSymbol("new_set")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new XRP__NewSet()))));
   BindToEnvironment(global_environment,
-                    shared_ptr<VentureSymbol>(new VentureSymbol("add-to-set")), // Make just via the std::string?
+                    shared_ptr<VentureSymbol>(new VentureSymbol("add_to_set")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new XRP__AddToSet()))));
   BindToEnvironment(global_environment,
-                    shared_ptr<VentureSymbol>(new VentureSymbol("sample-from-set")), // Make just via the std::string?
+                    shared_ptr<VentureSymbol>(new VentureSymbol("sample_from_set")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new XRP__SampleFromSet()))));
 
   // Makers of XRPs with internal state.
   BindToEnvironment(global_environment,
-                    shared_ptr<VentureSymbol>(new VentureSymbol("CRP/make")), // Make just via the std::string?
+                    shared_ptr<VentureSymbol>(new VentureSymbol("crp_make")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new XRP__CRPmaker()))));
   BindToEnvironment(global_environment,
                     shared_ptr<VentureSymbol>(new VentureSymbol("mem")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new XRP__memoizer()))));
   BindToEnvironment(global_environment,
-                    shared_ptr<VentureSymbol>(new VentureSymbol("symmetric-dirichlet-multinomial/make")), // Make just via the std::string?
+                    shared_ptr<VentureSymbol>(new VentureSymbol("symmetric_dirichlet_multinomial_make")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new XRP__SymmetricDirichletMultinomial_maker()))));
   BindToEnvironment(global_environment,
-                    shared_ptr<VentureSymbol>(new VentureSymbol("dirichlet-multinomial/make")), // Make just via the std::string?
+                    shared_ptr<VentureSymbol>(new VentureSymbol("dirichlet_multinomial_make")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new XRP__DirichletMultinomial_maker()))));
   BindToEnvironment(global_environment,
-                    shared_ptr<VentureSymbol>(new VentureSymbol("beta-binomial/make")), // Make just via the std::string?
+                    shared_ptr<VentureSymbol>(new VentureSymbol("beta_binomial_make")), // Make just via the std::string?
                                                                                         // FIXME: add check that there are 2 arguments!
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new XRP__DirichletMultinomial_maker()))));
 
@@ -336,13 +337,13 @@ void BindStandardElementsToGlobalEnvironment() {
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new ERP__Binomial()))));
   // WARNING: Deprecated:
   BindToEnvironment(global_environment,
-                    shared_ptr<VentureSymbol>(new VentureSymbol("noise-negate")), // Make just via the std::string?
+                    shared_ptr<VentureSymbol>(new VentureSymbol("noise_negate")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new ERP__NoisyNegate()))));
   BindToEnvironment(global_environment,
-                    shared_ptr<VentureSymbol>(new VentureSymbol("noisy-negate")), // Make just via the std::string?
+                    shared_ptr<VentureSymbol>(new VentureSymbol("noisy_negate")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new ERP__NoisyNegate()))));
   BindToEnvironment(global_environment,
-                    shared_ptr<VentureSymbol>(new VentureSymbol("condition-ERP")), // Make just via the std::string?
+                    shared_ptr<VentureSymbol>(new VentureSymbol("condition_erp")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new ERP__ConditionERP()))));
   BindToEnvironment(global_environment,
                     shared_ptr<VentureSymbol>(new VentureSymbol("normal")), // Make just via the std::string?
@@ -357,26 +358,26 @@ void BindStandardElementsToGlobalEnvironment() {
                     shared_ptr<VentureSymbol>(new VentureSymbol("gamma")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new ERP__Gamma()))));
   BindToEnvironment(global_environment,
-                    shared_ptr<VentureSymbol>(new VentureSymbol("inv-gamma")), // Make just via the std::string?
+                    shared_ptr<VentureSymbol>(new VentureSymbol("inv_gamma")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new ERP__InverseGamma()))));
   BindToEnvironment(global_environment,
                     shared_ptr<VentureSymbol>(new VentureSymbol("chisq")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new ERP__ChiSquared()))));
   BindToEnvironment(global_environment,
-                    shared_ptr<VentureSymbol>(new VentureSymbol("inv-chisq")), // Make just via the std::string?
+                    shared_ptr<VentureSymbol>(new VentureSymbol("inv_chisq")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new ERP__InverseChiSquared()))));
   BindToEnvironment(global_environment,
-                    shared_ptr<VentureSymbol>(new VentureSymbol("uniform-discrete")), // Make just via the std::string?
+                    shared_ptr<VentureSymbol>(new VentureSymbol("uniform_discrete")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new ERP__UniformDiscrete()))));
   BindToEnvironment(global_environment,
-                    shared_ptr<VentureSymbol>(new VentureSymbol("uniform-continuous")), // Make just via the std::string?
+                    shared_ptr<VentureSymbol>(new VentureSymbol("uniform_continuous")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new ERP__UniformContinuous()))));
   BindToEnvironment(global_environment,
                     shared_ptr<VentureSymbol>(new VentureSymbol("categorical")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new ERP__Categorical()))));
   
   BindToEnvironment(global_environment,
-                    shared_ptr<VentureSymbol>(new VentureSymbol("symmetric-dirichlet")), // Make just via the std::string?
+                    shared_ptr<VentureSymbol>(new VentureSymbol("symmetric_dirichlet")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new ERP__SymmetricDirichlet()))));
   BindToEnvironment(global_environment,
                     shared_ptr<VentureSymbol>(new VentureSymbol("dirichlet")), // Make just via the std::string?
@@ -410,7 +411,7 @@ void BindStandardElementsToGlobalEnvironment() {
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__RealEqualOrLesser()))));
   BindToEnvironment(global_environment,
                     shared_ptr<VentureSymbol>(new VentureSymbol(">")), // Make just via the std::string?
-                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__RealEqualOrGreater()))));
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__RealGreater()))));
   BindToEnvironment(global_environment,
                     shared_ptr<VentureSymbol>(new VentureSymbol("<")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__RealLesser()))));
@@ -433,65 +434,68 @@ void BindStandardElementsToGlobalEnvironment() {
   // For reals (repeating)
 
   BindToEnvironment(global_environment,
-                    shared_ptr<VentureSymbol>(new VentureSymbol("real+")), // Make just via the std::string?
+                    shared_ptr<VentureSymbol>(new VentureSymbol("real_plus")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__RealPlus()))));
   BindToEnvironment(global_environment,
-                    shared_ptr<VentureSymbol>(new VentureSymbol("real*")), // Make just via the std::string?
+                    shared_ptr<VentureSymbol>(new VentureSymbol("real_times")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__RealMultiply()))));
   BindToEnvironment(global_environment,
-                    shared_ptr<VentureSymbol>(new VentureSymbol("real-")), // Make just via the std::string?
+                    shared_ptr<VentureSymbol>(new VentureSymbol("real_minus")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__RealMinus()))));
   BindToEnvironment(global_environment,
-                    shared_ptr<VentureSymbol>(new VentureSymbol("real/")), // Make just via the std::string?
+                    shared_ptr<VentureSymbol>(new VentureSymbol("real_div")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__RealDivide()))));
 
   BindToEnvironment(global_environment,
-                    shared_ptr<VentureSymbol>(new VentureSymbol("real>=")), // Make just via the std::string?
+                    shared_ptr<VentureSymbol>(new VentureSymbol("real_gte")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__RealEqualOrGreater()))));
   BindToEnvironment(global_environment,
-                    shared_ptr<VentureSymbol>(new VentureSymbol("real<=")), // Make just via the std::string?
+                    shared_ptr<VentureSymbol>(new VentureSymbol("real_lte")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__RealEqualOrLesser()))));
   BindToEnvironment(global_environment,
-                    shared_ptr<VentureSymbol>(new VentureSymbol("real>")), // Make just via the std::string?
-                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__RealEqualOrGreater()))));
+                    shared_ptr<VentureSymbol>(new VentureSymbol("real_gt")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__RealGreater()))));
   BindToEnvironment(global_environment,
-                    shared_ptr<VentureSymbol>(new VentureSymbol("real<")), // Make just via the std::string?
+                    shared_ptr<VentureSymbol>(new VentureSymbol("real_lt")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__RealLesser()))));
   BindToEnvironment(global_environment,
-                    shared_ptr<VentureSymbol>(new VentureSymbol("real=")), // Make just via the std::string?
+                    shared_ptr<VentureSymbol>(new VentureSymbol("real_eq")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__RealEqual()))));
 
   // For integers
 
   BindToEnvironment(global_environment,
-                    shared_ptr<VentureSymbol>(new VentureSymbol("int+")), // Make just via the std::string?
+                    shared_ptr<VentureSymbol>(new VentureSymbol("int_plus")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__IntegerPlus()))));
   BindToEnvironment(global_environment,
-                    shared_ptr<VentureSymbol>(new VentureSymbol("int*")), // Make just via the std::string?
+                    shared_ptr<VentureSymbol>(new VentureSymbol("int_times")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__IntegerMultiply()))));
   BindToEnvironment(global_environment,
-                    shared_ptr<VentureSymbol>(new VentureSymbol("int-")), // Make just via the std::string?
+                    shared_ptr<VentureSymbol>(new VentureSymbol("int_minus")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__IntegerMinus()))));
+  BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol("int_div")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__IntegerDivide()))));
 
   BindToEnvironment(global_environment,
-                    shared_ptr<VentureSymbol>(new VentureSymbol("int>=")), // Make just via the std::string?
+                    shared_ptr<VentureSymbol>(new VentureSymbol("int_gte")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__IntegerEqualOrGreater()))));
   BindToEnvironment(global_environment,
-                    shared_ptr<VentureSymbol>(new VentureSymbol("int<=")), // Make just via the std::string?
+                    shared_ptr<VentureSymbol>(new VentureSymbol("int_lte")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__IntegerEqualOrLesser()))));
   BindToEnvironment(global_environment,
-                    shared_ptr<VentureSymbol>(new VentureSymbol("int>")), // Make just via the std::string?
-                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__IntegerEqualOrGreater()))));
+                    shared_ptr<VentureSymbol>(new VentureSymbol("int_gt")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__IntegerGreater()))));
   BindToEnvironment(global_environment,
-                    shared_ptr<VentureSymbol>(new VentureSymbol("int<")), // Make just via the std::string?
+                    shared_ptr<VentureSymbol>(new VentureSymbol("int_lt")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__IntegerLesser()))));
   BindToEnvironment(global_environment,
-                    shared_ptr<VentureSymbol>(new VentureSymbol("int=")), // Make just via the std::string?
+                    shared_ptr<VentureSymbol>(new VentureSymbol("int_eq")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__IntegerEqual()))));
 
 
   BindToEnvironment(global_environment,
-                    shared_ptr<VentureSymbol>(new VentureSymbol("mod")), // Make just via the std::string?
+                    shared_ptr<VentureSymbol>(new VentureSymbol("int_mod")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__IntegerModulo()))));
   
   // List and related procedures (should become deprecated soon, when we introduce new basic data type to Venture).
@@ -516,7 +520,7 @@ void BindStandardElementsToGlobalEnvironment() {
   BindToEnvironment(global_environment,
                     shared_ptr<VentureSymbol>(new VentureSymbol("nth")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__Nth()))));
-                    
+  
   BindToEnvironment(global_environment,
                     shared_ptr<VentureSymbol>(new VentureSymbol("scv+scv")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__SCVPlusSCV()))));
@@ -532,31 +536,32 @@ void BindStandardElementsToGlobalEnvironment() {
   
   // Types casting.
   BindToEnvironment(global_environment,
-                    shared_ptr<VentureSymbol>(new VentureSymbol("simplex-point")), // Make just via the std::string?
+                    shared_ptr<VentureSymbol>(new VentureSymbol("simplex_point")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__SimplexPoint()))));
                     
   BindToEnvironment(global_environment,
-                    shared_ptr<VentureSymbol>(new VentureSymbol("get-letter-id")), // Make just via the std::string?
+                    shared_ptr<VentureSymbol>(new VentureSymbol("get_letter_id")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new ERP__GetLetterId()))));
                     
   BindToEnvironment(global_environment,
-                    shared_ptr<VentureSymbol>(new VentureSymbol("load-python-Shell-module")), // Make just via the std::string?
+                    shared_ptr<VentureSymbol>(new VentureSymbol("load_python_Shell_module")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive_LoadPythonShellModule()))));
   BindToEnvironment(global_environment,
-                    shared_ptr<VentureSymbol>(new VentureSymbol("generate-empty-surface-and-pmap-prior")), // Make just via the std::string?
+                    shared_ptr<VentureSymbol>(new VentureSymbol("generate_empty_surface_and_pmap_prior")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__GenerateEmptySurfaceAndPMapPrior()))));
   BindToEnvironment(global_environment,
-                    shared_ptr<VentureSymbol>(new VentureSymbol("update-pmap-and-add-lobe")), // Make just via the std::string?
+                    shared_ptr<VentureSymbol>(new VentureSymbol("update_pmap_and_add_lobe")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__UpdatePMapAndAddLobe()))));
   BindToEnvironment(global_environment,
-                    shared_ptr<VentureSymbol>(new VentureSymbol("get-lobe-pos-x")), // Make just via the std::string?
+                    shared_ptr<VentureSymbol>(new VentureSymbol("get_lobe_pos_x")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new ERP__GetLobePosX()))));
   BindToEnvironment(global_environment,
-                    shared_ptr<VentureSymbol>(new VentureSymbol("get-lobe-pos-y")), // Make just via the std::string?
+                    shared_ptr<VentureSymbol>(new VentureSymbol("get_lobe_pos_y")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new ERP__GetLobePosY()))));
   BindToEnvironment(global_environment,
-                    shared_ptr<VentureSymbol>(new VentureSymbol("noisy-drill-well")), // Make just via the std::string?
+                    shared_ptr<VentureSymbol>(new VentureSymbol("noisy_drill_well")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new ERP__NoisyDrillWell()))));
+                    
   BindToEnvironment(global_environment,
                     shared_ptr<VentureSymbol>(new VentureSymbol("load-matlab-function")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__LoadMATLABFunction()))));
@@ -570,52 +575,7 @@ void BindStandardElementsToGlobalEnvironment() {
 
 
 
-void CheckNode(shared_ptr<Node> node, size_t level) {
-  if (dynamic_pointer_cast<NodeEvaluation>(node) != shared_ptr<NodeEvaluation>()) {
-    std::multiset< weak_ptr<Node> >::iterator previous = dynamic_pointer_cast<NodeEvaluation>(node)->output_references.end();
-    for (std::multiset< weak_ptr<Node> >::iterator iterator = dynamic_pointer_cast<NodeEvaluation>(node)->output_references.begin();
-         iterator != dynamic_pointer_cast<NodeEvaluation>(node)->output_references.end();
-         iterator++)
-    {
-      if (iterator->expired())
-      {
-        throw std::runtime_error("Expired.");
-      }
-      if (previous != dynamic_pointer_cast<NodeEvaluation>(node)->output_references.end() &&
-          previous->lock() == iterator->lock())
-      {
-        throw std::runtime_error("Duplication.");
-      }
-      previous = iterator;
-      if (level < 5) {
-        CheckNode(iterator->lock(), level + 1);
-      }
-    }
-  }
-  if (dynamic_pointer_cast<NodeVariable>(node) != shared_ptr<NodeVariable>()) {
-    std::multiset< weak_ptr<Node> >::iterator previous = dynamic_pointer_cast<NodeVariable>(node)->output_references.end();
-    for (std::multiset< weak_ptr<Node> >::iterator iterator = dynamic_pointer_cast<NodeVariable>(node)->output_references.begin();
-         iterator != dynamic_pointer_cast<NodeVariable>(node)->output_references.end();
-         iterator++)
-    {
-      if (iterator->expired())
-      {
-        cout << "Expired" << endl;
-        throw std::runtime_error("Expired.");
-      }
-      if (previous != dynamic_pointer_cast<NodeVariable>(node)->output_references.end() &&
-          previous->lock() == iterator->lock())
-      {
-        cout << "Duplication" << endl;
-        throw std::runtime_error("Duplication.");
-      }
-      previous = iterator;
-      if (level < 2) {
-        CheckNode(iterator->lock(), level + 1);
-      }
-    }
-  }
-}
+
 
 real GetLogscoreOfDirective(shared_ptr<Node> first_node) {
   real changed_probability = log(1.0);
@@ -624,7 +584,6 @@ real GetLogscoreOfDirective(shared_ptr<Node> first_node) {
   while (!processing_queue.empty()) {
     processing_queue.front()->GetChildren(processing_queue);
     shared_ptr<Node> current_node = processing_queue.front();
-    CheckNode(current_node, 0);
     processing_queue.pop();
 
     if (current_node->GetNodeType() == XRP_APPLICATION) {
