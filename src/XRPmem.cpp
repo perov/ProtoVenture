@@ -112,6 +112,7 @@ real XRP__memoized_procedure::GetSampledLoglikelihood(vector< shared_ptr<Venture
 
 void XRP__memoized_procedure::Incorporate(vector< shared_ptr<VentureValue> >& arguments,
                               shared_ptr<VentureValue> sampled_value) {
+  number_of_incorporated++;
   //Debug// assert(arguments.size() == 1);
   //Debug// cout << "Incorporating" << arguments[0]->GetString() << endl;
 
@@ -134,6 +135,7 @@ void XRP__memoized_procedure::Incorporate(vector< shared_ptr<VentureValue> >& ar
 
 void XRP__memoized_procedure::Remove(vector< shared_ptr<VentureValue> >& arguments,
                           shared_ptr<VentureValue> sampled_value) {
+  number_of_incorporated--;
   //Debug// assert(arguments.size() == 1);
   // cout << "Removing " << " " << this << " " << XRP__memoized_procedure__MakeMapKeyFromArguments(arguments) << endl;
 

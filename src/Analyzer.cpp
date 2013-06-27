@@ -789,6 +789,18 @@ GetArgumentsFromEnvironment(shared_ptr<NodeEnvironment> environment,
   return arguments;
 }
 
+vector< shared_ptr<VentureValue> >
+GetArgumentsFromEnvironmentOfThisNode(shared_ptr<NodeEnvironment> environment) {
+  vector< shared_ptr<VentureValue> > arguments;
+  for (size_t index = 0; index < environment->local_variables.size(); index++) {
+    arguments.push_back(LookupValue(environment,
+                                    index,
+                                    shared_ptr<NodeEvaluation>(),
+                                    true));
+  }
+  return arguments;
+}
+
 shared_ptr<VentureValue>
 NodeXRPApplication::Evaluate(shared_ptr<NodeEnvironment> environment, EvaluationConfig& evaluation_config) {
   //cout << "SIZE: " << GetArgumentsFromEnvironment(environment,

@@ -301,6 +301,9 @@ GetArgumentsFromEnvironment(shared_ptr<NodeEnvironment>,
                             shared_ptr<NodeEvaluation>,
                             bool);
 
+vector< shared_ptr<VentureValue> >
+GetArgumentsFromEnvironmentOfThisNode(shared_ptr<NodeEnvironment>);
+
 shared_ptr<VentureValue>
 EvaluateApplication(shared_ptr<VentureValue> evaluated_operator,
                     shared_ptr<NodeEnvironment> local_environment,

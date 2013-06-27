@@ -692,6 +692,7 @@ real GetLogscoreOfAllDirectives() {
   for (map<size_t, directive_entry>::iterator iterator = directives.begin(); iterator != directives.end(); iterator++) {
     changed_probability += GetLogscoreOfDirective(iterator->second.directive_node);
   }
+  assert(number_of_incorporated == 0);
   for (map<size_t, directive_entry>::iterator iterator = directives.begin(); iterator != directives.end(); iterator++) {
     RestoreDirective(iterator->second.directive_node);
   }

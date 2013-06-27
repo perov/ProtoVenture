@@ -624,6 +624,7 @@ pair<real, real> AbsorbBranchProbability(shared_ptr<Node> first_node, shared_ptr
     {
       throw std::runtime_error("Very strange: empty order.");
     }
+    processing_queue.pop();
     //PrintVector(dynamic_pointer_cast<NodeEvaluation>(current_node)->myorder);
     if (current_node->already_absorbed == MHid) {
       cout << "sizeof: " << global_reevaluation_parameters->touched_nodes.size() << endl;
@@ -631,13 +632,11 @@ pair<real, real> AbsorbBranchProbability(shared_ptr<Node> first_node, shared_ptr
       throw std::runtime_error("Already was absorbed!");
     }
     current_node->already_absorbed = MHid;
-    processing_queue.pop();
 
     if (current_node->GetNodeType() == XRP_APPLICATION) {
       shared_ptr<NodeXRPApplication> current_node2 = dynamic_pointer_cast<NodeXRPApplication>(current_node);
 
-      vector< shared_ptr<VentureValue> > got_arguments = GetArgumentsFromEnvironment(current_node2->environment, // Not efficient?
-                                      dynamic_pointer_cast<NodeEvaluation>(current_node2), true);
+      vector< shared_ptr<VentureValue> > got_arguments = GetArgumentsFromEnvironmentOfThisNode(current_node2->environment);
       current_node2->xrp->xrp->Remove(got_arguments, current_node2->my_sampled_value);
       
       real node_loglikelihood = current_node2->xrp->xrp->GetSampledLoglikelihood(got_arguments, current_node2->my_sampled_value);
@@ -686,8 +685,7 @@ void UnabsorbBranchProbability(shared_ptr<Node> first_node, shared_ptr<Reevaluat
     if (current_node->GetNodeType() == XRP_APPLICATION) {
       shared_ptr<NodeXRPApplication> current_node2 = dynamic_pointer_cast<NodeXRPApplication>(current_node);
 
-      vector< shared_ptr<VentureValue> > got_arguments = GetArgumentsFromEnvironment(current_node2->environment, // Not efficient?
-                                      dynamic_pointer_cast<NodeEvaluation>(current_node2), true);
+      vector< shared_ptr<VentureValue> > got_arguments = GetArgumentsFromEnvironmentOfThisNode(current_node2->environment);
       real node_loglikelihood = current_node2->xrp->xrp->GetSampledLoglikelihood(got_arguments, current_node2->my_sampled_value);
       current_node2->xrp->xrp->Incorporate(got_arguments, current_node2->my_sampled_value);
       

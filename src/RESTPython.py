@@ -95,7 +95,7 @@ ripl = venture_engine
 import venture.utils
 venture.utils.load_to_RIPL(
   ripl,
-  open('C:/Temp/serialized_model.lisp').read())
+  open('C:/Temp/serialized_model_2.lisp').read())
 # venture.utils.load_to_RIPL(
   # ripl,
   # """
@@ -113,13 +113,13 @@ venture.utils.load_to_RIPL(
   # [PREDICT (b a)]
   # """
 # )
-# for i in range(1000):
-  # print "Starting to calculate the logscore"
-  # ripl.logscore()
-  # print "Stopping to calculate the logscore"
-  # print "Starting to perform one inference iteration"
-  # ripl.infer(1)
-  # print "Stopping to perform one inference iteration"
+for i in range(1000):
+  print "Starting to calculate the logscore"
+  ripl.logscore()
+  print "Stopping to calculate the logscore"
+  print "Starting to perform one inference iteration"
+  ripl.infer(1)
+  print "Stopping to perform one inference iteration"
 # ripl.infer(1000)
 
 # sys.path.append("C:/pcp/20November2012/VentureAlphaOld/SourceCode/Venture/src")

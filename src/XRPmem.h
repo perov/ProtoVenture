@@ -7,6 +7,8 @@
 #include "MHProposal.h"
 #include "XRPCore.h"
 
+extern int number_of_incorporated;
+
 struct NodeApplicationCaller;
 
 struct XRP__memoizer_map_element {

@@ -15,6 +15,8 @@
 
 int difference_of_CRPs_operations;
 
+int number_of_incorporated = 0;
+
 /*
    NOTICES:
    1) Booleans should be as NIL!
@@ -45,8 +47,8 @@ bool need_to_return_inference;
 void InitGSL() {
   random_generator = gsl_rng_alloc(gsl_rng_mt19937);
   unsigned long seed = static_cast<unsigned long>(time(NULL)); // time(NULL)
-  if (false) {
-    seed = 1362378859;
+  if (true) {
+    seed = 1372291726;
     cout << "WARNING: RANDOM SEED is not random!" << endl;
   }
   cout << "Current seed: " << seed << endl;
