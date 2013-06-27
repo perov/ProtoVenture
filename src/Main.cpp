@@ -47,7 +47,7 @@ bool need_to_return_inference;
 void InitGSL() {
   random_generator = gsl_rng_alloc(gsl_rng_mt19937);
   unsigned long seed = static_cast<unsigned long>(time(NULL)); // time(NULL)
-  if (true) {
+  if (false) {
     seed = 1372291726;
     cout << "WARNING: RANDOM SEED is not random!" << endl;
   }
