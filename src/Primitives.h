@@ -1,4 +1,3 @@
-
 #ifndef VENTURE___PRIMITIVES_H
 #define VENTURE___PRIMITIVES_H
 
@@ -275,6 +274,12 @@ public:
   string function_name;
   bool if_stochastic;
 
+  virtual string GetName();
+};
+
+class Primitive__Throw : public Primitive {
+  virtual shared_ptr<VentureValue> Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config);
+public:
   virtual string GetName();
 };
 
