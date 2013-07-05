@@ -511,3 +511,11 @@ shared_ptr<VentureValue> ERP__PythonFunctionTemplate::Sampler(vector< shared_ptr
 string ERP__PythonFunctionTemplate::GetName() {
   return "ERP__PythonFunctionTemplate";
 }
+
+shared_ptr<VentureValue> Primitive__Throw::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config)
+{
+  throw arguments[0]->GetString();
+}
+string Primitive__Throw::GetName() {
+  return "Primitive__Throw";
+}
