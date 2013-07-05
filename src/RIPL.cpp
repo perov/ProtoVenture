@@ -569,7 +569,7 @@ void BindStandardElementsToGlobalEnvironment() {
                     
   BindToEnvironment(global_environment,
                     shared_ptr<VentureSymbol>(new VentureSymbol("throw")), // Make just via the std::string?
-                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive_Throw()))));
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__Throw()))));
 }
 
 
