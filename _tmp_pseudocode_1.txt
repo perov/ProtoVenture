@@ -1,4 +1,3 @@
-
 Apply.Sample(init-args, maker-address, const sp-state, sp-temporary-storage, args, application_address, key)
   sp-temporary-storage.address = Execution.AllocateAddress(
     parent_address=sp-state-address,
@@ -188,13 +187,3 @@ CSP.AbsorbArgumentsChange(init-args, maker-address, sp-state, sp-temporary-stora
     returning_new_values_for_addresses[argument_address] =
       new-args[argument_id]
   Return returning_new_values_for_addresses, EmptyRandomnessDelta
-
-***
-
-Cons.Sample(init-args, maker-address, const sp-state, sp-temporary-storage, args, application_address, key)
-  local_environment_address = Execute.AllocateAddress(
-    parent_address=application_address,
-    allocating_address_type=local_environment)
-  Execute.CreateEnvironment(
-    new_environment_address=local_environment_address,
-    parent_environment_address=Execution.GetGlobalEnvironment())
