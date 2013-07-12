@@ -1,0 +1,200 @@
+
+Apply.Sample(init-args, maker-address, const sp-state, sp-temporary-storage, args, application_address, key)
+  sp-temporary-storage.address = Execution.AllocateAddress(
+    parent_address=sp-state-address,
+    allocating_address_type=sp-state-subtrace)
+  value, randomndess_delta =
+    Execution.Apply(sp-temporary-storage.address, args[1], args[2], key)
+  sp-temporary-storage.saved_randomness_delta = randomndess_delta
+  Return value
+
+Apply.Incorporate(init-args, maker-address, sp-state, sp-temporary-storage, args, application_address, key, value)
+  If sp-temporary-storage.saved_randomness_delta == randomness_delta
+    returning_randomness_delta = sp-temporary-storage.saved_randomness_delta
+    sp-state.address = sp-temporary-storage.address
+    Clean(sp-temporary-storage)
+  Else
+    _, returning_randomness_delta =
+      Execution.Apply(sp-state.address, init-args[memoized-procedure], args, key)
+  Execution.AddDependency(application-address, sp-state.address, from-sp-state-subtrace-part)
+  Return randomness_delta
+
+Apply.Remove(init-args, maker-address, sp-state, sp-temporary-storage, args, application_address, key, value)
+  Execution.DeleteDependency(application-address, sp-state.address, from-sp-state-subtrace-part)
+  Return Execution.Unapply(sp-state.address, args[2], key)
+
+Apply.Unsample(init-args, maker-address, const sp-state, sp-temporary-storage, args, application_address, key, value)
+  Execution.DeallocateAddress(
+    parent_address=sp-state-address,
+    allocating_address_type=sp-state-subtrace)
+
+***
+
+MP._GetHash(hash_function, args)
+  tmpaddress = Execution.AllocateAddress(parent_address=NULL, allocating_address_type=TEMPORARY)
+  hash = Execution.Apply(tmpaddress, init-args['hash-function'], args).GetAsJSON()
+  Execution.DeallocateAddress(tmpaddresss)
+
+MP.Sample(init-args, maker-address, const sp-state, sp-temporary-storage, args, application_address, key)
+  hash = MP._GetHash(init-args['hash-function'], args)
+
+  If not sp-state.memtable.exist(hash)
+    sp-temporary-storage.memtable-new[hash].address =
+    Execution.AllocateAddress(
+      parent_address=sp-state-address,
+      allocating_address_type=sp-state-subtrace)
+      
+    value, sp-temporary-storage.memtable-new[hash].saved_randomness_delta =
+      Execution.Apply(sp-temporary-storage.memtable-new[hash].address, init-args[memoized-procedure], args, key)
+    sp-temporary-storage.memtable-new[hash].value = value
+    sp-temporary-storage.memtable-new[hash].counter++
+  Else
+    value = sp-state.memtable[hash].address.GetCurrentValue()
+
+  Return value
+
+MP.Incorporate(init-args, maker-address, sp-state, sp-temporary-storage, args, application_address, key, value)
+  hash = MP._GetHash(init-args['hash-function'], args)
+
+  returning_randomness_delta = Empty
+  
+  If sp-temporary-storage.memtable-new.exist(hash)
+    returning_randomness_delta = sp-temporary-storage.memtable-new[hash].saved_randomness_delta
+    Erase(sp-temporary-storage.memtable-new[hash].saved_randomness_delta)
+    sp-state.memtable[hash] = sp-temporary-storage.memtable-new[hash]
+    Clean(sp-temporary-storage.memtable-new)
+  Else
+    If sp-state.memtable[hash].counter == 0
+      returning_randomness_delta =
+        Execution.Apply(sp-state.memtable[hash].address, init-args[memoized-procedure], args, key)
+      
+  sp-state.memtable[hash].counter++
+  Execution.AddDependency(application-address, sp-state.address, from-sp-state-subtrace-part)
+  
+  Return returning_randomness_delta
+  
+MP.Remove(init-args, maker-address, const sp-state, sp-temporary-storage, args, application_address, key, value)
+  hash = MP._GetHash(init-args['hash-function'], args)
+
+  Execution.DeleteDependency(application-address, sp-state.memtable[hash].address, from-sp-state-subtrace-part)
+  sp-state.memtable[hash].counter--
+  
+  returning_randomness_delta = Empty
+  
+  If sp-state.memtable[hash].counter == 0
+    returning_randomness_delta =
+      Execution.Unapply(sp-state.memtable[hash].address, init-args[memoized-procedure], args, key)
+  
+  Return returning_randomness_delta
+
+MP.Unsample(init-args, maker-address, sp-state, sp-temporary-storage, args, application_address, key, value)
+  hash = MP._GetHash(init-args['hash-function'], args)
+  
+  if sp-state.memtable.exist(hash) && sp-state.memtable[hash].counter == 0
+    Execution.DeallocateAddress(
+      parent_address=sp-state-address,
+      allocating_address_type=sp-state-subtrace)
+
+***
+
+CSP is a compound stochastic procedure.
+
+CSP.Sample(init-args, maker-address, const sp-state, sp-temporary-storage, args, application_address, key)
+  local_environment_address = Execute.AllocateAddress(
+      parent_address=application_address,
+      allocating_address_type=local_environment)
+      
+  Execute.CreateEnvironment(
+    new_environment_address=local_environment_address,
+    parent_environment_address=sp-state.scope_environment)
+
+  Foreach arg_index in len(args):
+    Execute.Bind(
+      environment=local_environment_address,
+      binding_name=sp-state.argument_name[arg_index],
+      binder=application_address,
+      binding_value=args[arg_index])
+  
+  internal_evaluation_address = Execution.AllocateAddress(
+    application_address,
+    from-sp-state-subtrace-part)
+    
+  value, randomness_delta =
+    Execute.Evaluate(
+      sp-state.procedure_body,
+      local_environment_address,
+      internal_evaluation_address)
+      
+  sp-temporary-storage.new_applications[application_index].local_environment_address =
+    local_environment_address
+    
+  sp-temporary-storage.new_applications[application_index].internal_evaluation_address =
+    internal_evaluation_address
+    
+  sp-temporary-storage.new_applications[application_index].saved_randomness_delta[application_index] =
+    randomness_delta
+      
+  Return value
+   
+CSP.Incorporate(init-args, maker-address, sp-state, sp-temporary-storage, args, application_address, key, value)
+  If sp-temporary-storage.new-applications.exist(application_address)
+    randomness_delta = sp-temporary-storage.new_application[application_index].randomness_delta
+    Erase(sp-temporary-storage.new_application[application_index].randomness_delta)
+    sp-state.applications[application_index] =
+      sp-temporary-storage.new_applications[application_index]
+  Else
+    _, randomness_delta =
+      Execution.Evaluate(
+        sp-state.procedure_body,
+        sp-state.applications[application_address].local_environment_address,
+        sp-state.applications[application_address].internal_evaluation_address)
+        
+  Execution.AddDependency(
+    application_address,
+    sp-state.applications[application_address].internal_evaluation_address,
+    from-sp-state-subtrace-part)
+  
+  Return randomness_delta
+  
+CSP.Remove(init-args, maker-address, const sp-state, sp-temporary-storage, args, application_address, key, value)
+  Execution.DeleteDependency(
+    application_address,
+    sp-state.applications[application_address].internal_evaluation_address)
+    
+  Return Execution.Unevaluate(sp-state.applications[application_address].internal_evaluation_address)
+
+CSP.Unsample(init-args, maker-address, sp-state, sp-temporary-storage, args, application_address, key, value)
+  Execution.DeleteEnvironment(sp-state.applications[application_address].local_environment_address)
+  Execution.DeallocateAddress(local_environment_address)
+  Erase(sp-state.applications[application_index])
+
+CSP.IfAbsorbsArgumentsChange({changed-arguments-ids})
+  Return True
+  
+CSP.AbsorbingArgumentsChangeOutputs(maker-address, const sp-state, sp-temporary-storage, old-args, new-args, application_address, {changed-argument-ids}, key)
+  Return
+    Execution.GetBindingAddress(
+      sp-state.applications[application_address].local_environment_address,
+      sp-state.argument_name[arg_index])
+      
+CSP.AbsorbArgumentsChange(init-args, maker-address, sp-state, sp-temporary-storage, old-args, new-args, application_address, {changed-argument-ids}, key, value)
+  // Is being called when we have incorporated back the application.
+  returning_new_values_for_addresses = EmptyMap()
+  Foreach argument_id in changed-argument-ids
+    argument_address =
+      Execution.GetBindingAddress(
+        sp-state.applications[application_address].local_environment_address,
+        sp-state.argument_name[arg_index])
+    returning_new_values_for_addresses[argument_address] =
+      new-args[argument_id]
+  Return returning_new_values_for_addresses, EmptyRandomnessDelta
+
+***
+
+Cons.Sample(init-args, maker-address, const sp-state, sp-temporary-storage, args, application_address, key)
+  local_environment_address = Execute.AllocateAddress(
+    parent_address=application_address,
+    allocating_address_type=local_environment)
+  Execute.CreateEnvironment(
+    new_environment_address=local_environment_address,
+    parent_environment_address=Execution.GetGlobalEnvironment())
