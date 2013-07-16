@@ -212,6 +212,9 @@ int VentureCount::GetInteger() {
 int VentureAtom::GetInteger() {
   return data;
 }
+int VentureBoolean::GetInteger() {
+  return data;
+}
 
 // *** GetString ***
 string VentureValue::GetString() { return "UNDEFINED"; }

@@ -41,6 +41,7 @@ struct VentureBoolean : public VentureValue {
   virtual bool CompareByValue(shared_ptr<VentureValue>);
   virtual string GetString();
   virtual real GetReal(); // Should be deleted!
+  virtual int GetInteger();
   virtual PyObject* GetAsPythonObject();
   ~VentureBoolean();
 
