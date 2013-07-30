@@ -37,9 +37,8 @@ void VentureSmoothedCountVector::CheckMyData(VentureValue* venture_value) {
   }
 }
 void VentureSmoothedCount::CheckMyData(VentureValue* venture_value) {
-  if (venture_value->GetReal() <= 0.0) { // Add acceptable epsilon error.
-                                         // What about zero?
-    throw std::runtime_error("VentureSmoothedCount should be positive.");
+  if (venture_value->GetReal() < 0.0) { // Add acceptable epsilon error.
+    throw std::runtime_error("VentureSmoothedCount should be nonnegative.");
   }
 }
 
