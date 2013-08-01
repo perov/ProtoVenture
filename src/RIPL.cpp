@@ -476,7 +476,10 @@ void BindStandardElementsToGlobalEnvironment() {
   BindToEnvironment(global_environment,
                     shared_ptr<VentureSymbol>(new VentureSymbol("int_div")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__IntegerDivide()))));
-
+  BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol("int_mod")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__IntegerModulo()))));
+  
   BindToEnvironment(global_environment,
                     shared_ptr<VentureSymbol>(new VentureSymbol("int_gte")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__IntegerEqualOrGreater()))));
@@ -492,11 +495,25 @@ void BindStandardElementsToGlobalEnvironment() {
   BindToEnvironment(global_environment,
                     shared_ptr<VentureSymbol>(new VentureSymbol("int_eq")), // Make just via the std::string?
                     shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__IntegerEqual()))));
-
-
+  
   BindToEnvironment(global_environment,
-                    shared_ptr<VentureSymbol>(new VentureSymbol("int_mod")), // Make just via the std::string?
-                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__IntegerModulo()))));
+                    shared_ptr<VentureSymbol>(new VentureSymbol("int_ls")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__IntegerLeftShift()))));
+  BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol("int_rs")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__IntegerRightShift()))));
+  BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol("int_and")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__IntegerAnd()))));
+  BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol("int_or")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__IntegerOr()))));
+  BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol("int_xor")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__IntegerXor()))));
+  BindToEnvironment(global_environment,
+                    shared_ptr<VentureSymbol>(new VentureSymbol("int_not")), // Make just via the std::string?
+                    shared_ptr<VentureXRP>(new VentureXRP(shared_ptr<XRP>(new Primitive__IntegerNot()))));
   
   // List and related procedures (should become deprecated soon, when we introduce new basic data type to Venture).
   BindToEnvironment(global_environment,

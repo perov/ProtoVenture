@@ -227,6 +227,43 @@ public:
   virtual string GetName();
 };
 
+//bitwise operations
+
+class Primitive__IntegerLeftShift : public Primitive {
+  virtual shared_ptr<VentureValue> Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config);
+public:
+  virtual string GetName();
+};
+
+class Primitive__IntegerRightShift : public Primitive {
+  virtual shared_ptr<VentureValue> Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config);
+public:
+  virtual string GetName();
+};
+
+class Primitive__IntegerAnd : public Primitive {
+  virtual shared_ptr<VentureValue> Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config);
+public:
+  virtual string GetName();
+};
+
+class Primitive__IntegerOr : public Primitive {
+  virtual shared_ptr<VentureValue> Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config);
+public:
+  virtual string GetName();
+};
+
+class Primitive__IntegerXor : public Primitive {
+  virtual shared_ptr<VentureValue> Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config);
+public:
+  virtual string GetName();
+};
+
+class Primitive__IntegerNot : public Primitive {
+  virtual shared_ptr<VentureValue> Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config);
+public:
+  virtual string GetName();
+};
 
 
 class Primitive__SCVPlusSCV : public Primitive {

@@ -419,6 +419,61 @@ shared_ptr<VentureValue> Primitive__IntegerModulo::Sampler(vector< shared_ptr<Ve
 }
 string Primitive__IntegerModulo::GetName() { return "Primitive__IntegerModulo"; }
 
+shared_ptr<VentureValue> Primitive__IntegerLeftShift::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+  if (arguments.size() != 2) {
+    throw std::runtime_error("Wrong number of arguments.");
+  }
+  int result = arguments[0]->GetInteger() << arguments[1]->GetInteger();
+  return shared_ptr<VentureCount>(new VentureCount(result));
+}
+string Primitive__IntegerLeftShift::GetName() { return "Primitive__IntegerLeftShift"; }
+
+shared_ptr<VentureValue> Primitive__IntegerRightShift::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+  if (arguments.size() != 2) {
+    throw std::runtime_error("Wrong number of arguments.");
+  }
+  int result = arguments[0]->GetInteger() >> arguments[1]->GetInteger();
+  return shared_ptr<VentureCount>(new VentureCount(result));
+}
+string Primitive__IntegerRightShift::GetName() { return "Primitive__IntegerRightShift"; }
+
+shared_ptr<VentureValue> Primitive__IntegerAnd::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+  if (arguments.size() != 2) {
+    throw std::runtime_error("Wrong number of arguments.");
+  }
+  int result = arguments[0]->GetInteger() & arguments[1]->GetInteger();
+  return shared_ptr<VentureCount>(new VentureCount(result));
+}
+string Primitive__IntegerAnd::GetName() { return "Primitive__IntegerAnd"; }
+
+shared_ptr<VentureValue> Primitive__IntegerOr::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+  if (arguments.size() != 2) {
+    throw std::runtime_error("Wrong number of arguments.");
+  }
+  int result = arguments[0]->GetInteger() | arguments[1]->GetInteger();
+  return shared_ptr<VentureCount>(new VentureCount(result));
+}
+string Primitive__IntegerOr::GetName() { return "Primitive__IntegerOr"; }
+
+shared_ptr<VentureValue> Primitive__IntegerXor::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+  if (arguments.size() != 2) {
+    throw std::runtime_error("Wrong number of arguments.");
+  }
+  int result = arguments[0]->GetInteger() ^ arguments[1]->GetInteger();
+  return shared_ptr<VentureCount>(new VentureCount(result));
+}
+string Primitive__IntegerXor::GetName() { return "Primitive__IntegerXor"; }
+
+shared_ptr<VentureValue> Primitive__IntegerNot::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+  if (arguments.size() != 1) {
+    throw std::runtime_error("Wrong number of arguments.");
+  }
+  int result = ~arguments[0]->GetInteger();
+  return shared_ptr<VentureCount>(new VentureCount(result));
+}
+string Primitive__IntegerNot::GetName() { return "Primitive__IntegerNot"; }
+
+
 shared_ptr<VentureValue> Primitive_LoadPythonShellModule::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
   PyRun_SimpleString("import Shell");
   return shared_ptr<VentureBoolean>(new VentureBoolean(true));
