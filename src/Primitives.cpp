@@ -18,6 +18,16 @@ bool Primitive::CouldBeRescored() { return false; }
 string Primitive::GetName() { return "PrimitiveClass"; }
 
 
+shared_ptr<VentureValue> Primitive__Log::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
+  if(arguments.size() != 1) {
+    throw std::runtime_error("Wrong number of arguments.");
+  }
+  
+  real result = log(arguments[0]->GetReal());
+  return shared_ptr<VentureValue>(new VentureReal(result));
+}
+string Primitive__Log::GetName() { return "Primitive__Log"; }
+
 shared_ptr<VentureValue> Primitive__BooleanNot::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
   if(arguments.size() != 1) {
     throw std::runtime_error("Wrong number of arguments.");
