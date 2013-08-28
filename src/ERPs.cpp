@@ -56,16 +56,21 @@ real ERP__Binomial::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& 
                                 shared_ptr<VentureValue> sampled_value) { // inline?
   real weight;
   int number_of_attempts;
-  if (arguments.size() == 2) {
+  int offset = 0;
+  if (arguments.size() == 2 || arguments.size() == 3) {
     VentureCount::CheckMyData(arguments[0].get());
     number_of_attempts = arguments[0]->GetInteger();
     VentureProbability::CheckMyData(arguments[1].get());
     weight = arguments[1]->GetReal();
+    if (arguments.size() == 3) {
+      VentureCount::CheckMyData(arguments[2].get());
+      offset = arguments[2]->GetInteger();
+    }
   } else {
     throw std::runtime_error("Wrong number of arguments.");
   }
-  int number_of_successes = sampled_value->GetInteger();
-  if (number_of_successes > number_of_attempts) {
+  int number_of_successes = sampled_value->GetInteger() - offset;
+  if (number_of_successes > number_of_attempts || number_of_successes < 0) {
     return log(0.0);                
   } else {
     return
@@ -78,15 +83,20 @@ real ERP__Binomial::GetSampledLoglikelihood(vector< shared_ptr<VentureValue> >& 
 shared_ptr<VentureValue> ERP__Binomial::Sampler(vector< shared_ptr<VentureValue> >& arguments, shared_ptr<NodeXRPApplication> caller, EvaluationConfig& evaluation_config) {
   real weight;
   int number_of_attempts;
-  if (arguments.size() == 2) {
+  int offset = 0;
+  if (arguments.size() == 2 || arguments.size() == 3) {
     VentureCount::CheckMyData(arguments[0].get());
     number_of_attempts = arguments[0]->GetInteger();
     VentureProbability::CheckMyData(arguments[1].get());
     weight = arguments[1]->GetReal();
+    if (arguments.size() == 3) {
+      VentureCount::CheckMyData(arguments[2].get());
+      offset = arguments[2]->GetInteger();
+    }
   } else {
     throw std::runtime_error("Wrong number of arguments.");
   }
-  return shared_ptr<VentureCount>(new VentureCount(gsl_ran_binomial(random_generator, weight, number_of_attempts)));
+  return shared_ptr<VentureCount>(new VentureCount(offset + gsl_ran_binomial(random_generator, weight, number_of_attempts)));
 }
 string ERP__Binomial::GetName() { return "ERP__Binomial"; }
 
