@@ -40,7 +40,7 @@ venture_sources = [os.path.abspath(os.path.join(os.path.dirname(__file__),'..','
 ext_modules = []
 packages=["venture","venture.sivm","venture.ripl",
     "venture.parser","venture.server","venture.shortcuts",
-    "venture.test"]
+    "venture.test", "venture.venturelite"]
 
 if '--without-cpp-engine' in sys.argv:
     sys.argv.remove('--without-cpp-engine')
