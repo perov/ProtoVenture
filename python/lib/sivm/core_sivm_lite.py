@@ -42,8 +42,7 @@ class CoreSivmLite(object):
                 utils.validate_expression,modifier=_modify_expression, wrap_exception=False)
         sym = utils.validate_arg(instruction,'symbol',
                 utils.validate_symbol,modifier=_modify_symbol)
-        with self._catch_engine_error():
-            did, val = self.engine.assume(sym,exp)
+        did, val = self.engine.assume(sym,exp)
         return {"directive_id":did, "value":_parse_value(val)}
 
     def _do_observe(self,instruction):
@@ -52,18 +51,7 @@ class CoreSivmLite(object):
                 utils.validate_expression,modifier=_modify_expression, wrap_exception=False)
         val = utils.validate_arg(instruction,'value',
                 utils.validate_value,modifier=_modify_value)
-        with self._catch_engine_error():
-            try:
-                did = self.engine.observe(exp,val)
-            except Exception as e:
-                m = re.match(r'Rejection sampling has not successfully found any suitable state within (\d+) second\(s\), made iterations: (\d+).',e.message)
-                if m:
-                    t = int(m.groups()[0])*1000
-                    i = int(m.groups()[1])
-                    #NOTE: the C++ core is not capable of rolling-back
-                    raise VentureException("constraint_timeout", str(e),
-                            runtime=t, iterations=i)
-                raise
+        did = self.engine.observe(exp,val)
         self.observe_dict[did] = instruction
         return {"directive_id":did}
 
@@ -71,8 +59,7 @@ class CoreSivmLite(object):
         utils.require_state(self.state,'default')
         exp = utils.validate_arg(instruction,'expression',
                 utils.validate_expression,modifier=_modify_expression, wrap_exception=False)
-        with self._catch_engine_error():
-            did, val = self.engine.predict(exp)
+        did, val = self.engine.predict(exp)
         return {"directive_id":did, "value":_parse_value(val)}
 
     def _do_configure(self,instruction):
@@ -125,9 +112,8 @@ class CoreSivmLite(object):
                 utils.validate_positive_integer)
         resample = utils.validate_arg(instruction,'resample',
                 utils.validate_boolean)
-        with self._catch_engine_error():
-            #NOTE: model resampling is not implemented in C++
-            val = self.engine.infer(iterations)
+        #NOTE: model resampling is not implemented in C++
+        val = self.engine.infer(iterations)
         return {}
 
     def _do_clear(self,instruction):
@@ -166,20 +152,17 @@ class CoreSivmLite(object):
         
     def _do_start_continuous_inference(self,instruction):
         utils.require_state(self.state,'default')
-        with self._catch_engine_error():
-            self.engine.start_continuous_inference()
+        self.engine.start_continuous_inference()
         return {}
 
     def _do_stop_continuous_inference(self,instruction):
         utils.require_state(self.state,'default')
-        with self._catch_engine_error():
-            self.engine.stop_continuous_inference()
+        self.engine.stop_continuous_inference()
         return {}
 
     def _do_continuous_inference_status(self,instruction):
         utils.require_state(self.state,'default')
-        with self._catch_engine_error():
-            return {'running':self.engine.continuous_inference_status()}
+        return {'running':self.engine.continuous_inference_status()}
     
     ##############################
     # Profiler (stubs)
@@ -192,26 +175,6 @@ class CoreSivmLite(object):
         if e != None:
             self.profiler_enabled = e
         return {'options': {'profiler_enabled': self.profiler_enabled}}
-    
-    ###############################
-    # Error catching
-    ###############################
-
-    def _catch_engine_error(sivm):
-        class tmp(object):
-            def __enter__(self):
-                pass
-            def __exit__(self, type, value, traceback):
-                #for now, assume that all un-caught non-venture-exception errors are
-                #evaluation exceptions with null addresses. in future, also catch breakpoint
-                #exceptions and parse exceptions (static value construction is part of parsing)
-                if value:
-                    if not type == VentureException:
-                        sivm.state='exception'
-                        raise VentureException('evaluation',str(value),address=None)
-                    raise
-        return tmp()
-
 
 ###############################
 # Input modification functions
@@ -254,10 +217,7 @@ def _modify_value(ob):
             ob['type'] = 'count'
         else:
             ob['type'] = 'real'
-    t = _literal_type_map[ob['type']]
-    v = json.dumps(ob['value'])
-    s = "{0}[{1}]".format(t,v).encode('ascii')
-    return s
+    return ob['value']
 
 # the C++ engine now uses the correct symbol names
 _symbol_map = { "add" : '+', "sub" : '-',
