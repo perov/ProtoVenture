@@ -3,33 +3,32 @@
 
 from venture import parser, ripl, sivm, server
 
+def make_core_sivm(lite=False):
+    return sivm.CoreSivmLite() if lite else sivm.CoreSivmCppEngine()
 
-def make_core_sivm():
-    return sivm.CoreSivmCppEngine()
+def make_venture_sivm(lite=False):
+    return sivm.VentureSivm(make_core_sivm(lite))
 
-def make_venture_sivm():
-    return sivm.VentureSivm(make_core_sivm())
-
-def make_church_prime_ripl():
-    v = make_venture_sivm()
+def make_church_prime_ripl(lite=False):
+    v = make_venture_sivm(lite)
     parser1 = parser.ChurchPrimeParser()
     return ripl.Ripl(v,{"church_prime":parser1})
 
-def make_venture_script_ripl():
-    v = make_venture_sivm()
+def make_venture_script_ripl(lite=False):
+    v = make_venture_sivm(lite)
     parser1 = parser.VentureScriptParser()
     return ripl.Ripl(v,{"venture_script":parser1})
 
-def make_combined_ripl():
-    v = make_venture_sivm()
+def make_combined_ripl(lite=False):
+    v = make_venture_sivm(lite )
     parser1 = parser.ChurchPrimeParser()
     parser2 = parser.VentureScriptParser()
     r = ripl.Ripl(v,{"church_prime":parser1, "venture_script":parser2})
     r.set_mode("church_prime")
     return r
 
-def make_ripl_rest_server():
-    r = make_combined_ripl()
+def make_ripl_rest_server(lite=False):
+    r = make_combined_ripl(lite)
     return server.RiplRestServer(r)
 
 def make_ripl_rest_client(base_url):
