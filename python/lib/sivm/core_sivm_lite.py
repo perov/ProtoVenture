@@ -219,22 +219,34 @@ def _modify_value(ob):
             ob['type'] = 'real'
     return ob['value']
 
-# the C++ engine now uses the correct symbol names
 _symbol_map = { "add" : '+', "sub" : '-',
         "mul" : '*', "div" : "/", "pow" : "power",
         "lt" : "<", "gt" : ">", "lte" : "<=", "gte":
         ">=", "eq" : "=", "neq" : "!=",
-        #"crp_make" : "CRP/make",
-        #"dirichlet_multinomial_make" : "dirichlet-multinomial/make",
-        #"beta_binomial_make" : "beta-binomial/make",
-        #"symmetric_dirichlet_multinomial_make" : "symmetric-dirichlet-multinomial/make",
-        #"symmetric_dirichlet" : "symmetric-dirichlet",
-        #"noisy_negate" : "noisy-negate",
-        #"uniform_discrete" : "uniform-discrete",
-        #"uniform_continuous" : "uniform-continuous",
-        #"inv_gamma" : "inv-gamma",
-        #"inv_chisq" : "inv-chisq",
-        #"condition_erp" : "condition-ERP"
+        "crp_make" : "makeCRP",
+        "symmetric_dirichlet_multinomial_make" : "makeSymDirMult",
+        "condition_erp" : "biplex",
+        "uniform_discrete" : "uniformDiscrete",
+        "uniform_continuous" : "uniformContinuous",
+        "symmetric_dirichlet" : "symDirichlet",
+        "power": "pow",
+        "equal": "=",
+        "real_plus":"+",
+        "real_minus":"-",
+        "real_times": "*",
+        "real_div":"/",
+        "real_gt":">",
+        "real_lt":"<",
+        "real_eq":"=",
+        "int_plus":"+",
+        "int_minus":"-",
+        "int_times":"*",
+        "int_div":"//",
+        "int_gt":">",
+        "int_lt":"<",
+        "int_eq":"=",
+        "length":"len",
+        "nth":"get",
         }
 def _modify_symbol(s):
     if s in _symbol_map:
