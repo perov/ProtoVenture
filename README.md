@@ -1,6 +1,9 @@
-Venture
-=======
+Installation:
+See http://venture.csail.mit.edu/wiki/index.php5?title=Installation for prerequisites.
+Run python/global_install.sh to install Venture as a python module. See python/README.md for details.
 
-Installation manual: http://venture.csail.mit.edu/wiki/index.php5?title=Installation
+Usage:
+Shortcuts are provided to allow easy creation of a RIPL object.
 
-How to compile Venture with entry point in C++ (NOT RECOMMENDED!): http://venture.csail.mit.edu/wiki/index.php5?title=How_to_compile_Venture_with_entry_point_in_C%2B%2B
+from venture import shortcuts
+ripl = shortcuts.make_church_prime_ripl()
