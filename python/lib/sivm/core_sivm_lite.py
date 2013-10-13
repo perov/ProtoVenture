@@ -6,6 +6,7 @@ from venture.sivm import utils
 import json
 import re
 import copy
+import thread, threading
 
 class CoreSivmLite(object):
     ###############################
@@ -20,6 +21,9 @@ class CoreSivmLite(object):
         self.observe_dict = {}
         # cpp engine doesn't support profiling yet
         self.profiler_enabled = False
+        
+        self.continuous_inference_running = False
+        self.continuous_inference_lock = threading.Lock()
 
     _implemented_instructions = ["assume","observe","predict",
             "configure","forget","report","infer",
@@ -29,7 +33,8 @@ class CoreSivmLite(object):
     def execute_instruction(self, instruction):
         utils.validate_instruction(instruction,self._implemented_instructions)
         f = getattr(self,'_do_'+instruction['instruction'])
-        return f(instruction)
+        with self.continuous_inference_lock:
+            return f(instruction)
 
     ###############################
     # Instruction implementations
@@ -149,20 +154,29 @@ class CoreSivmLite(object):
         utils.require_state(self.state,'default')
         l = self.engine.logscore()
         return {"logscore":l}
-        
+    
+    def _run_continuous_inference(self, step):
+        while True:
+            with self.continuous_inference_lock:
+                if self.continuous_inference_running:
+                    self.engine.infer(step)
+                else: return
+    
     def _do_start_continuous_inference(self,instruction):
         utils.require_state(self.state,'default')
-        self.engine.start_continuous_inference()
+        if not self.continuous_inference_running:
+            self.continuous_inference_running = True
+            thread.start_new_thread(CoreSivmLite._run_continuous_inference, (self, 1))
         return {}
 
     def _do_stop_continuous_inference(self,instruction):
         utils.require_state(self.state,'default')
-        self.engine.stop_continuous_inference()
+        self.continuous_inference_running = False
         return {}
 
     def _do_continuous_inference_status(self,instruction):
         utils.require_state(self.state,'default')
-        return {'running':self.engine.continuous_inference_status()}
+        return {'running':self.engine.continuous_inference_running}
     
     ##############################
     # Profiler (stubs)
@@ -223,6 +237,7 @@ _symbol_map = { "add" : '+', "sub" : '-',
         "mul" : '*', "div" : "/", "pow" : "power",
         "lt" : "<", "gt" : ">", "lte" : "<=", "gte":
         ">=", "eq" : "=", "neq" : "!=",
+        "inv_gamma" : "invGamma",
         "crp_make" : "makeCRP",
         "symmetric_dirichlet_multinomial_make" : "makeSymDirMult",
         "condition_erp" : "biplex",
@@ -255,14 +270,21 @@ def _modify_symbol(s):
 
 _reverse_literal_type_map = dict((y,x) for x,y in _literal_type_map.items())
 
-def _parse_value(val):
-    tv = lambda t: {"type":t, "value":val}
-    
-    if isinstance(val, bool): return tv("boolean")
-    elif isinstance(val, int): return tv("count")
-    elif isinstance(val, float): return tv("number")
-    elif isinstance(val, list): return tv("list")
-    elif isinstance(val, str): return tv("string")
-    else: #probably an XRP or compound procedure
-        return tv("opaque")
+# venturelite uses numpy data types
+import numpy as np
 
+_python_to_venture_type_map = {
+    bool: "boolean",
+    np.bool_: "boolean",
+    int: "count",
+    np.int_: "count",
+    float: "number",
+    np.float_: "number",
+    list: "list",
+    str: "string"
+}
+
+def _parse_value(val):
+    if type(val) in _python_to_venture_type_map:
+        return {"type": _python_to_venture_type_map[type(val)], "value": val}
+    return {"type": "SP", "value": str(type(val))}
