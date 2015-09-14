@@ -1,7 +1,7 @@
 Venture
 =======
 
-*This is a very old, proto-version of Venture. For the current version goto http://probcomp.csail.mit.edu/venture/, please.*
+*This is a very old, proto-version of Venture. For the current version go to http://probcomp.csail.mit.edu/venture/, please.*
 
 Installation manual: http://venture.csail.mit.edu/wiki/index.php5?title=Installation
 
